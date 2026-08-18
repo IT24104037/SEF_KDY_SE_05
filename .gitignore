@@ -1,0 +1,55 @@
+# =========================
+# .NET
+# =========================
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# =========================
+# React / Node
+# =========================
+**/node_modules/
+**/dist/
+
+# =========================
+# Flutter
+# =========================
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/android/local.properties
+
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.local
+.env.development
+.env.production
+.env.development.local
+.env.production.local
+
+# Keep example environment files
+!.env.example
+!**/.env.example
+
+# =========================
+# IDE
+# =========================
+.idea/
+.vscode/settings.json
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+**/node_modules/
+**/dist/
