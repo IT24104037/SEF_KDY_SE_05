@@ -1,11 +1,46 @@
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
+
+import LoginPage from "./features/auth/pages/LoginPage.jsx";
+import UnauthorizedPage from "./features/auth/pages/UnauthorizedPage.jsx";
+import AdminHome from "./features/admin/pages/AdminHome.jsx";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
-    <main>
-      <h1>Smart Property Maintenance & Rental Operations System</h1>
-      <p>SE3090 Full-Stack and Agentic AI Project</p>
-      <p>React web application foundation is running.</p>
-    </main>
+    <BrowserRouter>
+      <Routes>
+
+        <Route
+          path="/"
+          element={<Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        <Route
+          path="/unauthorized"
+          element={<UnauthorizedPage />}
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminHome />
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 

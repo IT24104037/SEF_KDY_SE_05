@@ -1,13 +1,124 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using SmartProperty.Api.Data;
+using SmartProperty.Api.Entities.Identity;
+using SmartProperty.Api.Interfaces;
+using SmartProperty.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
+
+builder.Configuration.AddJsonFile(
+    "appsettings.Local.json",
+    optional: true,
+    reloadOnChange: true);
+    
 builder.Services.AddControllers();
 
-// Swagger / OpenAPI
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// CORS - React and Flutter will use this API
+// --------------------
+// PostgreSQL
+// --------------------
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString(
+            "DefaultConnection")));
+
+
+// --------------------
+// Services
+// --------------------
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IPasswordHasher<User>,
+    PasswordHasher<User>>();
+
+
+// --------------------
+// JWT Authentication
+// --------------------
+
+string jwtKey =
+    builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException(
+        "JWT key is not configured.");
+
+builder.Services
+    .AddAuthentication(
+        JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer =
+                    builder.Configuration["Jwt:Issuer"],
+
+                ValidAudience =
+                    builder.Configuration["Jwt:Audience"],
+
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey))
+            };
+    });
+
+builder.Services.AddAuthorization();
+
+
+// --------------------
+// Swagger
+// --------------------
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header
+        });
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference =
+                        new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                },
+                Array.Empty<string>()
+            }
+        });
+});
+
+
+// --------------------
+// CORS
+// --------------------
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClients", policy =>
@@ -19,9 +130,29 @@ builder.Services.AddCors(options =>
     });
 });
 
+
 var app = builder.Build();
 
-// Swagger
+
+// --------------------
+// Database migration
+// and Admin seed
+// --------------------
+
+using (var scope = app.Services.CreateScope())
+{
+    var db =
+        scope.ServiceProvider
+            .GetRequiredService<AppDbContext>();
+
+    await db.Database.MigrateAsync();
+
+    await DbSeeder.SeedAdminAsync(
+        scope.ServiceProvider,
+        app.Configuration);
+}
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -32,22 +163,22 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowClients");
 
-// Authentication and Authorization will be configured later
-// when the common JWT feature is implemented.
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapControllers();
 
-// Simple health endpoint for setup/testing/deployment
 app.MapGet("/health", () =>
 {
     return Results.Ok(new
     {
         status = "Healthy",
-        application = "Smart Property Maintenance API"
+        application =
+            "Smart Property Maintenance API"
     });
 });
 
 app.Run();
 
-// Required later for ASP.NET integration testing
 public partial class Program { }

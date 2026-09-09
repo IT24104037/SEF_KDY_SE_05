@@ -53,3 +53,13 @@ Thumbs.db
 *.log
 **/node_modules/
 **/dist/
+
+
+
+# Local ASP.NET configuration - contains secrets
+appsettings.Local.json
+**/appsettings.Local.json
+
+.env
+.env.*
+!.env.example
