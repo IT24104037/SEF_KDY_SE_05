@@ -38,7 +38,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<IPasswordHasher<User>,
     PasswordHasher<User>>();
-
+    
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
 // --------------------
 // JWT Authentication
