@@ -156,4 +156,78 @@ public class PropertiesController : ControllerBase
 
         return Ok(result);
     }
+
+    // PUT /api/properties/{propertyId}/units/{unitId}
+[HttpPut("{propertyId:int}/units/{unitId:int}")]
+public async Task<IActionResult> UpdateUnit(
+    int propertyId,
+    int unitId,
+    [FromBody] UpdateUnitDto request)
+{
+    var result = await _propertyService.UpdateUnitAsync(
+        GetUserId(),
+        propertyId,
+        unitId,
+        request);
+
+    if (result == null)
+    {
+        return BadRequest(
+            "Property or unit not found, owner is not verified, or unit label already exists.");
+    }
+
+    return Ok(result);
+}
+// DELETE /api/properties/{propertyId}/units/{unitId}
+// Uses archive instead of permanently deleting the unit.
+[HttpDelete("{propertyId:int}/units/{unitId:int}")]
+public async Task<IActionResult> ArchiveUnit(
+    int propertyId,
+    int unitId)
+{
+    var result = await _propertyService.ArchiveUnitAsync(
+        GetUserId(),
+        propertyId,
+        unitId);
+
+    if (!result)
+    {
+        return NotFound();
+    }
+
+    return NoContent();
+}
+// POST /api/properties/{propertyId}/units/bulk
+[HttpPost("{propertyId:int}/units/bulk")]
+public async Task<IActionResult> CreateBulkUnits(
+    int propertyId,
+    [FromBody] CreateBulkUnitsDto request)
+{
+    var result = await _propertyService.CreateBulkUnitsAsync(
+        GetUserId(),
+        propertyId,
+        request);
+
+    if (result.Count == 0)
+    {
+        return BadRequest(
+            "Property not found, owner is not verified, or one or more unit labels already exist.");
+    }
+
+    return Ok(result);
+}
+// GET /api/properties/dashboard
+[HttpGet("dashboard")]
+public async Task<IActionResult> GetOwnerDashboard()
+{
+    var result = await _propertyService.GetOwnerDashboardAsync(
+        GetUserId());
+
+    if (result == null)
+    {
+        return NotFound();
+    }
+
+    return Ok(result);
+}
 }

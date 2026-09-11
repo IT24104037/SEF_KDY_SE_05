@@ -281,7 +281,209 @@ public class PropertyService : IPropertyService
 
         return unit == null ? null : MapUnit(unit);
     }
+    public async Task<UnitResponseDto?> UpdateUnitAsync(
+    int userId,
+    int propertyId,
+    int unitId,
+    UpdateUnitDto request)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
 
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return null;
+    }
+
+    var unit = await _context.Units
+        .Include(u => u.Property)
+        .FirstOrDefaultAsync(u =>
+            u.Id == unitId &&
+            u.PropertyId == propertyId &&
+            u.Property!.PropertyOwnerId == owner.Id &&
+            !u.IsArchived &&
+            !u.Property.IsArchived);
+
+    if (unit == null)
+    {
+        return null;
+    }
+
+    var unitLabel = request.UnitLabel.Trim();
+
+    var duplicate = await _context.Units
+        .AnyAsync(u =>
+            u.PropertyId == propertyId &&
+            u.Id != unitId &&
+            u.UnitLabel == unitLabel &&
+            !u.IsArchived);
+
+    if (duplicate)
+    {
+        return null;
+    }
+
+    unit.UnitLabel = unitLabel;
+    unit.Description = request.Description?.Trim();
+    unit.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return MapUnit(unit);
+}
+
+public async Task<bool> ArchiveUnitAsync(
+    int userId,
+    int propertyId,
+    int unitId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return false;
+    }
+
+    var unit = await _context.Units
+        .Include(u => u.Property)
+        .FirstOrDefaultAsync(u =>
+            u.Id == unitId &&
+            u.PropertyId == propertyId &&
+            u.Property!.PropertyOwnerId == owner.Id &&
+            !u.IsArchived &&
+            !u.Property.IsArchived);
+
+    if (unit == null)
+    {
+        return false;
+    }
+
+    unit.IsArchived = true;
+    unit.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
+public async Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
+    int userId,
+    int propertyId,
+    CreateBulkUnitsDto request)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    var property = await _context.Properties
+        .FirstOrDefaultAsync(p =>
+            p.Id == propertyId &&
+            p.PropertyOwnerId == owner.Id &&
+            !p.IsArchived);
+
+    if (property == null)
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    var requestedLabels = request.Units
+        .Select(u => u.UnitLabel.Trim())
+        .ToList();
+
+    // Prevent duplicate labels inside the same request.
+    if (requestedLabels.Count != requestedLabels.Distinct().Count())
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    // Prevent labels that already exist for this property.
+    var existingLabels = await _context.Units
+        .Where(u =>
+            u.PropertyId == propertyId &&
+            requestedLabels.Contains(u.UnitLabel))
+        .Select(u => u.UnitLabel)
+        .ToListAsync();
+
+    if (existingLabels.Any())
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    var units = request.Units.Select(u => new Unit
+    {
+        PropertyId = propertyId,
+        UnitLabel = u.UnitLabel.Trim(),
+        Description = u.Description?.Trim()
+    }).ToList();
+
+    _context.Units.AddRange(units);
+
+    await _context.SaveChangesAsync();
+
+    return units
+        .Select(MapUnit)
+        .ToList();
+}
+
+public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
+    int userId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null)
+    {
+        return null;
+    }
+
+    var totalProperties = await _context.Properties
+        .CountAsync(p => p.PropertyOwnerId == owner.Id);
+
+    var activeProperties = await _context.Properties
+        .CountAsync(p =>
+            p.PropertyOwnerId == owner.Id &&
+            !p.IsArchived);
+
+    var archivedProperties = await _context.Properties
+        .CountAsync(p =>
+            p.PropertyOwnerId == owner.Id &&
+            p.IsArchived);
+
+    var propertyIds = await _context.Properties
+        .Where(p => p.PropertyOwnerId == owner.Id)
+        .Select(p => p.Id)
+        .ToListAsync();
+
+    var totalUnits = await _context.Units
+        .CountAsync(u => propertyIds.Contains(u.PropertyId));
+
+    var activeUnits = await _context.Units
+        .CountAsync(u =>
+            propertyIds.Contains(u.PropertyId) &&
+            !u.IsArchived);
+
+    var archivedUnits = await _context.Units
+        .CountAsync(u =>
+            propertyIds.Contains(u.PropertyId) &&
+            u.IsArchived);
+
+    return new OwnerDashboardDto
+    {
+        TotalProperties = totalProperties,
+        ActiveProperties = activeProperties,
+        ArchivedProperties = archivedProperties,
+        TotalUnits = totalUnits,
+        ActiveUnits = activeUnits,
+        ArchivedUnits = archivedUnits
+    };
+}
     private static PropertyResponseDto MapProperty(Property property)
     {
         return new PropertyResponseDto

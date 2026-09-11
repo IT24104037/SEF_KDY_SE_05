@@ -37,4 +37,23 @@ public interface IPropertyService
         int userId,
         int propertyId,
         int unitId);
+        
+    Task<UnitResponseDto?> UpdateUnitAsync(
+        int userId,
+        int propertyId,
+        int unitId,
+        UpdateUnitDto request);
+
+    Task<bool> ArchiveUnitAsync(
+    int userId,
+    int propertyId,
+    int unitId);
+
+    Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
+    int userId,
+    int propertyId,
+    CreateBulkUnitsDto request);
+
+    Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
+    int userId);
 }
