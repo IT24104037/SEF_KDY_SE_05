@@ -35,7 +35,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // --------------------
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<IPasswordHasher<User>,
     PasswordHasher<User>>();
 
