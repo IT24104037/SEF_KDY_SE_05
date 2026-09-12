@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SmartProperty.Api.DTOs.Properties;
 
-public class CreateUnitDto
+public class UpdateUnitDto
 {
     [Required]
     [StringLength(50)]
