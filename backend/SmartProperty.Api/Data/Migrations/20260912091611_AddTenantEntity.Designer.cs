@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartProperty.Api.Data;
@@ -11,9 +12,11 @@ using SmartProperty.Api.Data;
 namespace SmartProperty.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912091611_AddTenantEntity")]
+    partial class AddTenantEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,71 +114,6 @@ namespace SmartProperty.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.Property", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<int>("PropertyOwnerId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PropertyOwnerId");
-
-                    b.ToTable("Properties");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("PropertyOwners");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("PropertyId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PropertyId");
-
-                    b.ToTable("Units");
-                });
-
             modelBuilder.Entity("SmartProperty.Api.Entities.Tenancy.Tenant", b =>
                 {
                     b.Property<int>("Id")
@@ -204,12 +142,6 @@ namespace SmartProperty.Api.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int>("PropertyId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UnitId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -221,11 +153,7 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("MobileNumber")
                         .IsUnique();
 
-                    b.HasIndex("UnitId");
-
                     b.HasIndex("UserId");
-
-                    b.HasIndex("PropertyId", "UnitId");
 
                     b.ToTable("Tenants");
                 });
@@ -241,61 +169,12 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.Property", b =>
-                {
-                    b.HasOne("SmartProperty.Api.Entities.Property.PropertyOwner", "PropertyOwner")
-                        .WithMany("Properties")
-                        .HasForeignKey("PropertyOwnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PropertyOwner");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
-                {
-                    b.HasOne("SmartProperty.Api.Entities.Identity.User", "User")
-                        .WithOne()
-                        .HasForeignKey("SmartProperty.Api.Entities.Property.PropertyOwner", "UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
-                {
-                    b.HasOne("SmartProperty.Api.Entities.Property.Property", "Property")
-                        .WithMany("Units")
-                        .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Property");
-                });
-
             modelBuilder.Entity("SmartProperty.Api.Entities.Tenancy.Tenant", b =>
                 {
-                    b.HasOne("SmartProperty.Api.Entities.Property.Property", "Property")
-                        .WithMany()
-                        .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SmartProperty.Api.Entities.Property.Unit", "Unit")
-                        .WithMany("Tenants")
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("SmartProperty.Api.Entities.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Property");
-
-                    b.Navigation("Unit");
 
                     b.Navigation("User");
                 });
@@ -303,21 +182,6 @@ namespace SmartProperty.Api.Data.Migrations
             modelBuilder.Entity("SmartProperty.Api.Entities.Identity.Role", b =>
                 {
                     b.Navigation("Users");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.Property", b =>
-                {
-                    b.Navigation("Units");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
-                {
-                    b.Navigation("Properties");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
-                {
-                    b.Navigation("Tenants");
                 });
 #pragma warning restore 612, 618
         }

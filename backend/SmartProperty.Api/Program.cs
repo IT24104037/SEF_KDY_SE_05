@@ -8,6 +8,8 @@ using SmartProperty.Api.Data;
 using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Interfaces;
 using SmartProperty.Api.Services;
+using SmartProperty.Api.Repositories.Implementations;
+using SmartProperty.Api.Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +18,7 @@ builder.Configuration.AddJsonFile(
     "appsettings.Local.json",
     optional: true,
     reloadOnChange: true);
-    
+
 builder.Services.AddControllers();
 
 
@@ -39,6 +41,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>,
     PasswordHasher<User>>();
 
+builder.Services.AddScoped<ITenancyRepository, TenancyRepository>();
+builder.Services.AddScoped<ITenancyService, TenancyService>();
 
 // --------------------
 // JWT Authentication
@@ -148,6 +152,10 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 
     await DbSeeder.SeedAdminAsync(
+        scope.ServiceProvider,
+        app.Configuration);
+
+    await DbSeeder.SeedTestOwnerAsync(
         scope.ServiceProvider,
         app.Configuration);
 }
