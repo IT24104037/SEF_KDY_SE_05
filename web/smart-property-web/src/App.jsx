@@ -10,6 +10,8 @@ import OwnerRegisterPage from "./features/auth/pages/OwnerRegisterPage.jsx";
 import UnauthorizedPage from "./features/auth/pages/UnauthorizedPage.jsx";
 import OwnerVerificationPage from "./features/properties/pages/OwnerVerificationPage.jsx";
 import OwnerDashboardPage from "./features/properties/pages/OwnerDashboardPage.jsx";
+import MyPropertiesPage from "./features/properties/pages/MyPropertiesPage.jsx";
+import AddPropertyPage from "./features/properties/pages/AddPropertyPage.jsx";
 
 import AdminHome from "./features/admin/pages/AdminHome.jsx";
 import UserManagementPage from "./features/admin/pages/UserManagementPage.jsx";
@@ -54,7 +56,23 @@ function App() {
             <OwnerDashboardPage />
           </ProtectedRoute>
         }
-/>
+        />
+        <Route
+        path="/owner/properties"
+        element={
+          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <MyPropertiesPage />
+          </ProtectedRoute>
+        }
+        />
+        <Route
+        path="/owner/properties/add"
+        element={
+          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+             <AddPropertyPage />
+          </ProtectedRoute>
+        }
+        />
         <Route
           path="/owner/verification"
           element={
