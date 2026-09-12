@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getMyProperties,
-  createProperty,
   updateProperty,
   archiveProperty,
 } from "../services/propertyService.js";
@@ -16,6 +16,8 @@ const emptyForm = {
 };
 
 function MyPropertiesPage() {
+  const navigate = useNavigate();
+
   const [properties, setProperties] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -90,11 +92,7 @@ function MyPropertiesPage() {
           form.longitude === "" ? null : Number(form.longitude),
       };
 
-      if (editingId) {
-        await updateProperty(editingId, propertyData);
-      } else {
-        await createProperty(propertyData);
-      }
+      await updateProperty(editingId, propertyData);
 
       resetForm();
       await loadProperties();
@@ -136,7 +134,23 @@ function MyPropertiesPage() {
         padding: "30px 20px",
       }}
     >
-      <h1>My Properties</h1>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "10px",
+        }}
+      >
+        <h1>My Properties</h1>
+
+        <button
+          type="button"
+          onClick={() => navigate("/owner/properties/add")}
+        >
+          + Add Property
+        </button>
+      </div>
 
       <p>
         Manage your properties and keep their information up to date.
@@ -155,119 +169,133 @@ function MyPropertiesPage() {
         </div>
       )}
 
-      <section
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <h2>{editingId ? "Edit Property" : "Add Property"}</h2>
+      {editingId && (
+        <section
+          style={{
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            padding: "20px",
+            marginBottom: "30px",
+          }}
+        >
+          <h2>Edit Property</h2>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "15px" }}>
-            <label>
-              Property Name
-              <br />
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                required
-                maxLength={150}
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </label>
-          </div>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "15px" }}>
+              <label>
+                Property Name
+                <br />
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  maxLength={150}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                  }}
+                />
+              </label>
+            </div>
 
-          <div style={{ marginBottom: "15px" }}>
-            <label>
-              Address
-              <br />
-              <input
-                type="text"
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                required
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </label>
-          </div>
+            <div style={{ marginBottom: "15px" }}>
+              <label>
+                Address
+                <br />
+                <input
+                  type="text"
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                  }}
+                />
+              </label>
+            </div>
 
-          <div style={{ marginBottom: "15px" }}>
-            <label>
-              City
-              <br />
-              <input
-                type="text"
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </label>
-          </div>
+            <div style={{ marginBottom: "15px" }}>
+              <label>
+                City
+                <br />
+                <input
+                  type="text"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                  }}
+                />
+              </label>
+            </div>
 
-          <div style={{ marginBottom: "15px" }}>
-            <label>
-              Description
-              <br />
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows="4"
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </label>
-          </div>
+            <div style={{ marginBottom: "15px" }}>
+              <label>
+                Description
+                <br />
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  rows="4"
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                  }}
+                />
+              </label>
+            </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "15px",
-              marginBottom: "15px",
-            }}
-          >
-            <label style={{ flex: 1 }}>
-              Latitude
-              <br />
-              <input
-                type="number"
-                step="any"
-                name="latitude"
-                value={form.latitude}
-                onChange={handleChange}
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </label>
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                marginBottom: "15px",
+              }}
+            >
+              <label style={{ flex: 1 }}>
+                Latitude
+                <br />
+                <input
+                  type="number"
+                  step="any"
+                  name="latitude"
+                  value={form.latitude}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                  }}
+                />
+              </label>
 
-            <label style={{ flex: 1 }}>
-              Longitude
-              <br />
-              <input
-                type="number"
-                step="any"
-                name="longitude"
-                value={form.longitude}
-                onChange={handleChange}
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </label>
-          </div>
+              <label style={{ flex: 1 }}>
+                Longitude
+                <br />
+                <input
+                  type="number"
+                  step="any"
+                  name="longitude"
+                  value={form.longitude}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                  }}
+                />
+              </label>
+            </div>
 
-          <button type="submit" disabled={saving}>
-            {saving
-              ? "Saving..."
-              : editingId
-                ? "Update Property"
-                : "Add Property"}
-          </button>
+            <button type="submit" disabled={saving}>
+              {saving ? "Saving..." : "Update Property"}
+            </button>
 
-          {editingId && (
             <button
               type="button"
               onClick={resetForm}
@@ -275,9 +303,9 @@ function MyPropertiesPage() {
             >
               Cancel
             </button>
-          )}
-        </form>
-      </section>
+          </form>
+        </section>
+      )}
 
       <section>
         <h2>Property List</h2>
