@@ -7,6 +7,7 @@ import {
   updateUnit,
   archiveUnit,
   restoreUnit,
+  softDeleteUnit,
   createBulkUnits,
 } from "../services/unitService.js";
 import { getProperty } from "../services/propertyService.js";
@@ -34,6 +35,7 @@ function UnitsPage() {
   const [saving, setSaving] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function loadUnits() {
     try {
@@ -150,6 +152,27 @@ function UnitsPage() {
     }
   }
 
+  async function handleDelete(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently remove this archived unit from your unit lists? Its historical records will be preserved."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+
+      await softDeleteUnit(propertyId, id);
+      await loadUnits();
+      setSuccess("Archived unit deleted. Its historical records have been preserved.");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function handleBulkCreate(event) {
     event.preventDefault();
 
@@ -231,6 +254,19 @@ function UnitsPage() {
           }}
         >
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          style={{
+            padding: "12px",
+            marginBottom: "20px",
+            border: "1px solid #16a34a",
+            borderRadius: "6px",
+          }}
+        >
+          {success}
         </div>
       )}
 
@@ -462,6 +498,14 @@ function UnitsPage() {
                   onClick={() => handleRestore(unit.id)}
                 >
                   Restore
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDelete(unit.id)}
+                  style={{ marginLeft: "10px" }}
+                >
+                  Delete
                 </button>
               </div>
             ))}

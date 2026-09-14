@@ -268,7 +268,8 @@ public class PropertyService : IPropertyService
         .AnyAsync(u =>
             u.PropertyId == propertyId &&
             u.UnitLabel == unitLabel &&
-            !u.IsArchived);
+            !u.IsArchived &&
+            !u.IsDeleted);
 
     if (duplicate)
     {
@@ -320,7 +321,7 @@ public class PropertyService : IPropertyService
         }
 
         return await _context.Units
-            .Where(u => u.PropertyId == propertyId && !u.IsArchived)
+            .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted)
             .OrderBy(u => u.UnitLabel)
             .Select(u => new UnitResponseDto
             {
@@ -355,6 +356,7 @@ public class PropertyService : IPropertyService
                 u.PropertyId == propertyId &&
                 u.Property!.PropertyOwnerId == owner.Id &&
                 !u.IsArchived &&
+                !u.IsDeleted &&
                 !u.Property.IsArchived);
 
         return unit == null ? null : MapUnit(unit);
@@ -381,6 +383,7 @@ public class PropertyService : IPropertyService
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
             !u.IsArchived &&
+            !u.IsDeleted &&
             !u.Property.IsArchived);
 
     if (unit == null)
@@ -395,7 +398,8 @@ public class PropertyService : IPropertyService
             u.PropertyId == propertyId &&
             u.Id != unitId &&
             u.UnitLabel == unitLabel &&
-            !u.IsArchived);
+            !u.IsArchived &&
+            !u.IsDeleted);
 
     if (duplicate)
     {
@@ -432,6 +436,7 @@ public async Task<bool> ArchiveUnitAsync(
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
             !u.IsArchived &&
+            !u.IsDeleted &&
             !u.Property.IsArchived);
 
     if (unit == null)
@@ -472,7 +477,8 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
     return await _context.Units
         .Where(u =>
             u.PropertyId == propertyId &&
-            u.IsArchived)
+            u.IsArchived &&
+            !u.IsDeleted)
         .OrderBy(u => u.UnitLabel)
         .Select(u => new UnitResponseDto
         {
@@ -512,6 +518,7 @@ public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
             u.IsArchived &&
+            !u.IsDeleted &&
             !u.Property.IsArchived);
 
     if (unit == null)
@@ -528,7 +535,8 @@ public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
             u.PropertyId == propertyId &&
             u.Id != unitId &&
             u.UnitLabel == unit.UnitLabel &&
-            !u.IsArchived);
+            !u.IsArchived &&
+            !u.IsDeleted);
 
     if (duplicateActiveUnit)
     {
@@ -551,6 +559,45 @@ public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
         Success = true
     };
 }
+
+public async Task<bool> SoftDeleteUnitAsync(
+    int userId,
+    int propertyId,
+    int unitId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return false;
+    }
+
+    var unit = await _context.Units
+        .Include(u => u.Property)
+        .FirstOrDefaultAsync(u =>
+            u.Id == unitId &&
+            u.PropertyId == propertyId &&
+            u.Property!.PropertyOwnerId == owner.Id &&
+            u.IsArchived &&
+            !u.IsDeleted &&
+            !u.Property.IsArchived);
+
+    if (unit == null)
+    {
+        return false;
+    }
+
+    unit.IsDeleted = true;
+    unit.DeletedAt = DateTime.UtcNow;
+    unit.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
+
 public async Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
     int userId,
     int propertyId,
@@ -601,7 +648,9 @@ public async Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
     var existingLabels = await _context.Units
         .Where(u =>
             u.PropertyId == propertyId &&
-            requestedLabels.Contains(u.UnitLabel))
+            requestedLabels.Contains(u.UnitLabel) &&
+            !u.IsArchived &&
+            !u.IsDeleted)
         .Select(u => u.UnitLabel)
         .ToListAsync();
 
@@ -665,17 +714,21 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         .ToListAsync();
 
     var totalUnits = await _context.Units
-        .CountAsync(u => propertyIds.Contains(u.PropertyId));
+        .CountAsync(u =>
+            propertyIds.Contains(u.PropertyId) &&
+            !u.IsDeleted);
 
     var activeUnits = await _context.Units
         .CountAsync(u =>
             propertyIds.Contains(u.PropertyId) &&
-            !u.IsArchived);
+            !u.IsArchived &&
+            !u.IsDeleted);
 
     var archivedUnits = await _context.Units
         .CountAsync(u =>
             propertyIds.Contains(u.PropertyId) &&
-            u.IsArchived);
+            u.IsArchived &&
+            !u.IsDeleted);
 
     return new OwnerDashboardDto
     {

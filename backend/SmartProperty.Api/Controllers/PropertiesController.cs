@@ -234,8 +234,28 @@ public async Task<IActionResult> GetArchivedUnits(int id)
             return NotFound();
         }
 
-        return NoContent();
+    return NoContent();
+}
+
+// DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
+// Soft deletes an archived unit while preserving its database record.
+[HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
+public async Task<IActionResult> SoftDeleteUnit(
+    int propertyId,
+    int unitId)
+{
+    var result = await _propertyService.SoftDeleteUnitAsync(
+        GetUserId(),
+        propertyId,
+        unitId);
+
+    if (!result)
+    {
+        return NotFound(new { message = "Archived unit was not found or cannot be deleted." });
     }
+
+    return NoContent();
+}
 
 [HttpPut("{propertyId:int}/units/{unitId:int}/restore")]
 public async Task<IActionResult> RestoreUnit(

@@ -154,3 +154,21 @@ export async function createBulkUnits(propertyId, units) {
 
   return handleResponse(response);
 }
+
+export async function softDeleteUnit(propertyId, unitId) {
+  const response = await fetch(
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}/soft-delete`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return handleResponse(response);
+  }
+
+  return true;
+}

@@ -50,6 +50,7 @@ public class TenancyRepository : ITenancyRepository
             .FirstOrDefaultAsync(u =>
                 u.Id == unitId &&
                 u.PropertyId == propertyId &&
+                !u.IsDeleted &&
                 u.Property.PropertyOwner.UserId == ownerUserId);
     }
 

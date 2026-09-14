@@ -81,12 +81,11 @@ public class AppDbContext : DbContext
             .HasForeignKey(u => u.PropertyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-// Active unit labels must be unique within a property.
-// Archived units can reuse the same label.
-modelBuilder.Entity<Unit>()
-    .HasIndex(u => new { u.PropertyId, u.UnitLabel })
-    .HasFilter("\"IsArchived\" = false")
-    .IsUnique();
+        // Only non-deleted active unit labels must be unique within a property.
+        modelBuilder.Entity<Unit>()
+            .HasIndex(u => new { u.PropertyId, u.UnitLabel })
+            .HasFilter("\"IsArchived\" = false AND \"IsDeleted\" = false")
+            .IsUnique();
 
 modelBuilder.Entity<Tenant>()
     .HasOne(t => t.Property)

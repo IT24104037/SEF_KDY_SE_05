@@ -56,6 +56,11 @@ public interface IPropertyService
         int propertyId,
         int unitId);
 
+    Task<bool> SoftDeleteUnitAsync(
+        int userId,
+        int propertyId,
+        int unitId);
+
     Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
         int userId,
         int propertyId);
