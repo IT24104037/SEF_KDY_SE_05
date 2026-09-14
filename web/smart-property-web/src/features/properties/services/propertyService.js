@@ -101,3 +101,35 @@ export async function archiveProperty(id) {
 
   return true;
 }
+
+export async function getArchivedProperties() {
+  const response = await fetch(
+    `${API_URL}/api/properties/archived`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function restoreProperty(propertyId) {
+  const response = await fetch(
+    `${API_URL}/api/properties/${propertyId}/restore`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return handleResponse(response);
+  }
+
+  return true;
+}
