@@ -3,8 +3,20 @@ namespace SmartProperty.Api.Entities.Property;
 public class Unit
 {
     public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
+
     public int PropertyId { get; set; }
-    public Property Property { get; set; } = null!;
+
+    public Property? Property { get; set; }
+
+    public string UnitLabel { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    public bool IsArchived { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
     public ICollection<SmartProperty.Api.Entities.Tenancy.Tenant> Tenants { get; set; } = new List<SmartProperty.Api.Entities.Tenancy.Tenant>();
 }

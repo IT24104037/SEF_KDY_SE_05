@@ -18,3 +18,33 @@ export async function login(identifier, password) {
 
   return await response.json();
 }
+
+export async function registerOwner(ownerData) {
+  const response = await fetch(`${API_URL}/api/auth/register-owner`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(ownerData),
+  });
+
+  const responseText = await response.text();
+
+  let data = {};
+
+  if (responseText) {
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = {};
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Owner registration failed."
+    );
+  }
+
+  return data;
+}

@@ -32,6 +32,26 @@ public class AuthController : ControllerBase
 
         return Ok(result);
     }
+     //registration endpoint
+    [HttpPost("register-owner")]
+    public async Task<IActionResult> RegisterOwner(
+        RegisterOwnerDto request)
+    {
+        var result = await _authService.RegisterOwnerAsync(request);
+
+        if (!result)
+        {
+            return BadRequest(new
+            {
+                message = "An account with the provided email or mobile already exists."
+            });
+        }
+
+        return Ok(new
+        {
+            message = "Owner registration submitted successfully."
+        });
+    }
 
     [Authorize]
     [HttpGet("me")]

@@ -11,65 +11,6 @@ namespace SmartProperty.Api.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "PropertyOwners",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PropertyOwners", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PropertyOwners_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Properties",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
-                    PropertyOwnerId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Properties", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Properties_PropertyOwners_PropertyOwnerId",
-                        column: x => x.PropertyOwnerId,
-                        principalTable: "PropertyOwners",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Units",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    PropertyId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Units", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Units_Properties_PropertyId",
-                        column: x => x.PropertyId,
-                        principalTable: "Properties",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.Sql("""
                 INSERT INTO "PropertyOwners" ("UserId")
                 SELECT u."Id"
@@ -82,8 +23,8 @@ namespace SmartProperty.Api.Data.Migrations
                 """);
 
             migrationBuilder.Sql("""
-                INSERT INTO "Properties" ("Name", "PropertyOwnerId")
-                SELECT 'Default Property', po."Id"
+                INSERT INTO "Properties" ("PropertyOwnerId", "Name", "Address", "CreatedAt", "UpdatedAt", "IsArchived")
+                SELECT po."Id", 'Default Property', 'Not provided', NOW(), NOW(), FALSE
                 FROM "PropertyOwners" po
                 WHERE NOT EXISTS (
                     SELECT 1 FROM "Properties" p WHERE p."PropertyOwnerId" = po."Id"
@@ -91,8 +32,8 @@ namespace SmartProperty.Api.Data.Migrations
                 """);
 
             migrationBuilder.Sql("""
-                INSERT INTO "Units" ("Name", "PropertyId")
-                SELECT 'Default Unit', p."Id"
+                INSERT INTO "Units" ("PropertyId", "UnitLabel", "IsArchived", "CreatedAt", "UpdatedAt")
+                SELECT p."Id", 'Default Unit', FALSE, NOW(), NOW()
                 FROM "Properties" p
                 WHERE NOT EXISTS (
                     SELECT 1 FROM "Units" u WHERE u."PropertyId" = p."Id"
@@ -123,21 +64,15 @@ namespace SmartProperty.Api.Data.Migrations
                 table: "Tenants",
                 column: "UnitId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Properties_PropertyOwnerId",
-                table: "Properties",
-                column: "PropertyOwnerId");
+            migrationBuilder.DropIndex(
+                name: "IX_PropertyOwners_UserId",
+                table: "PropertyOwners");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PropertyOwners_UserId",
                 table: "PropertyOwners",
                 column: "UserId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Units_PropertyId",
-                table: "Units",
-                column: "PropertyId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Tenants_Properties_PropertyId",

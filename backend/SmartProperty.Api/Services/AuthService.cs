@@ -99,4 +99,84 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler()
             .WriteToken(token);
     }
+    public async Task<bool> RegisterOwnerAsync(RegisterOwnerDto request)
+{
+    var email = request.Email?.Trim();
+    var mobile = request.Mobile?.Trim();
+
+    // Check whether the email or mobile is already registered.
+    var existingUser = await _context.Users
+        .FirstOrDefaultAsync(u =>
+            (email != null && u.Email != null &&
+             u.Email.ToLower() == email.ToLower()) ||
+            (mobile != null && u.Mobile == mobile));
+
+    if (existingUser != null)
+    {
+        return false;
+    }
+
+    // Get the PropertyOwner role.
+    var ownerRole = await _context.Roles
+        .FirstOrDefaultAsync(r => r.Name == "PropertyOwner");
+
+    if (ownerRole == null)
+    {
+        throw new InvalidOperationException(
+            "PropertyOwner role was not found.");
+    }
+
+    // Create the user.
+    var user = new User
+    {
+        FullName = request.FullName.Trim(),
+        Email = email,
+        Mobile = mobile,
+        IsActive = true,
+        RoleId = ownerRole.Id
+    };
+
+    user.PasswordHash = _passwordHasher.HashPassword(
+        user,
+        request.Password);
+
+    // Create the PropertyOwner profile.
+    var propertyOwner = new SmartProperty.Api.Entities.Property.PropertyOwner
+    {
+        User = user,
+        VerificationStatus =
+            SmartProperty.Api.Entities.Property.OwnerVerificationStatus
+                .PendingVerification
+    };
+
+    // Create the initial property from registration.
+    var property = new SmartProperty.Api.Entities.Property.Property
+    {
+        PropertyOwner = propertyOwner,
+        Name = request.PropertyName.Trim(),
+        Address = request.PropertyAddress.Trim(),
+        City = request.City?.Trim(),
+        Description = request.PropertyDescription?.Trim(),
+        Latitude = request.Latitude,
+        Longitude = request.Longitude
+    };
+
+    // Save the ownership/management proof.
+    var document =
+        new SmartProperty.Api.Entities.Property.OwnerVerificationDocument
+        {
+            PropertyOwner = propertyOwner,
+            DocumentType = request.DocumentType.Trim(),
+            DocumentUrl = request.DocumentUrl.Trim()
+        };
+
+    _context.Users.Add(user);
+    _context.PropertyOwners.Add(propertyOwner);
+    _context.Properties.Add(property);
+    _context.OwnerVerificationDocuments.Add(document);
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
 }

@@ -7,12 +7,11 @@ using Microsoft.OpenApi.Models;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Interfaces;
-using SmartProperty.Api.Services;
 using SmartProperty.Api.Repositories.Implementations;
 using SmartProperty.Api.Repositories.Interfaces;
+using SmartProperty.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Configuration.AddJsonFile(
     "appsettings.Local.json",
@@ -21,28 +20,24 @@ builder.Configuration.AddJsonFile(
 
 builder.Services.AddControllers();
 
-
 // --------------------
 // PostgreSQL
 // --------------------
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString(
-            "DefaultConnection")));
-
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // --------------------
 // Services
 // --------------------
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-builder.Services.AddScoped<IPasswordHasher<User>,
-    PasswordHasher<User>>();
-
+builder.Services.AddScoped<IPropertyService, PropertyService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<ITenancyRepository, TenancyRepository>();
 builder.Services.AddScoped<ITenancyService, TenancyService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // --------------------
 // JWT Authentication
@@ -50,12 +45,10 @@ builder.Services.AddScoped<ITenancyService, TenancyService>();
 
 string jwtKey =
     builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException(
-        "JWT key is not configured.");
+    ?? throw new InvalidOperationException("JWT key is not configured.");
 
 builder.Services
-    .AddAuthentication(
-        JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters =
@@ -65,21 +58,13 @@ builder.Services
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-
-                ValidIssuer =
-                    builder.Configuration["Jwt:Issuer"],
-
-                ValidAudience =
-                    builder.Configuration["Jwt:Audience"],
-
-                IssuerSigningKey =
-                    new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtKey))
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
             };
     });
 
 builder.Services.AddAuthorization();
-
 
 // --------------------
 // Swagger
@@ -106,18 +91,16 @@ builder.Services.AddSwaggerGen(options =>
             {
                 new OpenApiSecurityScheme
                 {
-                    Reference =
-                        new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
                 },
                 Array.Empty<string>()
             }
         });
 });
-
 
 // --------------------
 // CORS
@@ -134,9 +117,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 var app = builder.Build();
-
 
 // --------------------
 // Database migration
@@ -145,21 +126,13 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db =
-        scope.ServiceProvider
-            .GetRequiredService<AppDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
     await db.Database.MigrateAsync();
 
-    await DbSeeder.SeedAdminAsync(
-        scope.ServiceProvider,
-        app.Configuration);
-
-    await DbSeeder.SeedTestOwnerAsync(
-        scope.ServiceProvider,
-        app.Configuration);
+    await DbSeeder.SeedAdminAsync(scope.ServiceProvider, app.Configuration);
+    await DbSeeder.SeedTestOwnerAsync(scope.ServiceProvider, app.Configuration);
 }
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -173,9 +146,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowClients");
-
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();
@@ -185,8 +156,7 @@ app.MapGet("/health", () =>
     return Results.Ok(new
     {
         status = "Healthy",
-        application =
-            "Smart Property Maintenance API"
+        application = "Smart Property Maintenance API"
     });
 });
 

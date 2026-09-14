@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { login } from "../../../api/authApi.js";
-import { saveSession } from "../../../utils/auth.js"
+import { saveSession } from "../../../utils/auth.js";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -72,7 +72,9 @@ function LoginPage() {
         />
 
         {error && (
-          <p style={styles.error}>{error}</p>
+          <p style={styles.error}>
+            {error}
+          </p>
         )}
 
         <button
@@ -81,6 +83,14 @@ function LoginPage() {
           disabled={loading}
         >
           {loading ? "Signing in..." : "Login"}
+        </button>
+
+        <button
+          type="button"
+          style={styles.registerButton}
+          onClick={() => navigate("/register-owner")}
+        >
+          Register as Property Owner
         </button>
       </form>
     </div>
@@ -129,6 +139,15 @@ const styles = {
     borderRadius: "6px",
     backgroundColor: "#1F8A8A",
     color: "#FFFFFF",
+    cursor: "pointer",
+  },
+
+  registerButton: {
+    padding: "10px",
+    border: "1px solid #1F8A8A",
+    borderRadius: "6px",
+    backgroundColor: "#FFFFFF",
+    color: "#1F8A8A",
     cursor: "pointer",
   },
 

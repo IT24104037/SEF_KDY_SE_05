@@ -113,7 +113,7 @@ public class TenancyService : ITenancyService
             PropertyId = tenant.PropertyId,
             PropertyName = tenant.Property.Name,
             UnitId = tenant.UnitId,
-            UnitName = tenant.Unit.Name,
+            UnitName = tenant.Unit.UnitLabel,
             IsActive = tenant.IsActive,
             CreatedAt = tenant.CreatedAt,
             UpdatedAt = tenant.UpdatedAt
