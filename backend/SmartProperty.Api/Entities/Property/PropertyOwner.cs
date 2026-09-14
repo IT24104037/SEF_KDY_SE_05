@@ -26,8 +26,7 @@ public class PropertyOwner
     public ICollection<OwnerVerificationDocument> VerificationDocuments { get; set; }
         = new List<OwnerVerificationDocument>();
 
-    public ICollection<global::SmartProperty.Api.Entities.Property.Property> Properties { get; set; }
-    = new List<global::SmartProperty.Api.Entities.Property.Property>();
+    public ICollection<Property> Properties { get; set; } = new List<Property>();
 }
 
 public enum OwnerVerificationStatus

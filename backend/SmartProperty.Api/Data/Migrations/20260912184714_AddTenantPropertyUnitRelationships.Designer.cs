@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartProperty.Api.Data;
@@ -11,9 +12,11 @@ using SmartProperty.Api.Data;
 namespace SmartProperty.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912184714_AddTenantPropertyUnitRelationships")]
+    partial class AddTenantPropertyUnitRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,35 +114,6 @@ namespace SmartProperty.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerVerificationDocument", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DocumentUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("PropertyOwnerId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PropertyOwnerId");
-
-                    b.ToTable("OwnerVerificationDocuments");
-                });
-
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Property", b =>
                 {
                     b.Property<int>("Id")
@@ -148,37 +122,13 @@ namespace SmartProperty.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("City")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal?>("Latitude")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<int>("PropertyOwnerId")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -195,29 +145,13 @@ namespace SmartProperty.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("VerificationStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("VerifiedByAdminId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("VerifiedByAdminId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("PropertyOwners");
                 });
@@ -230,29 +164,17 @@ namespace SmartProperty.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("boolean");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("PropertyId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("UnitLabel")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("PropertyId", "UnitLabel")
-                        .IsUnique();
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("Units");
                 });
@@ -302,11 +224,11 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("MobileNumber")
                         .IsUnique();
 
-                    b.HasIndex("PropertyId", "UnitId");
-
                     b.HasIndex("UnitId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("PropertyId", "UnitId");
 
                     b.ToTable("Tenants");
                 });
@@ -320,17 +242,6 @@ namespace SmartProperty.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerVerificationDocument", b =>
-                {
-                    b.HasOne("SmartProperty.Api.Entities.Property.PropertyOwner", "PropertyOwner")
-                        .WithMany("VerificationDocuments")
-                        .HasForeignKey("PropertyOwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PropertyOwner");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Property", b =>
@@ -347,18 +258,12 @@ namespace SmartProperty.Api.Data.Migrations
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
                 {
                     b.HasOne("SmartProperty.Api.Entities.Identity.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .WithOne()
+                        .HasForeignKey("SmartProperty.Api.Entities.Property.PropertyOwner", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SmartProperty.Api.Entities.Identity.User", "VerifiedByAdmin")
-                        .WithMany()
-                        .HasForeignKey("VerifiedByAdminId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("User");
-                    b.Navigation("VerifiedByAdmin");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
@@ -366,7 +271,7 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasOne("SmartProperty.Api.Entities.Property.Property", "Property")
                         .WithMany("Units")
                         .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Property");
@@ -392,7 +297,9 @@ namespace SmartProperty.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Property");
+
                     b.Navigation("Unit");
+
                     b.Navigation("User");
                 });
 
@@ -409,7 +316,6 @@ namespace SmartProperty.Api.Data.Migrations
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
                 {
                     b.Navigation("Properties");
-                    b.Navigation("VerificationDocuments");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
