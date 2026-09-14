@@ -81,20 +81,22 @@ public class AppDbContext : DbContext
             .HasForeignKey(u => u.PropertyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Only non-deleted active unit labels must be unique within a property.
         modelBuilder.Entity<Unit>()
             .HasIndex(u => new { u.PropertyId, u.UnitLabel })
+            .HasFilter("\"IsArchived\" = false AND \"IsDeleted\" = false")
             .IsUnique();
 
-        modelBuilder.Entity<Tenant>()
-            .HasOne(t => t.Property)
-            .WithMany()
-            .HasForeignKey(t => t.PropertyId)
-            .OnDelete(DeleteBehavior.Restrict);
+modelBuilder.Entity<Tenant>()
+    .HasOne(t => t.Property)
+    .WithMany()
+    .HasForeignKey(t => t.PropertyId)
+    .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Tenant>()
-            .HasOne(t => t.Unit)
-            .WithMany(u => u.Tenants)
-            .HasForeignKey(t => t.UnitId)
-            .OnDelete(DeleteBehavior.Restrict);
+modelBuilder.Entity<Tenant>()
+    .HasOne(t => t.Unit)
+    .WithMany(u => u.Tenants)
+    .HasForeignKey(t => t.UnitId)
+    .OnDelete(DeleteBehavior.Restrict);
     }
 }

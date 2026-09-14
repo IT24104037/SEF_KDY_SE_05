@@ -55,6 +55,16 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
+    // GET /api/properties/archived
+    [HttpGet("archived")]
+    public async Task<IActionResult> GetArchivedProperties()
+    {
+        var result = await _propertyService.GetArchivedPropertiesAsync(
+            GetUserId());
+
+        return Ok(result);
+    }
+
     // GET /api/properties/{id}
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetProperty(int id)
@@ -106,6 +116,21 @@ public class PropertiesController : ControllerBase
 
         return NoContent();
     }
+    // PUT /api/properties/{id}/restore
+        [HttpPut("{id:int}/restore")]
+        public async Task<IActionResult> RestoreProperty(int id)
+        {
+            var result = await _propertyService.RestorePropertyAsync(
+                GetUserId(),
+                id);
+
+            if (!result)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
 
     // POST /api/properties/{id}/units
     [HttpPost("{id:int}/units")]
@@ -118,13 +143,15 @@ public class PropertiesController : ControllerBase
             id,
             request);
 
-        if (result == null)
+        if (!result.Success)
         {
-            return BadRequest(
-                "Property not found, owner is not verified, or unit label already exists.");
+            return BadRequest(new
+            {
+                message = result.ErrorMessage
+            });
         }
 
-        return Ok(result);
+        return Ok(result.Unit);
     }
 
     // GET /api/properties/{id}/units
@@ -157,77 +184,127 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
-    // PUT /api/properties/{propertyId}/units/{unitId}
-[HttpPut("{propertyId:int}/units/{unitId:int}")]
-public async Task<IActionResult> UpdateUnit(
-    int propertyId,
-    int unitId,
-    [FromBody] UpdateUnitDto request)
+    // GET /api/properties/{id}/units/archived
+[HttpGet("{id:int}/units/archived")]
+public async Task<IActionResult> GetArchivedUnits(int id)
 {
-    var result = await _propertyService.UpdateUnitAsync(
+    var result = await _propertyService.GetArchivedUnitsAsync(
         GetUserId(),
-        propertyId,
-        unitId,
-        request);
-
-    if (result == null)
-    {
-        return BadRequest(
-            "Property or unit not found, owner is not verified, or unit label already exists.");
-    }
+        id);
 
     return Ok(result);
 }
-// DELETE /api/properties/{propertyId}/units/{unitId}
-// Uses archive instead of permanently deleting the unit.
-[HttpDelete("{propertyId:int}/units/{unitId:int}")]
-public async Task<IActionResult> ArchiveUnit(
+
+    // PUT /api/properties/{propertyId}/units/{unitId}
+    [HttpPut("{propertyId:int}/units/{unitId:int}")]
+    public async Task<IActionResult> UpdateUnit(
+        int propertyId,
+        int unitId,
+        [FromBody] UpdateUnitDto request)
+    {
+        var result = await _propertyService.UpdateUnitAsync(
+            GetUserId(),
+            propertyId,
+            unitId,
+            request);
+
+        if (result == null)
+        {
+            return BadRequest(
+                "Property or unit not found, owner is not verified, or unit label already exists.");
+        }
+
+        return Ok(result);
+    }
+
+    // DELETE /api/properties/{propertyId}/units/{unitId}
+    // Uses archive instead of permanently deleting the unit.
+    [HttpDelete("{propertyId:int}/units/{unitId:int}")]
+    public async Task<IActionResult> ArchiveUnit(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.ArchiveUnitAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (!result)
+        {
+            return NotFound();
+        }
+
+    return NoContent();
+}
+
+// DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
+// Soft deletes an archived unit while preserving its database record.
+[HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
+public async Task<IActionResult> SoftDeleteUnit(
     int propertyId,
     int unitId)
 {
-    var result = await _propertyService.ArchiveUnitAsync(
+    var result = await _propertyService.SoftDeleteUnitAsync(
         GetUserId(),
         propertyId,
         unitId);
 
     if (!result)
     {
-        return NotFound();
+        return NotFound(new { message = "Archived unit was not found or cannot be deleted." });
     }
 
     return NoContent();
 }
-// POST /api/properties/{propertyId}/units/bulk
-[HttpPost("{propertyId:int}/units/bulk")]
-public async Task<IActionResult> CreateBulkUnits(
+
+[HttpPut("{propertyId:int}/units/{unitId:int}/restore")]
+public async Task<IActionResult> RestoreUnit(
     int propertyId,
-    [FromBody] CreateBulkUnitsDto request)
+    int unitId)
 {
-    var result = await _propertyService.CreateBulkUnitsAsync(
+    var result = await _propertyService.RestoreUnitAsync(
         GetUserId(),
         propertyId,
-        request);
+        unitId);
 
-    if (result.Count == 0)
+    if (result.DuplicateLabel)
     {
-        return BadRequest(
-            "Property not found, owner is not verified, or one or more unit labels already exist.");
+        return Conflict(new
+        {
+            message = result.ErrorMessage
+        });
     }
 
-    return Ok(result);
+    if (!result.Success)
+    {
+        return NotFound(new
+        {
+            message = result.ErrorMessage
+        });
+    }
+
+    return NoContent();
 }
-// GET /api/properties/dashboard
-[HttpGet("dashboard")]
-public async Task<IActionResult> GetOwnerDashboard()
+
+    // POST /api/properties/{propertyId}/units/bulk
+    [HttpPost("{propertyId:int}/units/bulk")]
+    public async Task<IActionResult> CreateBulkUnits(
+        int propertyId,
+        [FromBody] CreateBulkUnitsDto request)
+    {
+        var result = await _propertyService.CreateBulkUnitsAsync(
+            GetUserId(),
+            propertyId,
+            request);
+
+        if (!result.Success)
 {
-    var result = await _propertyService.GetOwnerDashboardAsync(
-        GetUserId());
-
-    if (result == null)
+    return BadRequest(new
     {
-        return NotFound();
-    }
-
-    return Ok(result);
+        message = result.ErrorMessage
+    });
 }
+
+    return Ok(result.Units);
+    }
 }

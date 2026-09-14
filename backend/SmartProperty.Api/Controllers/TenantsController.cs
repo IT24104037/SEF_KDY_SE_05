@@ -30,7 +30,9 @@ public class TenantsController : ControllerBase
             {
                 p.Id,
                 p.Name,
-                Units = p.Units.Select(u => new { u.Id, u.UnitLabel })
+                Units = p.Units
+                    .Where(u => !u.IsDeleted)
+                    .Select(u => new { u.Id, u.UnitLabel })
             })
             .ToListAsync();
 

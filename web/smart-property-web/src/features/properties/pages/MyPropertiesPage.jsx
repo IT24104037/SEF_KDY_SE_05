@@ -4,6 +4,8 @@ import {
   getMyProperties,
   updateProperty,
   archiveProperty,
+  getArchivedProperties,
+  restoreProperty,
 } from "../services/propertyService.js";
 
 const emptyForm = {
@@ -19,6 +21,7 @@ function MyPropertiesPage() {
   const navigate = useNavigate();
 
   const [properties, setProperties] = useState([]);
+  const [archivedProperties, setArchivedProperties] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,8 +33,13 @@ function MyPropertiesPage() {
       setLoading(true);
       setError("");
 
-      const data = await getMyProperties();
-      setProperties(data);
+      const [activeData, archivedData] = await Promise.all([
+        getMyProperties(),
+        getArchivedProperties(),
+      ]);
+
+      setProperties(activeData);
+      setArchivedProperties(archivedData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -121,6 +129,17 @@ function MyPropertiesPage() {
       if (editingId === id) {
         resetForm();
       }
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleRestore(id) {
+    try {
+      setError("");
+
+      await restoreProperty(id);
+      await loadProperties();
     } catch (err) {
       setError(err.message);
     }
@@ -307,6 +326,7 @@ function MyPropertiesPage() {
         </section>
       )}
 
+      {/* Active Properties */}
       <section>
         <h2>Property List</h2>
 
@@ -352,30 +372,98 @@ function MyPropertiesPage() {
                 )}
 
                 <p>
-                  <strong>Status:</strong>{" "}
-                  {property.isArchived ? "Archived" : "Active"}
+                  <strong>Status:</strong> Active
                 </p>
 
                 <div style={{ marginTop: "15px" }}>
-                  {!property.isArchived && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => startEdit(property)}
-                      >
-                        Edit
-                      </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/owner/properties/${property.id}/units`
+                      )
+                    }
+                  >
+                    Manage Units
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleArchive(property.id)}
-                        style={{ marginLeft: "10px" }}
-                      >
-                        Archive
-                      </button>
-                    </>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => startEdit(property)}
+                    style={{ marginLeft: "10px" }}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleArchive(property.id)}
+                    style={{ marginLeft: "10px" }}
+                  >
+                    Archive
+                  </button>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Archived Properties */}
+      <section style={{ marginTop: "40px" }}>
+        <h2>Archived Properties</h2>
+
+        {loading ? (
+          <p>Loading archived properties...</p>
+        ) : archivedProperties.length === 0 ? (
+          <p>No archived properties.</p>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {archivedProperties.map((property) => (
+              <div
+                key={property.id}
+                style={{
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  padding: "20px",
+                }}
+              >
+                <h3>{property.name}</h3>
+
+                <p>
+                  <strong>Address:</strong> {property.address}
+                </p>
+
+                {property.city && (
+                  <p>
+                    <strong>City:</strong> {property.city}
+                  </p>
+                )}
+
+                {property.description && (
+                  <p>
+                    <strong>Description:</strong>{" "}
+                    {property.description}
+                  </p>
+                )}
+
+                <p>
+                  <strong>Status:</strong> Archived
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => handleRestore(property.id)}
+                >
+                  Restore
+                </button>
               </div>
             ))}
           </div>

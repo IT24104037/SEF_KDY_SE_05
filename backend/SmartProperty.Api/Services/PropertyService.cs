@@ -75,6 +75,38 @@ public class PropertyService : IPropertyService
             })
             .ToListAsync();
     }
+    public async Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
+    int userId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null)
+    {
+        return new List<PropertyResponseDto>();
+    }
+
+    return await _context.Properties
+        .Where(p =>
+            p.PropertyOwnerId == owner.Id &&
+            p.IsArchived)
+        .OrderBy(p => p.Name)
+        .Select(p => new PropertyResponseDto
+        {
+            Id = p.Id,
+            PropertyOwnerId = p.PropertyOwnerId,
+            Name = p.Name,
+            Address = p.Address,
+            City = p.City,
+            Description = p.Description,
+            Latitude = p.Latitude,
+            Longitude = p.Longitude,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt,
+            IsArchived = p.IsArchived
+        })
+        .ToListAsync();
+}
 
     public async Task<PropertyResponseDto?> GetPropertyByIdAsync(
         int userId,
@@ -167,56 +199,103 @@ public class PropertyService : IPropertyService
         return true;
     }
 
-    public async Task<UnitResponseDto?> CreateUnitAsync(
-        int userId,
-        int propertyId,
-        CreateUnitDto request)
+    public async Task<bool> RestorePropertyAsync(
+    int userId,
+    int propertyId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
-        var owner = await _context.PropertyOwners
-            .FirstOrDefaultAsync(po => po.UserId == userId);
-
-        if (owner == null ||
-            owner.VerificationStatus != OwnerVerificationStatus.Verified)
-        {
-            return null;
-        }
-
-        var property = await _context.Properties
-            .FirstOrDefaultAsync(p =>
-                p.Id == propertyId &&
-                p.PropertyOwnerId == owner.Id &&
-                !p.IsArchived);
-
-        if (property == null)
-        {
-            return null;
-        }
-
-        var unitLabel = request.UnitLabel.Trim();
-
-        var duplicate = await _context.Units
-            .AnyAsync(u =>
-                u.PropertyId == propertyId &&
-                u.UnitLabel == unitLabel &&
-                !u.IsArchived);
-
-        if (duplicate)
-        {
-            return null;
-        }
-
-        var unit = new Unit
-        {
-            PropertyId = propertyId,
-            UnitLabel = unitLabel,
-            Description = request.Description?.Trim()
-        };
-
-        _context.Units.Add(unit);
-        await _context.SaveChangesAsync();
-
-        return MapUnit(unit);
+        return false;
     }
+
+    var property = await _context.Properties
+        .FirstOrDefaultAsync(p =>
+            p.Id == propertyId &&
+            p.PropertyOwnerId == owner.Id &&
+            p.IsArchived);
+
+    if (property == null)
+    {
+        return false;
+    }
+
+    property.IsArchived = false;
+    property.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
+
+    public async Task<UnitOperationResult> CreateUnitAsync(
+    int userId,
+    int propertyId,
+    CreateUnitDto request)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return new UnitOperationResult
+        {
+            ErrorMessage = "Your account must be verified before managing units."
+        };
+    }
+
+    var property = await _context.Properties
+        .FirstOrDefaultAsync(p =>
+            p.Id == propertyId &&
+            p.PropertyOwnerId == owner.Id &&
+            !p.IsArchived);
+
+    if (property == null)
+    {
+        return new UnitOperationResult
+        {
+            ErrorMessage = "Property not found."
+        };
+    }
+
+    var unitLabel = request.UnitLabel.Trim();
+
+    var duplicate = await _context.Units
+        .AnyAsync(u =>
+            u.PropertyId == propertyId &&
+            u.UnitLabel == unitLabel &&
+            !u.IsArchived &&
+            !u.IsDeleted);
+
+    if (duplicate)
+    {
+        return new UnitOperationResult
+        {
+            ErrorMessage =
+                "A unit with this label already exists in this property."
+        };
+    }
+
+    var unit = new Unit
+    {
+        PropertyId = propertyId,
+        UnitLabel = unitLabel,
+        Description = request.Description?.Trim()
+    };
+
+    _context.Units.Add(unit);
+    await _context.SaveChangesAsync();
+
+    return new UnitOperationResult
+    {
+        Unit = MapUnit(unit)
+    };
+}
+    
 
     public async Task<List<UnitResponseDto>> GetUnitsAsync(
         int userId,
@@ -242,7 +321,7 @@ public class PropertyService : IPropertyService
         }
 
         return await _context.Units
-            .Where(u => u.PropertyId == propertyId && !u.IsArchived)
+            .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted)
             .OrderBy(u => u.UnitLabel)
             .Select(u => new UnitResponseDto
             {
@@ -277,6 +356,7 @@ public class PropertyService : IPropertyService
                 u.PropertyId == propertyId &&
                 u.Property!.PropertyOwnerId == owner.Id &&
                 !u.IsArchived &&
+                !u.IsDeleted &&
                 !u.Property.IsArchived);
 
         return unit == null ? null : MapUnit(unit);
@@ -303,6 +383,7 @@ public class PropertyService : IPropertyService
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
             !u.IsArchived &&
+            !u.IsDeleted &&
             !u.Property.IsArchived);
 
     if (unit == null)
@@ -317,7 +398,8 @@ public class PropertyService : IPropertyService
             u.PropertyId == propertyId &&
             u.Id != unitId &&
             u.UnitLabel == unitLabel &&
-            !u.IsArchived);
+            !u.IsArchived &&
+            !u.IsDeleted);
 
     if (duplicate)
     {
@@ -354,6 +436,7 @@ public async Task<bool> ArchiveUnitAsync(
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
             !u.IsArchived &&
+            !u.IsDeleted &&
             !u.Property.IsArchived);
 
     if (unit == null)
@@ -368,7 +451,154 @@ public async Task<bool> ArchiveUnitAsync(
 
     return true;
 }
-public async Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
+public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
+    int userId,
+    int propertyId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null)
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    var propertyExists = await _context.Properties
+        .AnyAsync(p =>
+            p.Id == propertyId &&
+            p.PropertyOwnerId == owner.Id &&
+            !p.IsArchived);
+
+    if (!propertyExists)
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    return await _context.Units
+        .Where(u =>
+            u.PropertyId == propertyId &&
+            u.IsArchived &&
+            !u.IsDeleted)
+        .OrderBy(u => u.UnitLabel)
+        .Select(u => new UnitResponseDto
+        {
+            Id = u.Id,
+            PropertyId = u.PropertyId,
+            UnitLabel = u.UnitLabel,
+            Description = u.Description,
+            IsArchived = u.IsArchived,
+            CreatedAt = u.CreatedAt,
+            UpdatedAt = u.UpdatedAt
+        })
+        .ToListAsync();
+}
+
+public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
+    int userId,
+    int propertyId,
+    int unitId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return new RestoreUnitOperationResult
+        {
+            Success = false,
+            ErrorMessage = "Property owner is not verified."
+        };
+    }
+
+    var unit = await _context.Units
+        .Include(u => u.Property)
+        .FirstOrDefaultAsync(u =>
+            u.Id == unitId &&
+            u.PropertyId == propertyId &&
+            u.Property!.PropertyOwnerId == owner.Id &&
+            u.IsArchived &&
+            !u.IsDeleted &&
+            !u.Property.IsArchived);
+
+    if (unit == null)
+    {
+        return new RestoreUnitOperationResult
+        {
+            Success = false,
+            ErrorMessage = "Archived unit was not found."
+        };
+    }
+
+    var duplicateActiveUnit = await _context.Units
+        .AnyAsync(u =>
+            u.PropertyId == propertyId &&
+            u.Id != unitId &&
+            u.UnitLabel == unit.UnitLabel &&
+            !u.IsArchived &&
+            !u.IsDeleted);
+
+    if (duplicateActiveUnit)
+    {
+        return new RestoreUnitOperationResult
+        {
+            Success = false,
+            DuplicateLabel = true,
+            ErrorMessage =
+                $"Cannot restore unit '{unit.UnitLabel}' because an active unit with the same label already exists."
+        };
+    }
+
+    unit.IsArchived = false;
+    unit.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return new RestoreUnitOperationResult
+    {
+        Success = true
+    };
+}
+
+public async Task<bool> SoftDeleteUnitAsync(
+    int userId,
+    int propertyId,
+    int unitId)
+{
+    var owner = await _context.PropertyOwners
+        .FirstOrDefaultAsync(po => po.UserId == userId);
+
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return false;
+    }
+
+    var unit = await _context.Units
+        .Include(u => u.Property)
+        .FirstOrDefaultAsync(u =>
+            u.Id == unitId &&
+            u.PropertyId == propertyId &&
+            u.Property!.PropertyOwnerId == owner.Id &&
+            u.IsArchived &&
+            !u.IsDeleted &&
+            !u.Property.IsArchived);
+
+    if (unit == null)
+    {
+        return false;
+    }
+
+    unit.IsDeleted = true;
+    unit.DeletedAt = DateTime.UtcNow;
+    unit.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
+
+public async Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
     int userId,
     int propertyId,
     CreateBulkUnitsDto request)
@@ -379,7 +609,11 @@ public async Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
     if (owner == null ||
         owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
-        return new List<UnitResponseDto>();
+        return new BulkUnitOperationResult
+        {
+            ErrorMessage =
+                "Your account must be verified before managing units."
+        };
     }
 
     var property = await _context.Properties
@@ -390,7 +624,10 @@ public async Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
 
     if (property == null)
     {
-        return new List<UnitResponseDto>();
+        return new BulkUnitOperationResult
+        {
+            ErrorMessage = "Property not found."
+        };
     }
 
     var requestedLabels = request.Units
@@ -400,36 +637,51 @@ public async Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
     // Prevent duplicate labels inside the same request.
     if (requestedLabels.Count != requestedLabels.Distinct().Count())
     {
-        return new List<UnitResponseDto>();
+        return new BulkUnitOperationResult
+        {
+            ErrorMessage =
+                "Duplicate unit labels were provided in the request."
+        };
     }
 
     // Prevent labels that already exist for this property.
     var existingLabels = await _context.Units
         .Where(u =>
             u.PropertyId == propertyId &&
-            requestedLabels.Contains(u.UnitLabel))
+            requestedLabels.Contains(u.UnitLabel) &&
+            !u.IsArchived &&
+            !u.IsDeleted)
         .Select(u => u.UnitLabel)
         .ToListAsync();
 
     if (existingLabels.Any())
     {
-        return new List<UnitResponseDto>();
+        return new BulkUnitOperationResult
+        {
+            ErrorMessage =
+                "One or more unit labels already exist in this property."
+        };
     }
 
-    var units = request.Units.Select(u => new Unit
-    {
-        PropertyId = propertyId,
-        UnitLabel = u.UnitLabel.Trim(),
-        Description = u.Description?.Trim()
-    }).ToList();
+    var units = request.Units
+        .Select(u => new Unit
+        {
+            PropertyId = propertyId,
+            UnitLabel = u.UnitLabel.Trim(),
+            Description = u.Description?.Trim()
+        })
+        .ToList();
 
     _context.Units.AddRange(units);
 
     await _context.SaveChangesAsync();
 
-    return units
-        .Select(MapUnit)
-        .ToList();
+    return new BulkUnitOperationResult
+    {
+        Units = units
+            .Select(MapUnit)
+            .ToList()
+    };
 }
 
 public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
@@ -462,17 +714,21 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         .ToListAsync();
 
     var totalUnits = await _context.Units
-        .CountAsync(u => propertyIds.Contains(u.PropertyId));
+        .CountAsync(u =>
+            propertyIds.Contains(u.PropertyId) &&
+            !u.IsDeleted);
 
     var activeUnits = await _context.Units
         .CountAsync(u =>
             propertyIds.Contains(u.PropertyId) &&
-            !u.IsArchived);
+            !u.IsArchived &&
+            !u.IsDeleted);
 
     var archivedUnits = await _context.Units
         .CountAsync(u =>
             propertyIds.Contains(u.PropertyId) &&
-            u.IsArchived);
+            u.IsArchived &&
+            !u.IsDeleted);
 
     return new OwnerDashboardDto
     {
@@ -515,4 +771,5 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             UpdatedAt = unit.UpdatedAt
         };
     }
+    
 }

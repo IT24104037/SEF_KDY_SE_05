@@ -12,6 +12,7 @@ import OwnerVerificationPage from "./features/properties/pages/OwnerVerification
 import OwnerDashboardPage from "./features/properties/pages/OwnerDashboardPage.jsx";
 import MyPropertiesPage from "./features/properties/pages/MyPropertiesPage.jsx";
 import AddPropertyPage from "./features/properties/pages/AddPropertyPage.jsx";
+import UnitsPage from "./features/properties/pages/UnitsPage.jsx";
 
 import AdminHome from "./features/admin/pages/AdminHome.jsx";
 import UserManagementPage from "./features/admin/pages/UserManagementPage.jsx";
@@ -76,6 +77,45 @@ function App() {
         />
 
         <Route
+
+          path="/unauthorized"
+          element={<UnauthorizedPage />}
+        />
+        <Route
+        path="/owner/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <OwnerDashboardPage />
+          </ProtectedRoute>
+        }
+        />
+        <Route
+        path="/owner/properties"
+        element={
+          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <MyPropertiesPage />
+          </ProtectedRoute>
+        }
+        />
+        <Route
+        path="/owner/properties/add"
+        element={
+          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+             <AddPropertyPage />
+          </ProtectedRoute>
+        }
+        />
+
+      <Route
+      path="/owner/properties/:propertyId/units"
+      element={
+        <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+          <UnitsPage />
+        </ProtectedRoute>
+      }
+      />
+        <Route
+
           path="/owner/verification"
           element={
             <ProtectedRoute allowedRoles={["PropertyOwner"]}>

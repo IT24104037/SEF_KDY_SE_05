@@ -11,6 +11,9 @@ public interface IPropertyService
     Task<List<PropertyResponseDto>> GetMyPropertiesAsync(
         int userId);
 
+    Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
+        int userId);
+
     Task<PropertyResponseDto?> GetPropertyByIdAsync(
         int userId,
         int propertyId);
@@ -24,7 +27,11 @@ public interface IPropertyService
         int userId,
         int propertyId);
 
-    Task<UnitResponseDto?> CreateUnitAsync(
+    Task<bool> RestorePropertyAsync(
+        int userId,
+        int propertyId);
+
+    Task<UnitOperationResult> CreateUnitAsync(
         int userId,
         int propertyId,
         CreateUnitDto request);
@@ -37,7 +44,7 @@ public interface IPropertyService
         int userId,
         int propertyId,
         int unitId);
-        
+
     Task<UnitResponseDto?> UpdateUnitAsync(
         int userId,
         int propertyId,
@@ -45,15 +52,29 @@ public interface IPropertyService
         UpdateUnitDto request);
 
     Task<bool> ArchiveUnitAsync(
-    int userId,
-    int propertyId,
-    int unitId);
+        int userId,
+        int propertyId,
+        int unitId);
 
-    Task<List<UnitResponseDto>> CreateBulkUnitsAsync(
-    int userId,
-    int propertyId,
-    CreateBulkUnitsDto request);
+    Task<bool> SoftDeleteUnitAsync(
+        int userId,
+        int propertyId,
+        int unitId);
+
+    Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
+        int userId,
+        int propertyId);
+
+    Task<RestoreUnitOperationResult> RestoreUnitAsync(
+        int userId,
+        int propertyId,
+        int unitId);
+
+    Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
+        int userId,
+        int propertyId,
+        CreateBulkUnitsDto request);
 
     Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
-    int userId);
+        int userId);
 }

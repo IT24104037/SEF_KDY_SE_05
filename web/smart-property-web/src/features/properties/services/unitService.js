@@ -17,16 +17,19 @@ async function handleResponse(response) {
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Something went wrong."
+      data.message ||
+        data.detail ||
+        responseText ||
+        "Something went wrong."
     );
   }
 
   return data;
 }
 
-export async function getMyProperties() {
+export async function getUnits(propertyId) {
   const response = await fetch(
-    `${API_URL}/api/properties`,
+    `${API_URL}/api/properties/${propertyId}/units`,
     {
       method: "GET",
       headers: {
@@ -38,9 +41,9 @@ export async function getMyProperties() {
   return handleResponse(response);
 }
 
-export async function getProperty(id) {
+export async function getArchivedUnits(propertyId) {
   const response = await fetch(
-    `${API_URL}/api/properties/${id}`,
+    `${API_URL}/api/properties/${propertyId}/units/archived`,
     {
       method: "GET",
       headers: {
@@ -52,41 +55,55 @@ export async function getProperty(id) {
   return handleResponse(response);
 }
 
-export async function createProperty(property) {
+export async function getUnit(propertyId, unitId) {
   const response = await fetch(
-    `${API_URL}/api/properties`,
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function createUnit(propertyId, unit) {
+  const response = await fetch(
+    `${API_URL}/api/properties/${propertyId}/units`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${getToken()}`,
       },
-      body: JSON.stringify(property),
+      body: JSON.stringify(unit),
     }
   );
 
   return handleResponse(response);
 }
 
-export async function updateProperty(id, property) {
+export async function updateUnit(propertyId, unitId, unit) {
   const response = await fetch(
-    `${API_URL}/api/properties/${id}`,
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}`,
     {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${getToken()}`,
       },
-      body: JSON.stringify(property),
+      body: JSON.stringify(unit),
     }
   );
 
   return handleResponse(response);
 }
 
-export async function archiveProperty(id) {
+export async function archiveUnit(propertyId, unitId) {
   const response = await fetch(
-    `${API_URL}/api/properties/${id}`,
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}`,
     {
       method: "DELETE",
       headers: {
@@ -102,25 +119,47 @@ export async function archiveProperty(id) {
   return true;
 }
 
-export async function getArchivedProperties() {
+export async function restoreUnit(propertyId, unitId) {
   const response = await fetch(
-    `${API_URL}/api/properties/archived`,
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}/restore`,
     {
-      method: "GET",
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${getToken()}`,
       },
     }
   );
 
+  if (!response.ok) {
+    return handleResponse(response);
+  }
+
+  return true;
+}
+
+export async function createBulkUnits(propertyId, units) {
+  const response = await fetch(
+    `${API_URL}/api/properties/${propertyId}/units/bulk`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({
+        units,
+      }),
+    }
+  );
+
   return handleResponse(response);
 }
 
-export async function restoreProperty(propertyId) {
+export async function softDeleteUnit(propertyId, unitId) {
   const response = await fetch(
-    `${API_URL}/api/properties/${propertyId}/restore`,
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}/soft-delete`,
     {
-      method: "PUT",
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${getToken()}`,
       },
