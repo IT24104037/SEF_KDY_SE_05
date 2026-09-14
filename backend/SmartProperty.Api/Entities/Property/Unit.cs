@@ -17,4 +17,6 @@ public class Unit
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<SmartProperty.Api.Entities.Tenancy.Tenant> Tenants { get; set; } = new List<SmartProperty.Api.Entities.Tenancy.Tenant>();
 }

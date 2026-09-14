@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using SmartProperty.Api.Data.Configurations;
 using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Entities.Property;
+using SmartProperty.Api.Entities.Tenancy;
 
 namespace SmartProperty.Api.Data;
 
@@ -13,7 +15,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
-
+    public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<PropertyOwner> PropertyOwners => Set<PropertyOwner>();
     public DbSet<OwnerVerificationDocument> OwnerVerificationDocuments => Set<OwnerVerificationDocument>();
     public DbSet<Property> Properties => Set<Property>();
@@ -23,9 +25,7 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // --------------------
-        // Identity
-        // --------------------
+        modelBuilder.ApplyConfiguration(new TenantConfiguration());
 
         modelBuilder.Entity<Role>()
             .HasIndex(r => r.Name)
@@ -51,10 +51,6 @@ public class AppDbContext : DbContext
             new Role { Id = 4, Name = "MaintenanceWorker" }
         );
 
-        // --------------------
-        // Property Owner
-        // --------------------
-
         modelBuilder.Entity<PropertyOwner>()
             .HasOne(po => po.User)
             .WithMany()
@@ -67,19 +63,11 @@ public class AppDbContext : DbContext
             .HasForeignKey(po => po.VerifiedByAdminId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // --------------------
-        // Verification Documents
-        // --------------------
-
         modelBuilder.Entity<OwnerVerificationDocument>()
             .HasOne(d => d.PropertyOwner)
             .WithMany(po => po.VerificationDocuments)
             .HasForeignKey(d => d.PropertyOwnerId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // --------------------
-        // Property
-        // --------------------
 
         modelBuilder.Entity<Property>()
             .HasOne(p => p.PropertyOwner)
@@ -87,21 +75,29 @@ public class AppDbContext : DbContext
             .HasForeignKey(p => p.PropertyOwnerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // --------------------
-        // Unit
-        // --------------------
-
         modelBuilder.Entity<Unit>()
             .HasOne(u => u.Property)
             .WithMany(p => p.Units)
             .HasForeignKey(u => u.PropertyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Active unit labels must be unique within a property.
-    // Archived units can reuse the same label.
-    modelBuilder.Entity<Unit>()
-        .HasIndex(u => new { u.PropertyId, u.UnitLabel })
-        .HasFilter("\"IsArchived\" = false")
-        .IsUnique();
-        }
+// Active unit labels must be unique within a property.
+// Archived units can reuse the same label.
+modelBuilder.Entity<Unit>()
+    .HasIndex(u => new { u.PropertyId, u.UnitLabel })
+    .HasFilter("\"IsArchived\" = false")
+    .IsUnique();
+
+modelBuilder.Entity<Tenant>()
+    .HasOne(t => t.Property)
+    .WithMany()
+    .HasForeignKey(t => t.PropertyId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+modelBuilder.Entity<Tenant>()
+    .HasOne(t => t.Unit)
+    .WithMany(u => u.Tenants)
+    .HasForeignKey(t => t.UnitId)
+    .OnDelete(DeleteBehavior.Restrict);
+    }
 }
