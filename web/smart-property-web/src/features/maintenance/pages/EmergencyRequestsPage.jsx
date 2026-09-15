@@ -1,41 +1,33 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { getMaintenanceRequests } from "../services/maintenanceApi.js";
 
-function MaintenanceRequestsPage() {
+function EmergencyRequestsPage() {
   const navigate = useNavigate();
 
   const [requests, setRequests] = useState([]);
-
-  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [requestType, setRequestType] = useState("");
-  const [priority, setPriority] = useState("");
-
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortDirection, setSortDirection] = useState("desc");
-
   const [page, setPage] = useState(1);
+
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadRequests() {
+  async function loadEmergencyRequests() {
     try {
       setLoading(true);
       setError("");
 
       const result = await getMaintenanceRequests({
-        search,
+        requestType: "EMERGENCY",
         status,
-        requestType,
-        priority,
-        sortBy,
-        sortDirection,
         page,
         pageSize: 10,
+        sortBy: "createdAt",
+        sortDirection: "desc",
       });
 
       setRequests(result.requests || []);
@@ -49,70 +41,32 @@ function MaintenanceRequestsPage() {
   }
 
   useEffect(() => {
-    loadRequests();
-  }, [
-    page,
-    status,
-    requestType,
-    priority,
-    sortBy,
-    sortDirection,
-  ]);
+    loadEmergencyRequests();
+  }, [page, status]);
 
-  async function handleSearch(event) {
-    event.preventDefault();
+  function formatDate(value) {
+    if (!value) return "-";
 
-    if (page !== 1) {
-      setPage(1);
-    } else {
-      await loadRequests();
-    }
-  }
-
-  function clearFilters() {
-    setSearch("");
-    setStatus("");
-    setRequestType("");
-    setPriority("");
-    setSortBy("createdAt");
-    setSortDirection("desc");
-    setPage(1);
-  }
-
-  function formatDate(date) {
-    if (!date) return "-";
-
-    return new Date(date).toLocaleString();
+    return new Date(value).toLocaleString();
   }
 
   return (
     <div>
-      <div style={styles.headingRow}>
+      <div style={styles.heading}>
         <div>
-          <h1 style={{ marginBottom: "5px" }}>
-            Maintenance Requests
-          </h1>
+          <h1>Emergency Requests</h1>
 
           <p style={styles.subtitle}>
-            View and manage maintenance requests submitted by tenants.
+            View and monitor emergency maintenance requests.
           </p>
         </div>
 
-        <div style={styles.totalBox}>
-          Total Requests: {totalCount}
+        <div style={styles.total}>
+          Total Emergencies: {totalCount}
         </div>
       </div>
 
-      {/* SEARCH + FILTERS */}
-      <form style={styles.filters} onSubmit={handleSearch}>
-        <input
-          style={styles.input}
-          type="text"
-          placeholder="Search description, category..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
+      <div style={styles.filters}>
         <select
           style={styles.input}
           value={status}
@@ -122,91 +76,32 @@ function MaintenanceRequestsPage() {
           }}
         >
           <option value="">All Status</option>
-          <option value="Submitted">Submitted</option>
           <option value="Emergency">Emergency</option>
           <option value="Analysing">Analysing</option>
-          <option value="NeedsMoreInfo">Needs More Info</option>
           <option value="Assigned">Assigned</option>
           <option value="InProgress">In Progress</option>
           <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
+
+          <option value="OwnerArrangingExternalEmergencyService">
+            Owner Arranging External Emergency Service
+          </option>
+
+          <option value="ExternalEmergencyServiceScheduled">
+            External Emergency Service Scheduled
+          </option>
+
+          <option value="Cancelled">
+            Cancelled
+          </option>
         </select>
-
-        <select
-          style={styles.input}
-          value={requestType}
-          onChange={(e) => {
-            setRequestType(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All Types</option>
-          <option value="NORMAL">Normal</option>
-          <option value="EMERGENCY">Emergency</option>
-        </select>
-
-        <select
-          style={styles.input}
-          value={priority}
-          onChange={(e) => {
-            setPriority(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All Priorities</option>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-          <option value="Critical">Critical</option>
-        </select>
-
-        <select
-          style={styles.input}
-          value={sortBy}
-          onChange={(e) => {
-            setSortBy(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="createdAt">Created Date</option>
-          <option value="updatedAt">Updated Date</option>
-          <option value="status">Status</option>
-          <option value="priority">Priority</option>
-        </select>
-
-        <select
-          style={styles.input}
-          value={sortDirection}
-          onChange={(e) => {
-            setSortDirection(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="desc">Descending</option>
-          <option value="asc">Ascending</option>
-        </select>
-
-        <button style={styles.searchButton} type="submit">
-          Search
-        </button>
-
-        <button
-          style={styles.clearButton}
-          type="button"
-          onClick={clearFilters}
-        >
-          Clear
-        </button>
-      </form>
+      </div>
 
       {error && (
-        <div style={styles.error}>
-          {error}
-        </div>
+        <p style={styles.error}>{error}</p>
       )}
 
       {loading ? (
-        <p>Loading maintenance requests...</p>
+        <p>Loading emergency requests...</p>
       ) : (
         <>
           <div style={styles.tableContainer}>
@@ -214,9 +109,8 @@ function MaintenanceRequestsPage() {
               <thead>
                 <tr>
                   <th style={styles.th}>ID</th>
+                  <th style={styles.th}>Emergency Type</th>
                   <th style={styles.th}>Description</th>
-                  <th style={styles.th}>Type</th>
-                  <th style={styles.th}>Category</th>
                   <th style={styles.th}>Priority</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Created</th>
@@ -227,8 +121,11 @@ function MaintenanceRequestsPage() {
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={styles.empty}>
-                      No maintenance requests found.
+                    <td
+                      colSpan="7"
+                      style={styles.empty}
+                    >
+                      No emergency requests found.
                     </td>
                   </tr>
                 ) : (
@@ -239,19 +136,15 @@ function MaintenanceRequestsPage() {
                       </td>
 
                       <td style={styles.td}>
+                        {request.emergencyType || "-"}
+                      </td>
+
+                      <td style={styles.td}>
                         {request.description}
                       </td>
 
                       <td style={styles.td}>
-                        {request.requestType}
-                      </td>
-
-                      <td style={styles.td}>
-                        {request.categoryName || "Not analysed"}
-                      </td>
-
-                      <td style={styles.td}>
-                        {request.priority || "Pending"}
+                        {request.priority || "Critical"}
                       </td>
 
                       <td style={styles.td}>
@@ -264,7 +157,7 @@ function MaintenanceRequestsPage() {
 
                       <td style={styles.td}>
                         <button
-                          style={styles.viewButton}
+                          style={styles.button}
                           onClick={() =>
                             navigate(
                               `/admin/maintenance/${request.id}`
@@ -314,20 +207,19 @@ function MaintenanceRequestsPage() {
 }
 
 const styles = {
-  headingRow: {
+  heading: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "20px",
     flexWrap: "wrap",
+    gap: "20px",
   },
 
   subtitle: {
     color: "#6b7280",
-    marginTop: 0,
   },
 
-  totalBox: {
+  total: {
     backgroundColor: "#ffffff",
     padding: "12px 18px",
     borderRadius: "8px",
@@ -335,10 +227,7 @@ const styles = {
   },
 
   filters: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "10px",
-    marginTop: "25px",
+    marginTop: "20px",
     marginBottom: "20px",
   },
 
@@ -346,24 +235,6 @@ const styles = {
     padding: "10px",
     border: "1px solid #d1d5db",
     borderRadius: "6px",
-    minWidth: "150px",
-  },
-
-  searchButton: {
-    padding: "10px 18px",
-    border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#1f8a8a",
-    color: "#ffffff",
-    cursor: "pointer",
-  },
-
-  clearButton: {
-    padding: "10px 18px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    backgroundColor: "#ffffff",
-    cursor: "pointer",
   },
 
   tableContainer: {
@@ -392,10 +263,9 @@ const styles = {
   empty: {
     textAlign: "center",
     padding: "35px",
-    color: "#6b7280",
   },
 
-  viewButton: {
+  button: {
     padding: "7px 12px",
     border: "none",
     borderRadius: "5px",
@@ -413,12 +283,8 @@ const styles = {
   },
 
   error: {
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-    padding: "12px",
-    borderRadius: "6px",
-    marginBottom: "15px",
+    color: "red",
   },
 };
 
-export default MaintenanceRequestsPage;
+export default EmergencyRequestsPage;
