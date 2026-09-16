@@ -16,13 +16,15 @@ import UnitsPage from "./features/properties/pages/UnitsPage.jsx";
 
 import AdminHome from "./features/admin/pages/AdminHome.jsx";
 import UserManagementPage from "./features/admin/pages/UserManagementPage.jsx";
+import AdminOwnerVerificationPage from "./features/admin/pages/OwnerVerificationPage.jsx";
+import AiWorkflowPage from "./features/admin/pages/AiWorkflowPage.jsx";
+import ReportsPage from "./features/admin/pages/ReportsPage.jsx";
+import SystemActivityPage from "./features/admin/pages/SystemActivityPage.jsx";
+
 import MaintenanceRequestsPage from "./features/maintenance/pages/MaintenanceRequestsPage.jsx";
 import MaintenanceCategoriesPage from "./features/maintenance/pages/MaintenanceCategoriesPage.jsx";
 import MaintenanceRequestDetailsPage from "./features/maintenance/pages/MaintenanceRequestDetailsPage.jsx";
 import EmergencyRequestsPage from "./features/maintenance/pages/EmergencyRequestsPage.jsx";
-import AiWorkflowPage from "./features/admin/pages/AiWorkflowPage.jsx";
-import ReportsPage from "./features/admin/pages/ReportsPage.jsx";
-import SystemActivityPage from "./features/admin/pages/SystemActivityPage.jsx";
 
 import TenantListPage from "./features/tenancies/pages/TenantListPage.jsx";
 import AddTenantPage from "./features/tenancies/pages/AddTenantPage.jsx";
@@ -78,45 +80,15 @@ function App() {
         />
 
         <Route
-
-          path="/unauthorized"
-          element={<UnauthorizedPage />}
-        />
-        <Route
-        path="/owner/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
-            <OwnerDashboardPage />
-          </ProtectedRoute>
-        }
-        />
-        <Route
-        path="/owner/properties"
-        element={
-          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
-            <MyPropertiesPage />
-          </ProtectedRoute>
-        }
-        />
-        <Route
-        path="/owner/properties/add"
-        element={
-          <ProtectedRoute allowedRoles={["PropertyOwner"]}>
-             <AddPropertyPage />
-          </ProtectedRoute>
-        }
+          path="/owner/properties/:propertyId/units"
+          element={
+            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+              <UnitsPage />
+            </ProtectedRoute>
+          }
         />
 
-      <Route
-      path="/owner/properties/:propertyId/units"
-      element={
-        <ProtectedRoute allowedRoles={["PropertyOwner"]}>
-          <UnitsPage />
-        </ProtectedRoute>
-      }
-      />
         <Route
-
           path="/owner/verification"
           element={
             <ProtectedRoute allowedRoles={["PropertyOwner"]}>
@@ -135,14 +107,14 @@ function App() {
         >
           <Route index element={<AdminHome />} />
           <Route path="users" element={<UserManagementPage />} />
+          <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
           <Route path="maintenance" element={<MaintenanceRequestsPage />} />
           <Route path="emergencies" element={<EmergencyRequestsPage />} />
           <Route path="categories" element={<MaintenanceCategoriesPage />} />
           <Route path="ai-monitoring" element={<AiWorkflowPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="activity" element={<SystemActivityPage />} />
-          <Route path="maintenance/:id" element={<MaintenanceRequestDetailsPage />}
-        />         
+          <Route path="maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
         </Route>
 
         <Route

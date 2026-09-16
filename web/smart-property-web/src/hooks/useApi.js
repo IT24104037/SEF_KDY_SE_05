@@ -1,39 +1,38 @@
-import axios from "axios";
+export { default } from "../api/apiClient";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5080";
+// All calls to /api/tenants and /api/tenancies.
+const tenancyService = {
+  // ---- Tenant Management ----
+  createTenant: (payload) =>
+    apiClient.post("/api/tenants", payload).then((res) => res.data),
 
-// Shared axios instance for the whole app. Reads the API base URL from an
-// env variable so it's easy to point at a different backend in dev/prod.
-// Create a .env file in web/smart-property-web with:
-//   VITE_API_BASE_URL=http://localhost:5000
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-});
+  getTenants: (params) =>
+    apiClient.get("/api/tenants", { params }).then((res) => res.data),
 
-// Attaches the JWT (set by the Login page) to every request automatically.
-apiClient.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+  getTenantById: (id) =>
+    apiClient.get(`/api/tenants/${id}`).then((res) => res.data),
 
-// If a request comes back 401 (expired/invalid token), clear it so the
-// user isn't stuck in a broken logged-in state.
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      sessionStorage.removeItem("token");
-    }
-    return Promise.reject(error);
-  }
-);
+  updateTenant: (id, payload) =>
+    apiClient.put(`/api/tenants/${id}`, payload).then((res) => res.data),
 
-export default apiClient;
+  // ---- Tenancy Management ----
+  createTenancy: (payload) =>
+    apiClient.post("/api/tenancies", payload).then((res) => res.data),
 
-// Optional hook form, for components that prefer calling a hook.
-export function useApi() {
-  return apiClient;
-}
+  // Owner-facing: every tenancy (active + ended) for one tenant.
+  getTenanciesForTenant: (tenantId) =>
+    apiClient.get(`/api/tenancies/tenant/${tenantId}`).then((res) => res.data),
+
+  // Tenant-facing (used later by the Flutter/Tenant Dashboard side, kept
+  // here too in case a Tenant-facing React view is ever needed):
+  getCurrentTenancy: () =>
+    apiClient.get("/api/tenancies/current").then((res) => res.data),
+
+  getTenancyHistory: () =>
+    apiClient.get("/api/tenancies/history").then((res) => res.data),
+
+  endTenancy: (tenancyId, payload = {}) =>
+    apiClient.put(`/api/tenancies/${tenancyId}/end`, payload).then((res) => res.data),
+};
+
+export default tenancyService;

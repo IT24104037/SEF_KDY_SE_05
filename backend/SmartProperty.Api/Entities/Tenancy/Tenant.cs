@@ -3,6 +3,8 @@ using SmartProperty.Api.Entities.Property;
 
 namespace SmartProperty.Api.Entities.Tenancy;
 
+
+
 // A Tenant is added ONLY by a verified Property Owner — there is no public
 // self-registration endpoint for tenants.
 //
@@ -11,6 +13,7 @@ namespace SmartProperty.Api.Entities.Tenancy;
 // stays false and the tenant has no login.
 public class Tenant
 {
+    public ICollection<Tenancy> Tenancies { get; set; } = new List<Tenancy>();
     public int Id { get; set; }
 
     // Nullable: no linked login account exists until PIN activation.

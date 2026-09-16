@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
         : base(options)
     {
     }
+    public DbSet<Tenancy> Tenancies => Set<Tenancy>();
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
@@ -35,6 +36,7 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfiguration(new TenantConfiguration());
+        modelBuilder.ApplyConfiguration(new TenancyConfiguration());
 
         modelBuilder.Entity<Role>()
             .HasIndex(r => r.Name)
@@ -108,97 +110,93 @@ public class AppDbContext : DbContext
             .HasForeignKey(t => t.UnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-
         modelBuilder.Entity<MaintenanceCategory>(entity =>
-{
-    entity.Property(x => x.Name)
-        .IsRequired()
-        .HasMaxLength(100);
+        {
+            entity.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(100);
 
-    entity.Property(x => x.Description)
-        .HasMaxLength(500);
+            entity.Property(x => x.Description)
+                .HasMaxLength(500);
 
-    entity.HasIndex(x => x.Name)
-        .IsUnique();
-});
+            entity.HasIndex(x => x.Name)
+                .IsUnique();
+        });
 
-modelBuilder.Entity<MaintenanceRequest>(entity =>
-{
-    entity.Property(x => x.Description)
-        .IsRequired()
-        .HasMaxLength(1000);
+        modelBuilder.Entity<MaintenanceRequest>(entity =>
+        {
+            entity.Property(x => x.Description)
+                .IsRequired()
+                .HasMaxLength(1000);
 
-    entity.Property(x => x.RequestType)
-        .IsRequired()
-        .HasMaxLength(30);
+            entity.Property(x => x.RequestType)
+                .IsRequired()
+                .HasMaxLength(30);
 
-    entity.Property(x => x.Status)
-        .IsRequired()
-        .HasMaxLength(50);
+            entity.Property(x => x.Status)
+                .IsRequired()
+                .HasMaxLength(50);
 
-    entity.Property(x => x.Priority)
-        .HasMaxLength(30);
+            entity.Property(x => x.Priority)
+                .HasMaxLength(30);
 
-    entity.Property(x => x.EmergencyType)
-        .HasMaxLength(100);
+            entity.Property(x => x.EmergencyType)
+                .HasMaxLength(100);
 
-    entity.HasOne(x => x.Category)
-        .WithMany()
-        .HasForeignKey(x => x.CategoryId)
-        .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(x => x.Category)
+                .WithMany()
+                .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-    entity.HasOne(x => x.Tenant)
-        .WithMany()
-        .HasForeignKey(x => x.TenantId)
-        .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Tenant)
+                .WithMany()
+                .HasForeignKey(x => x.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasOne(x => x.Property)
-        .WithMany()
-        .HasForeignKey(x => x.PropertyId)
-        .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Property)
+                .WithMany()
+                .HasForeignKey(x => x.PropertyId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasOne(x => x.Unit)
-        .WithMany()
-        .HasForeignKey(x => x.UnitId)
-        .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Unit)
+                .WithMany()
+                .HasForeignKey(x => x.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
+        modelBuilder.Entity<MaintenanceImage>(entity =>
+        {
+            entity.Property(x => x.ImageUrl)
+                .IsRequired()
+                .HasMaxLength(1000);
 
-});
+            entity.HasOne(x => x.MaintenanceRequest)
+                .WithMany()
+                .HasForeignKey(x => x.MaintenanceRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-modelBuilder.Entity<MaintenanceImage>(entity =>
-{
-    entity.Property(x => x.ImageUrl)
-        .IsRequired()
-        .HasMaxLength(1000);
+        modelBuilder.Entity<MaintenanceStatusHistory>(entity =>
+        {
+            entity.Property(x => x.OldStatus)
+                .HasMaxLength(50);
 
-    entity.HasOne(x => x.MaintenanceRequest)
-        .WithMany()
-        .HasForeignKey(x => x.MaintenanceRequestId)
-        .OnDelete(DeleteBehavior.Cascade);
-});
+            entity.Property(x => x.NewStatus)
+                .IsRequired()
+                .HasMaxLength(50);
 
-modelBuilder.Entity<MaintenanceStatusHistory>(entity =>
-{
-    entity.Property(x => x.OldStatus)
-        .HasMaxLength(50);
+            entity.Property(x => x.Note)
+                .HasMaxLength(500);
 
-    entity.Property(x => x.NewStatus)
-        .IsRequired()
-        .HasMaxLength(50);
+            entity.HasOne(x => x.MaintenanceRequest)
+                .WithMany()
+                .HasForeignKey(x => x.MaintenanceRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-    entity.Property(x => x.Note)
-        .HasMaxLength(500);
-
-    entity.HasOne(x => x.MaintenanceRequest)
-        .WithMany()
-        .HasForeignKey(x => x.MaintenanceRequestId)
-        .OnDelete(DeleteBehavior.Cascade);
-
-    entity.HasOne(x => x.ChangedByUser)
-        .WithMany()
-        .HasForeignKey(x => x.ChangedByUserId)
-        .OnDelete(DeleteBehavior.SetNull);
-        
-});
+            entity.HasOne(x => x.ChangedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.ChangedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
     }
 }

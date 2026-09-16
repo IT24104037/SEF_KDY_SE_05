@@ -31,7 +31,9 @@ public class TenantsController : ControllerBase
                 p.Id,
                 p.Name,
                 Units = p.Units
-                    .Where(u => !u.IsDeleted)
+                    .Where(u => !u.IsDeleted &&
+                        !_context.Tenancies.Any(t =>
+                            t.UnitId == u.Id && t.Status == Entities.Tenancy.TenancyStatus.Active))
                     .Select(u => new { u.Id, u.UnitLabel })
             })
             .ToListAsync();
