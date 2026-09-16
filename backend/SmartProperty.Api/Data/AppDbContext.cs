@@ -153,6 +153,11 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.TenantId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne(x => x.Tenancy)
+                .WithMany()
+                .HasForeignKey(x => x.TenancyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(x => x.Property)
                 .WithMany()
                 .HasForeignKey(x => x.PropertyId)
@@ -162,6 +167,7 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.UnitId)
                 .OnDelete(DeleteBehavior.Restrict);
+
         });
 
         modelBuilder.Entity<MaintenanceImage>(entity =>

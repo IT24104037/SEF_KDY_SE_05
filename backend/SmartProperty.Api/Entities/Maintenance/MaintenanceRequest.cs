@@ -10,10 +10,12 @@ public class MaintenanceRequest
     public int TenantId { get; set; }
     public Tenant Tenant { get; set; } = null!;
 
-    // Tenancy entity has not been created by Member 2 yet.
-    // We will connect this properly later.
-    public int? TenancyId { get; set; }
+    // Tenancy entity has not been created by Member 2 yet.\
 
+    public int TenancyId { get; set; }
+
+    public SmartProperty.Api.Entities.Tenancy.Tenancy Tenancy { get; set; } = null!;
+    // We will connect this properly later.
     public int PropertyId { get; set; }
     public SmartProperty.Api.Entities.Property.Property Property { get; set; } = null!;
 
