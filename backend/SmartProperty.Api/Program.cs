@@ -38,6 +38,14 @@ builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<ITenancyRepository, TenancyRepository>();
 builder.Services.AddScoped<ITenancyService, TenancyService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<
+    IMaintenanceCategoryService,
+    MaintenanceCategoryService>();
+
+builder.Services.AddScoped<
+    IMaintenanceRequestService,
+    MaintenanceRequestService>();
+
 
 // --------------------
 // JWT Authentication
