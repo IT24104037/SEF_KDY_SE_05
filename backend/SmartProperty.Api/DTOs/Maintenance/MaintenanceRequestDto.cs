@@ -6,7 +6,7 @@ public class MaintenanceRequestDto
 
     public int TenantId { get; set; }
 
-    public int? TenancyId { get; set; }
+    public int TenancyId { get; set; }
 
     public int PropertyId { get; set; }
 
