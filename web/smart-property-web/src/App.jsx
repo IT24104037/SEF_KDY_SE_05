@@ -16,6 +16,7 @@ import UnitsPage from "./features/properties/pages/UnitsPage.jsx";
 
 import AdminHome from "./features/admin/pages/AdminHome.jsx";
 import UserManagementPage from "./features/admin/pages/UserManagementPage.jsx";
+import AdminOwnerVerificationPage from "./features/admin/pages/OwnerVerificationPage.jsx";
 import MaintenanceRequestsPage from "./features/admin/pages/MaintenanceRequestsPage.jsx";
 import EmergencyRequestsPage from "./features/admin/pages/EmergencyRequestsPage.jsx";
 import MaintenanceCategoriesPage from "./features/admin/pages/MaintenanceCategoriesPage.jsx";
@@ -134,6 +135,7 @@ function App() {
         >
           <Route index element={<AdminHome />} />
           <Route path="users" element={<UserManagementPage />} />
+          <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
           <Route path="maintenance" element={<MaintenanceRequestsPage />} />
           <Route path="emergencies" element={<EmergencyRequestsPage />} />
           <Route path="categories" element={<MaintenanceCategoriesPage />} />

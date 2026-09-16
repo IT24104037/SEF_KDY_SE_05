@@ -3,8 +3,7 @@ using SmartProperty.Api.Entities.Tenancy;
 namespace SmartProperty.Api.Repositories.Interfaces;
 
 // Covers data access for the whole Tenancy module (Tenant, Tenancy,
-// Activation). Only Tenant methods are implemented so far — Tenancy and
-// Activation methods will be added here when those modules are built.
+// Activation). Activation methods will be added here in the next module.
 public interface ITenancyRepository
 {
     // ---- Tenant Management ----
@@ -26,4 +25,12 @@ public interface ITenancyRepository
         int pageSize);
 
     Task UpdateTenantAsync(Tenant tenant);
+
+    // ---- Tenancy Management ----
+    Task<bool> HasActiveTenancyForUnitAsync(int unitId);
+    Task<Tenancy> AddTenancyAsync(Tenancy tenancy);
+    Task<Tenancy?> GetTenancyByIdAsync(int id);
+    Task<Tenancy?> GetActiveTenancyByUserIdAsync(int userId);
+    Task<List<Tenancy>> GetTenancyHistoryByUserIdAsync(int userId);
+    Task UpdateTenancyAsync(Tenancy tenancy);
 }

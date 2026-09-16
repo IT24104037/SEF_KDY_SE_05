@@ -16,6 +16,11 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  const selectedProperty = options.find(
+    (property) => String(property.id) === String(propertyId)
+  );
+  const availableUnits = selectedProperty?.units || [];
+
   useEffect(() => {
     if (mode === "create") {
       tenancyService.getOptions().then(setOptions).catch(() => setSubmitError("Could not load properties."));
@@ -87,12 +92,28 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
             </select>
           </Field>
           <Field label="Unit" error={errors.unitId}>
-            <select value={unitId} onChange={(e) => setUnitId(e.target.value)} style={inputStyle}>
-              <option value="">Select unit</option>
-              {(options.find((property) => String(property.id) === String(propertyId))?.units || []).map((unit) => (
-                <option key={unit.id} value={unit.id}>{unit.name}</option>
+            <select
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              disabled={!propertyId || availableUnits.length === 0}
+              style={inputStyle}
+            >
+              <option value="">
+                {!propertyId
+                  ? "Select a property first"
+                  : availableUnits.length === 0
+                    ? "No vacant units available"
+                    : "Select unit"}
+              </option>
+              {availableUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>{unit.unitLabel}</option>
               ))}
             </select>
+            {propertyId && availableUnits.length === 0 && (
+              <p style={{ color: "#6B7280", fontSize: 12, margin: "4px 0 0" }}>
+                This property has no vacant units. <a href="/owner/properties">Manage properties and units</a>.
+              </p>
+            )}
           </Field>
         </>
       )}

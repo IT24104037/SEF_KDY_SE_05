@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
         : base(options)
     {
     }
+    public DbSet<Tenancy> Tenancies => Set<Tenancy>();
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
@@ -26,6 +27,7 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfiguration(new TenantConfiguration());
+        modelBuilder.ApplyConfiguration(new TenancyConfiguration());
 
         modelBuilder.Entity<Role>()
             .HasIndex(r => r.Name)
@@ -87,16 +89,16 @@ public class AppDbContext : DbContext
             .HasFilter("\"IsArchived\" = false AND \"IsDeleted\" = false")
             .IsUnique();
 
-modelBuilder.Entity<Tenant>()
-    .HasOne(t => t.Property)
-    .WithMany()
-    .HasForeignKey(t => t.PropertyId)
-    .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Tenant>()
+            .HasOne(t => t.Property)
+            .WithMany()
+            .HasForeignKey(t => t.PropertyId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-modelBuilder.Entity<Tenant>()
-    .HasOne(t => t.Unit)
-    .WithMany(u => u.Tenants)
-    .HasForeignKey(t => t.UnitId)
-    .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Tenant>()
+            .HasOne(t => t.Unit)
+            .WithMany(u => u.Tenants)
+            .HasForeignKey(t => t.UnitId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

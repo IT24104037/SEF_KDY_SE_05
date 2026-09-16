@@ -93,7 +93,7 @@ export default function TenantListPage() {
         <select value={unitId} onChange={(e) => { setPage(1); setUnitId(e.target.value); }} style={inputStyle}>
           <option value="">All units</option>
           {(options.find((property) => String(property.id) === String(propertyId))?.units || []).map((unit) => (
-            <option key={unit.id} value={unit.id}>{unit.name}</option>
+            <option key={unit.id} value={unit.id}>{unit.unitLabel}</option>
           ))}
         </select>
 

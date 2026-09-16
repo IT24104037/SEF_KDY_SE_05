@@ -12,4 +12,10 @@ public interface ITenancyService
     Task<PagedResult<TenantResponseDto>> GetTenantsAsync(TenantQueryParameters query, int ownerUserId);
     Task<TenantResponseDto?> GetTenantByIdAsync(int id, int ownerUserId);
     Task<TenantResponseDto?> UpdateTenantAsync(int id, UpdateTenantDto dto, int ownerUserId);
+
+    // ---- Tenancy Management ----
+    Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId);
+    Task<TenancyResponseDto?> GetCurrentTenancyAsync(int currentUserId);
+    Task<List<TenancyResponseDto>> GetTenancyHistoryAsync(int currentUserId);
+    Task<bool> EndTenancyAsync(int tenancyId, EndTenancyDto dto);
 }

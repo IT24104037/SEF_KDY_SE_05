@@ -101,6 +101,65 @@ public class TenancyService : ITenancyService
         return ToResponseDto(tenant);
     }
 
+    public async Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId)
+    {
+        var tenant = await _repository.GetTenantByIdAsync(dto.TenantId, ownerUserId);
+        if (tenant == null || tenant.UnitId != dto.UnitId)
+        {
+            throw new InvalidOperationException("The tenant or unit is not managed by this owner.");
+        }
+
+        if (await _repository.HasActiveTenancyForUnitAsync(dto.UnitId))
+        {
+            throw new InvalidOperationException("The unit already has an active tenancy.");
+        }
+
+        var tenancy = new Tenancy
+        {
+            TenantId = dto.TenantId,
+            UnitId = dto.UnitId,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
+            Status = dto.EndDate.HasValue ? TenancyStatus.Ended : TenancyStatus.Active
+        };
+
+        var created = await _repository.AddTenancyAsync(tenancy);
+        return ToTenancyResponseDto((await _repository.GetTenancyByIdAsync(created.Id))!);
+    }
+
+    public async Task<TenancyResponseDto?> GetCurrentTenancyAsync(int currentUserId) =>
+        ToTenancyResponseDto(await _repository.GetActiveTenancyByUserIdAsync(currentUserId));
+
+    public async Task<List<TenancyResponseDto>> GetTenancyHistoryAsync(int currentUserId) =>
+        (await _repository.GetTenancyHistoryByUserIdAsync(currentUserId)).Select(ToTenancyResponseDto).ToList();
+
+    public async Task<bool> EndTenancyAsync(int tenancyId, EndTenancyDto dto)
+    {
+        var tenancy = await _repository.GetTenancyByIdAsync(tenancyId);
+        if (tenancy == null) return false;
+        if (tenancy.Status == TenancyStatus.Ended)
+        {
+            throw new InvalidOperationException("Tenancy is already ended.");
+        }
+
+        tenancy.EndDate = dto.EndDate ?? DateTime.UtcNow;
+        tenancy.Status = TenancyStatus.Ended;
+        await _repository.UpdateTenancyAsync(tenancy);
+        return true;
+    }
+
+    private static TenancyResponseDto ToTenancyResponseDto(Tenancy? tenancy) => new()
+    {
+        Id = tenancy!.Id,
+        TenantId = tenancy.TenantId,
+        TenantFullName = tenancy.Tenant?.FullName ?? string.Empty,
+        UnitId = tenancy.UnitId,
+        StartDate = tenancy.StartDate,
+        EndDate = tenancy.EndDate,
+        Status = tenancy.Status,
+        CreatedAt = tenancy.CreatedAt
+    };
+
     private static TenantResponseDto ToResponseDto(Tenant tenant)
     {
         return new TenantResponseDto

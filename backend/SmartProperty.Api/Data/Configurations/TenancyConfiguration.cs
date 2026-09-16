@@ -4,36 +4,25 @@ using SmartProperty.Api.Entities.Tenancy;
 
 namespace SmartProperty.Api.Data.Configurations;
 
-public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
+public class TenancyConfiguration : IEntityTypeConfiguration<Tenancy>
 {
-    public void Configure(EntityTypeBuilder<Tenant> builder)
+    public void Configure(EntityTypeBuilder<Tenancy> builder)
     {
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.FullName)
-            .IsRequired()
-            .HasMaxLength(150);
+        builder.Property(t => t.Status)
+            .HasConversion<string>() // stores "Active"/"Ended" as readable text
+            .IsRequired();
 
-        builder.Property(t => t.MobileNumber)
-            .IsRequired()
-            .HasMaxLength(20);
+        builder.Property(t => t.StartDate).IsRequired();
 
-        // Mobile number must be unique — it's used later for PIN activation
-        // and login, so two tenants can never share one.
-        builder.HasIndex(t => t.MobileNumber)
-            .IsUnique();
+        // No FK constraint on UnitId yet — Unit table doesn't exist. This
+        // index still speeds up the active-tenancy conflict-check query.
+        builder.HasIndex(t => new { t.UnitId, t.Status });
 
-        builder.Property(t => t.Email)
-            .HasMaxLength(150);
-
-        builder.HasIndex(t => new { t.PropertyId, t.UnitId });
-
-        // Optional link to the shared User table. Restrict (not Cascade)
-        // so deleting a User can never silently wipe out Tenant history.
-        builder.HasOne(t => t.User)
-            .WithMany()
-            .HasForeignKey(t => t.UserId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+        builder.HasOne(t => t.Tenant)
+            .WithMany(tn => tn.Tenancies)
+            .HasForeignKey(t => t.TenantId)
+            .OnDelete(DeleteBehavior.Restrict); // never cascade-delete history
     }
 }

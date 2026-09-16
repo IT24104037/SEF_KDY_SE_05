@@ -9,6 +9,11 @@ export default function AddTenantPage() {
 
   const handleCreate = async (payload) => {
     const created = await tenancyService.createTenant(payload);
+    await tenancyService.createTenancy({
+      tenantId: created.id,
+      unitId: payload.unitId,
+      startDate: new Date().toISOString(),
+    });
     setSuccessMessage(`Tenant "${created.fullName}" was added successfully.`);
 
     // Give the success message a moment to be seen, then go to their details.
@@ -25,7 +30,7 @@ export default function AddTenantPage() {
         <p style={{ color: "#22A06B", fontWeight: 600 }}>{successMessage}</p>
       )}
 
-      <TenantForm mode="create" onSubmit={handleCreate} submitLabel="Add Tenant" />
+      <TenantForm mode="create" onSubmit={handleCreate} submitLabel="Create Tenant & Tenancy" />
     </div>
   );
 }
