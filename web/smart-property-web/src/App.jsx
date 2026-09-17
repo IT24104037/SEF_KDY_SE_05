@@ -20,6 +20,13 @@ import AdminOwnerVerificationPage from "./features/admin/pages/OwnerVerification
 import AiWorkflowPage from "./features/admin/pages/AiWorkflowPage.jsx";
 import ReportsPage from "./features/admin/pages/ReportsPage.jsx";
 import SystemActivityPage from "./features/admin/pages/SystemActivityPage.jsx";
+import WorkersPage from "./features/workers/pages/WorkersPage.jsx";
+import WorkerRegistrationPage from "./features/workers/pages/WorkerRegistrationPage.jsx";
+import WorkerVerificationPage from "./features/workers/pages/WorkerVerificationPage.jsx";
+import WorkerDashboardPage from "./features/workers/pages/WorkerDashboardPage.jsx";
+import WorkOrdersPage from "./features/workers/pages/WorkOrdersPage.jsx";
+import WorkOrderDetailsPage from "./features/workers/pages/WorkOrderDetailsPage.jsx";
+import ApprovalPage from "./features/ai-workflow/pages/ApprovalPage.jsx";
 
 import MaintenanceRequestsPage from "./features/maintenance/pages/MaintenanceRequestsPage.jsx";
 import MaintenanceCategoriesPage from "./features/maintenance/pages/MaintenanceCategoriesPage.jsx";
@@ -40,6 +47,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register-owner" element={<OwnerRegisterPage />} />
+        <Route path="/register-worker" element={<WorkerRegistrationPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         <Route
@@ -104,6 +112,7 @@ function App() {
           <Route path="ai-monitoring" element={<AiWorkflowPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="activity" element={<SystemActivityPage />} />
+          <Route path="workers" element={<WorkersPage />} />
           <Route path="maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
         </Route>
 
@@ -112,6 +121,51 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["PropertyOwner"]}>
               <Navigate to="/owner/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/owner/approval"
+          element={
+            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+              <ApprovalPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/owner/work-orders"
+          element={
+            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+              <WorkOrdersPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/owner/work-orders/:id"
+          element={
+            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+              <WorkOrderDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/worker"
+          element={
+            <ProtectedRoute allowedRoles={["MaintenanceWorker"]}>
+              <WorkerDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/worker/verification"
+          element={
+            <ProtectedRoute allowedRoles={["MaintenanceWorker"]}>
+              <WorkerVerificationPage />
             </ProtectedRoute>
           }
         />

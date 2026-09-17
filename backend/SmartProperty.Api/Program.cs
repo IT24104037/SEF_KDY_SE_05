@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Interfaces;
+using SmartProperty.Api.Repositories;
 using SmartProperty.Api.Repositories.Implementations;
 using SmartProperty.Api.Repositories.Interfaces;
 using SmartProperty.Api.Services;
@@ -46,6 +47,7 @@ builder.Services.AddScoped<
     IMaintenanceRequestService,
     MaintenanceRequestService>();
 
+builder.Services.AddScoped<IWorkerService, WorkerService>();
 
 // --------------------
 // JWT Authentication
@@ -154,6 +156,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowClients");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
