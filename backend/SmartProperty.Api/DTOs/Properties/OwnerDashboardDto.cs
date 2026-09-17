@@ -8,4 +8,6 @@ public class OwnerDashboardDto
     public int TotalUnits { get; set; }
     public int ActiveUnits { get; set; }
     public int ArchivedUnits { get; set; }
+    public int OccupiedUnits { get; set; }
+    public int VacantUnits { get; set; }
 }

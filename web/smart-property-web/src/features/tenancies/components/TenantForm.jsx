@@ -19,7 +19,9 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
   const selectedProperty = options.find(
     (property) => String(property.id) === String(propertyId)
   );
-  const availableUnits = selectedProperty?.units || [];
+  const availableUnits = (selectedProperty?.units || []).filter(
+    (unit) => !unit.isArchived && !unit.isDeleted
+  );
 
   useEffect(() => {
     if (mode === "create") {

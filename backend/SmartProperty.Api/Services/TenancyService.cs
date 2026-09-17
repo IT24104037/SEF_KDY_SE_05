@@ -104,9 +104,11 @@ public class TenancyService : ITenancyService
     public async Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId)
     {
         var tenant = await _repository.GetTenantByIdAsync(dto.TenantId, ownerUserId);
-        if (tenant == null || tenant.UnitId != dto.UnitId)
+        if (tenant == null || tenant.UnitId != dto.UnitId ||
+            tenant.Property.IsArchived || tenant.Unit.IsArchived || tenant.Unit.IsDeleted ||
+            tenant.Unit.PropertyId != tenant.PropertyId)
         {
-            throw new InvalidOperationException("The tenant or unit is not managed by this owner.");
+            throw new InvalidOperationException("The selected property or unit is not available for tenancy.");
         }
 
         if (await _repository.HasActiveTenancyForUnitAsync(dto.UnitId))

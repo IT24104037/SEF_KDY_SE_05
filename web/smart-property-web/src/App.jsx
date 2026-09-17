@@ -40,16 +40,6 @@ import TenantDetailsPage from "./features/tenancies/pages/TenantDetailsPage.jsx"
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 
-function OwnerHome() {
-  return (
-    <main style={{ padding: "48px", fontFamily: "Georgia, serif" }}>
-      <h1>Owner Dashboard</h1>
-      <p>Welcome, Property Owner</p>
-      <a href="/owner/tenants">Manage Tenants</a>
-    </main>
-  );
-}
-
 function App() {
   return (
     <BrowserRouter>
@@ -130,7 +120,7 @@ function App() {
           path="/owner"
           element={
             <ProtectedRoute allowedRoles={["PropertyOwner"]}>
-              <OwnerHome />
+              <Navigate to="/owner/dashboard" replace />
             </ProtectedRoute>
           }
         />

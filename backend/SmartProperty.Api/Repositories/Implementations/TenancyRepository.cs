@@ -32,7 +32,9 @@ public class TenancyRepository : ITenancyRepository
         int unitId, int propertyId, int ownerUserId) =>
         await _context.Units.Include(u => u.Property).ThenInclude(p => p!.PropertyOwner)
             .FirstOrDefaultAsync(u => u.Id == unitId && u.PropertyId == propertyId &&
-                u.Property!.PropertyOwner!.UserId == ownerUserId);
+                !u.IsArchived && !u.IsDeleted &&
+                !u.Property!.IsArchived &&
+                u.Property.PropertyOwner!.UserId == ownerUserId);
 
     public async Task<(List<Tenant> Items, int TotalCount)> GetTenantsAsync(
         int ownerUserId, string? search, bool? isActive, int? propertyId, int? unitId,
