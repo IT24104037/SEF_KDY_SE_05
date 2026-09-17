@@ -4,7 +4,8 @@ using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Entities.Property;
 using SmartProperty.Api.Entities.Tenancy;
 using SmartProperty.Api.Entities.Maintenance;
-
+using SmartProperty.Api.Entities.Worker;
+using SmartProperty.Api.Entities.AgenticAI;
 
 namespace SmartProperty.Api.Data;
 
@@ -28,6 +29,16 @@ public class AppDbContext : DbContext
     public DbSet<MaintenanceRequest> MaintenanceRequests { get; set; }
     public DbSet<MaintenanceImage> MaintenanceImages { get; set; }
     public DbSet<MaintenanceStatusHistory> MaintenanceStatusHistories { get; set; }
+
+    public DbSet<Worker> Workers => Set<Worker>();
+    public DbSet<WorkerSkill> WorkerSkills => Set<WorkerSkill>();
+    public DbSet<WorkerDocument> WorkerDocuments => Set<WorkerDocument>();
+    public DbSet<WorkerAvailability> WorkerAvailabilities => Set<WorkerAvailability>();
+    public DbSet<ServiceArea> ServiceAreas => Set<ServiceArea>();
+    public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+    public DbSet<ExternalMaintenanceArrangement> ExternalMaintenanceArrangements => Set<ExternalMaintenanceArrangement>();
+    public DbSet<ValidationResult> ValidationResults => Set<ValidationResult>();
+    public DbSet<ApprovalDecision> ApprovalDecisions => Set<ApprovalDecision>();
 
 
 
@@ -203,6 +214,132 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ChangedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.ApplyConfiguration(new WorkerConfiguration());
+        modelBuilder.ApplyConfiguration(new WorkOrderConfiguration());
+
+        modelBuilder.Entity<WorkerSkill>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.SkillName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.HasOne(x => x.Category)
+                .WithMany()
+                .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<WorkerDocument>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.DocumentType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.DocumentUrl)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.OriginalFileName)
+                .HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<ServiceArea>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.City)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.PostalCode)
+                .HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<WorkerAvailability>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+        });
+
+        modelBuilder.Entity<ExternalMaintenanceArrangement>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.ProviderName)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(x => x.ContactPhone)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.ContactEmail)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.EstimatedArrival)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.EstimatedCost)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.Status)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.Note)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.MaintenanceRequest)
+                .WithMany()
+                .HasForeignKey(x => x.MaintenanceRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ValidationResult>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.Summary)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.HasOne(x => x.MaintenanceRequest)
+                .WithMany()
+                .HasForeignKey(x => x.MaintenanceRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Worker)
+                .WithMany()
+                .HasForeignKey(x => x.WorkerId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<ApprovalDecision>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Decision)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.Notes)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.MaintenanceRequest)
+                .WithMany()
+                .HasForeignKey(x => x.MaintenanceRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.PropertyOwner)
+                .WithMany()
+                .HasForeignKey(x => x.PropertyOwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
