@@ -31,6 +31,12 @@
 .env.development.local
 .env.production.local
 
+# ASP.NET local secrets (contains DB password, JWT keys)
+**/appsettings.Local.json
+**/appsettings.local.json
+**/appsettings.*.Local.json
+
+
 # Keep example environment files
 !.env.example
 !**/.env.example
