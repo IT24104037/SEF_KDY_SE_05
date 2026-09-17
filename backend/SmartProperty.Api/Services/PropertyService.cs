@@ -730,6 +730,27 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             u.IsArchived &&
             !u.IsDeleted);
 
+    var occupiedUnitIds = await _context.Tenancies
+        .Where(t =>
+            t.Status == Entities.Tenancy.TenancyStatus.Active &&
+            _context.Units.Any(u =>
+                u.Id == t.UnitId &&
+                propertyIds.Contains(u.PropertyId) &&
+                !u.IsArchived &&
+                !u.IsDeleted))
+        .Select(t => t.UnitId)
+        .Distinct()
+        .ToListAsync();
+
+    var occupiedUnits = await _context.Units
+        .CountAsync(u =>
+            occupiedUnitIds.Contains(u.Id) &&
+            propertyIds.Contains(u.PropertyId) &&
+            !u.IsArchived &&
+            !u.IsDeleted);
+
+    var vacantUnits = activeUnits - occupiedUnits;
+
     return new OwnerDashboardDto
     {
         TotalProperties = totalProperties,
@@ -737,7 +758,9 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         ArchivedProperties = archivedProperties,
         TotalUnits = totalUnits,
         ActiveUnits = activeUnits,
-        ArchivedUnits = archivedUnits
+        ArchivedUnits = archivedUnits,
+        OccupiedUnits = occupiedUnits,
+        VacantUnits = vacantUnits
     };
 }
     private static PropertyResponseDto MapProperty(Property property)
