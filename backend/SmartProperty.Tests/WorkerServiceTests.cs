@@ -172,5 +172,173 @@ public class WorkerServiceTests
         Assert.Equal("Certificate document is illegible or expired.", rejected.RejectionReason);
         Assert.Null(rejected.VerifiedAt);
     }
+
+    [Fact]
+    public async Task UpdateMyProfileAsync_UpdatesBioHourlyRateSkillsAndServiceArea()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext("WorkerTest_UpdateProfile");
+        var passwordHasher = new PasswordHasher<User>();
+        var service = new WorkerService(context, passwordHasher);
+
+        var registered = await service.RegisterWorkerAsync(new RegisterWorkerDto
+        {
+            FullName = "Ruwan Gamage",
+            Email = "ruwan@example.com",
+            Mobile = "+94778899001",
+            Password = "Password123!",
+            Skills = new List<string> { "Plumbing" },
+            ServiceArea = "Colombo 03",
+            ProofDocumentName = "proof.pdf"
+        });
+
+        // Act
+        var updateDto = new UpdateWorkerProfileDto
+        {
+            Bio = "Experienced master plumber with 10 years of field expertise.",
+            HourlyRate = 2500.50m,
+            IsAvailable = true,
+            ServiceArea = "Colombo 03 and Greater Colombo",
+            Skills = new List<string> { "Plumbing", "Carpentry" }
+        };
+
+        var updated = await service.UpdateMyProfileAsync(registered.UserId, updateDto);
+
+        // Assert
+        Assert.Equal("Experienced master plumber with 10 years of field expertise.", updated.Bio);
+        Assert.Equal(2500.50m, updated.HourlyRate);
+        Assert.Equal("Colombo 03 and Greater Colombo", updated.ServiceArea);
+        Assert.Equal(2, updated.Skills.Count);
+        Assert.Contains("Carpentry", updated.Skills);
+    }
+
+    [Fact]
+    public async Task UpdateMyAvailabilityAsync_EndTimeBeforeStartTime_ThrowsException()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext("WorkerTest_Availability_InvalidTime");
+        var passwordHasher = new PasswordHasher<User>();
+        var service = new WorkerService(context, passwordHasher);
+
+        var registered = await service.RegisterWorkerAsync(new RegisterWorkerDto
+        {
+            FullName = "Thilina Dias",
+            Email = "thilina@example.com",
+            Mobile = "+94779911223",
+            Password = "Password123!",
+            Skills = new List<string> { "Electrical" },
+            ServiceArea = "Negombo",
+            ProofDocumentName = "proof.pdf"
+        });
+
+        var invalidDto = new UpdateAvailabilityDto
+        {
+            Slots = new List<AvailabilitySlotDto>
+            {
+                new AvailabilitySlotDto
+                {
+                    DayOfWeek = DayOfWeek.Monday,
+                    StartTime = new TimeSpan(17, 0, 0),
+                    EndTime = new TimeSpan(9, 0, 0) // Invalid: end < start
+                }
+            }
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateMyAvailabilityAsync(registered.UserId, invalidDto));
+    }
+
+    [Fact]
+    public async Task UpdateMyAvailabilityAsync_OverlappingSlots_ThrowsException()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext("WorkerTest_Availability_Overlap");
+        var passwordHasher = new PasswordHasher<User>();
+        var service = new WorkerService(context, passwordHasher);
+
+        var registered = await service.RegisterWorkerAsync(new RegisterWorkerDto
+        {
+            FullName = "Mahesh Bandara",
+            Email = "mahesh@example.com",
+            Mobile = "+94771199334",
+            Password = "Password123!",
+            Skills = new List<string> { "Masonry" },
+            ServiceArea = "Kurunegala",
+            ProofDocumentName = "proof.pdf"
+        });
+
+        var overlappingDto = new UpdateAvailabilityDto
+        {
+            Slots = new List<AvailabilitySlotDto>
+            {
+                new AvailabilitySlotDto
+                {
+                    DayOfWeek = DayOfWeek.Tuesday,
+                    StartTime = new TimeSpan(9, 0, 0),
+                    EndTime = new TimeSpan(13, 0, 0)
+                },
+                new AvailabilitySlotDto
+                {
+                    DayOfWeek = DayOfWeek.Tuesday,
+                    StartTime = new TimeSpan(12, 0, 0), // Overlaps with previous slot
+                    EndTime = new TimeSpan(17, 0, 0)
+                }
+            }
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateMyAvailabilityAsync(registered.UserId, overlappingDto));
+    }
+
+    [Fact]
+    public async Task UpdateMyAvailabilityAsync_ValidSlots_SavesAndReturnsSlots()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext("WorkerTest_Availability_Valid");
+        var passwordHasher = new PasswordHasher<User>();
+        var service = new WorkerService(context, passwordHasher);
+
+        var registered = await service.RegisterWorkerAsync(new RegisterWorkerDto
+        {
+            FullName = "Dinesh Priyantha",
+            Email = "dinesh@example.com",
+            Mobile = "+94774433221",
+            Password = "Password123!",
+            Skills = new List<string> { "HVAC" },
+            ServiceArea = "Panadura",
+            ProofDocumentName = "proof.pdf"
+        });
+
+        var validDto = new UpdateAvailabilityDto
+        {
+            Slots = new List<AvailabilitySlotDto>
+            {
+                new AvailabilitySlotDto
+                {
+                    DayOfWeek = DayOfWeek.Monday,
+                    StartTime = new TimeSpan(8, 0, 0),
+                    EndTime = new TimeSpan(12, 0, 0),
+                    IsActive = true
+                },
+                new AvailabilitySlotDto
+                {
+                    DayOfWeek = DayOfWeek.Monday,
+                    StartTime = new TimeSpan(13, 0, 0),
+                    EndTime = new TimeSpan(17, 0, 0),
+                    IsActive = true
+                }
+            }
+        };
+
+        // Act
+        var result = await service.UpdateMyAvailabilityAsync(registered.UserId, validDto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Slots.Count);
+        Assert.Equal(new TimeSpan(8, 0, 0), result.Slots[0].StartTime);
+        Assert.Equal(new TimeSpan(13, 0, 0), result.Slots[1].StartTime);
+    }
 }
+
 

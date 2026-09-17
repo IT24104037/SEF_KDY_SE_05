@@ -64,10 +64,12 @@ public class WorkersController : ControllerBase
         return Ok(worker);
     }
 
+    // GET /api/workers/me
     // GET /api/workers/me/status
     [Authorize(Roles = "MaintenanceWorker")]
+    [HttpGet("me")]
     [HttpGet("me/status")]
-    public async Task<IActionResult> GetMyStatus()
+    public async Task<IActionResult> GetMyProfile()
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(userIdClaim, out var userId))
@@ -82,6 +84,32 @@ public class WorkersController : ControllerBase
         }
 
         return Ok(worker);
+    }
+
+    // PUT /api/workers/me
+    [Authorize(Roles = "MaintenanceWorker")]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateWorkerProfileDto dto)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var updated = await _workerService.UpdateMyProfileAsync(userId, dto);
+            return Ok(updated);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // PUT /api/admin/workers/{id}/verification
@@ -110,4 +138,3 @@ public class WorkersController : ControllerBase
         }
     }
 }
-

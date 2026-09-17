@@ -244,6 +244,229 @@ public class WorkerService : IWorkerService
         return MapToDto(worker);
     }
 
+    // -------------------------------------------------------------
+    // API Phase 2: Profile, Skills, Service Area Management
+    // -------------------------------------------------------------
+    public async Task<WorkerResponseDto> UpdateMyProfileAsync(int userId, UpdateWorkerProfileDto dto)
+    {
+        var worker = await _context.Workers
+            .Include(w => w.User)
+            .Include(w => w.Skills)
+            .Include(w => w.ServiceAreas)
+            .Include(w => w.Documents)
+            .FirstOrDefaultAsync(w => w.UserId == userId);
+
+        if (worker == null)
+        {
+            throw new KeyNotFoundException("Worker profile not found for this account.");
+        }
+
+        if (dto.HourlyRate.HasValue && dto.HourlyRate < 0)
+        {
+            throw new ArgumentException("Hourly rate must be a positive number.");
+        }
+
+        worker.Bio = dto.Bio?.Trim();
+        worker.HourlyRate = dto.HourlyRate;
+        worker.IsAvailable = dto.IsAvailable;
+        worker.UpdatedAt = DateTime.UtcNow;
+
+        // Update Service Area if provided
+        if (dto.ServiceArea != null)
+        {
+            var area = worker.ServiceAreas.FirstOrDefault();
+            if (area == null)
+            {
+                worker.ServiceAreas.Add(new ServiceArea
+                {
+                    Worker = worker,
+                    City = dto.ServiceArea.Trim(),
+                    RadiusKm = 25.0,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                area.City = dto.ServiceArea.Trim();
+            }
+        }
+
+        // Update Skills if provided
+        if (dto.Skills != null)
+        {
+            _context.WorkerSkills.RemoveRange(worker.Skills);
+            worker.Skills.Clear();
+
+            foreach (var skillName in dto.Skills.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var skillTrimmed = skillName.Trim();
+                if (!string.IsNullOrEmpty(skillTrimmed))
+                {
+                    var matchingCategory = await _context.MaintenanceCategories
+                        .FirstOrDefaultAsync(c => c.Name.ToLower() == skillTrimmed.ToLower());
+
+                    worker.Skills.Add(new WorkerSkill
+                    {
+                        Worker = worker,
+                        SkillName = skillTrimmed,
+                        CategoryId = matchingCategory?.Id,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        return MapToDto(worker);
+    }
+
+    // -------------------------------------------------------------
+    // API Phase 3: Availability & "Free Now" Management
+    // -------------------------------------------------------------
+    public async Task<AvailabilityResponseDto> GetMyAvailabilityAsync(int userId)
+    {
+        var worker = await _context.Workers
+            .Include(w => w.Availabilities)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.UserId == userId);
+
+        if (worker == null)
+        {
+            throw new KeyNotFoundException("Worker profile not found for this account.");
+        }
+
+        bool isFree = await IsWorkerFreeNowAsync(worker.Id);
+
+        return new AvailabilityResponseDto
+        {
+            Slots = worker.Availabilities
+                .OrderBy(a => a.DayOfWeek)
+                .ThenBy(a => a.StartTime)
+                .Select(a => new AvailabilitySlotDto
+                {
+                    Id = a.Id,
+                    DayOfWeek = a.DayOfWeek,
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    IsActive = a.IsActive
+                }).ToList(),
+            FreeNow = isFree
+        };
+    }
+
+    public async Task<AvailabilityResponseDto> UpdateMyAvailabilityAsync(int userId, UpdateAvailabilityDto dto)
+    {
+        var worker = await _context.Workers
+            .Include(w => w.Availabilities)
+            .FirstOrDefaultAsync(w => w.UserId == userId);
+
+        if (worker == null)
+        {
+            throw new KeyNotFoundException("Worker profile not found for this account.");
+        }
+
+        // Validation Rule 1: EndTime must be strictly after StartTime for every slot
+        foreach (var slot in dto.Slots)
+        {
+            if (slot.EndTime <= slot.StartTime)
+            {
+                throw new ArgumentException($"Shift end time ({slot.EndTime}) must be after start time ({slot.StartTime}) for {slot.DayOfWeek}.");
+            }
+        }
+
+        // Validation Rule 2: Overlapping slots on the same day must be rejected
+        var groupedByDay = dto.Slots.GroupBy(s => s.DayOfWeek);
+        foreach (var group in groupedByDay)
+        {
+            var sortedSlots = group.OrderBy(s => s.StartTime).ToList();
+            for (int i = 0; i < sortedSlots.Count - 1; i++)
+            {
+                if (sortedSlots[i].EndTime > sortedSlots[i + 1].StartTime)
+                {
+                    throw new ArgumentException($"Overlapping availability slots detected on {group.Key} ({sortedSlots[i].StartTime:hh\\:mm} - {sortedSlots[i].EndTime:hh\\:mm} overlaps with {sortedSlots[i + 1].StartTime:hh\\:mm} - {sortedSlots[i + 1].EndTime:hh\\:mm}).");
+                }
+            }
+        }
+
+        // Replace slots
+        _context.WorkerAvailabilities.RemoveRange(worker.Availabilities);
+        worker.Availabilities.Clear();
+
+        foreach (var slot in dto.Slots)
+        {
+            worker.Availabilities.Add(new WorkerAvailability
+            {
+                Worker = worker,
+                DayOfWeek = slot.DayOfWeek,
+                StartTime = slot.StartTime,
+                EndTime = slot.EndTime,
+                IsActive = slot.IsActive,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        worker.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        bool isFree = await IsWorkerFreeNowAsync(worker.Id);
+
+        return new AvailabilityResponseDto
+        {
+            Slots = worker.Availabilities
+                .OrderBy(a => a.DayOfWeek)
+                .ThenBy(a => a.StartTime)
+                .Select(a => new AvailabilitySlotDto
+                {
+                    Id = a.Id,
+                    DayOfWeek = a.DayOfWeek,
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    IsActive = a.IsActive
+                }).ToList(),
+            FreeNow = isFree
+        };
+    }
+
+    public async Task<bool> IsWorkerFreeNowAsync(int workerId)
+    {
+        var worker = await _context.Workers
+            .Include(w => w.Availabilities)
+            .Include(w => w.WorkOrders)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == workerId);
+
+        if (worker == null || !worker.IsAvailable || worker.VerificationStatus != WorkerVerificationStatus.Verified)
+        {
+            return false;
+        }
+
+        // Check if there is an ongoing/conflicting active work order right now
+        bool hasActiveJob = worker.WorkOrders.Any(wo =>
+            wo.Status == WorkOrderStatus.InProgress ||
+            (wo.Status == WorkOrderStatus.Assigned && wo.ScheduledDate.HasValue &&
+             Math.Abs((wo.ScheduledDate.Value - DateTime.UtcNow).TotalHours) < 2));
+
+        if (hasActiveJob)
+        {
+            return false;
+        }
+
+        // Check current day and time slot
+        var now = DateTime.UtcNow;
+        var currentDay = now.DayOfWeek;
+        var currentTime = now.TimeOfDay;
+
+        bool hasMatchingSlot = worker.Availabilities.Any(a =>
+            a.IsActive &&
+            a.DayOfWeek == currentDay &&
+            a.StartTime <= currentTime &&
+            a.EndTime >= currentTime);
+
+        return hasMatchingSlot;
+    }
+
     private static WorkerResponseDto MapToDto(Worker worker)
     {
         var doc = worker.Documents.OrderByDescending(d => d.UploadedAt).FirstOrDefault();
@@ -270,4 +493,3 @@ public class WorkerService : IWorkerService
         };
     }
 }
-
