@@ -9,5 +9,12 @@ public interface IWorkerService
     Task<WorkerResponseDto?> GetWorkerByIdAsync(int id);
     Task<WorkerResponseDto?> GetWorkerByUserIdAsync(int userId);
     Task<WorkerResponseDto> VerifyWorkerAsync(int workerId, VerifyWorkerDto dto, int adminUserId);
-}
 
+    // API Phase 2: Profile, Skills, Service Area
+    Task<WorkerResponseDto> UpdateMyProfileAsync(int userId, UpdateWorkerProfileDto dto);
+
+    // API Phase 3: Availability
+    Task<AvailabilityResponseDto> GetMyAvailabilityAsync(int userId);
+    Task<AvailabilityResponseDto> UpdateMyAvailabilityAsync(int userId, UpdateAvailabilityDto dto);
+    Task<bool> IsWorkerFreeNowAsync(int workerId);
+}

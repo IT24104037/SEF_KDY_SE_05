@@ -58,6 +58,47 @@ export async function getWorkerStatus() {
   }
 }
 
+export async function getMyProfile() {
+  try {
+    const response = await apiClient.get("/api/workers/me");
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to load worker profile.";
+    throw new Error(message);
+  }
+}
+
+export async function updateMyProfile(payload) {
+  try {
+    const response = await apiClient.put("/api/workers/me", payload);
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to update profile.";
+    throw new Error(message);
+  }
+}
+
+export async function getMyAvailability() {
+  try {
+    const response = await apiClient.get("/api/workers/me/availability");
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to load availability.";
+    throw new Error(message);
+  }
+}
+
+export async function updateMyAvailability(slots) {
+  try {
+    const response = await apiClient.put("/api/workers/me/availability", { slots });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to update availability schedule.";
+    throw new Error(message);
+  }
+}
+
+
 
 const initialWorkOrders = [
   {
