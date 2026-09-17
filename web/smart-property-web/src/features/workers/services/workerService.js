@@ -148,25 +148,58 @@ export async function updateWorkOrderStatus(id, status) {
   return updated.find((workOrder) => workOrder.id === Number(id));
 }
 
-export async function getApprovalRequest() {
-  return {
-    id: 9003,
-    title: "Blocked bathroom drain",
-    property: "Lakeview Apartments",
-    unit: "B1",
-    tenant: "Sahan Fernando",
-    priority: "Normal",
-    description: "Water is draining slowly and backing up in the bathroom.",
-    recommendedWorker: "Amal Perera",
-    workerSkill: "Plumbing",
-    proposedTime: "2026-09-19T09:00:00Z",
-    serviceArea: "Colombo 05, within 15 km",
-    validationStatus: "Pending deterministic validation",
-  };
+export async function getPendingApprovals() {
+  try {
+    const response = await apiClient.get("/api/maintenance-requests/pending-approvals");
+    return response.data || [];
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to load pending approvals.";
+    throw new Error(message);
+  }
 }
 
-export async function submitApprovalDecision(decision, note = "") {
-  return { decision, note, createdWorkOrder: decision === "Approve" };
+export async function getApprovalRequest(requestId) {
+  try {
+    if (requestId) {
+      const response = await apiClient.get(`/api/maintenance-requests/${requestId}/recommendation`);
+      return response.data;
+    }
+
+    // If no ID passed, try fetching pending approvals for the logged-in owner
+    const pending = await getPendingApprovals();
+    if (pending && pending.length > 0) {
+      return pending[0];
+    }
+
+    // If no pending approvals found, fetch the first available maintenance request to get its recommendation
+    const listResponse = await apiClient.get("/api/maintenance-requests?pageSize=1");
+    const requests = listResponse.data?.requests || [];
+    if (requests.length > 0) {
+      const response = await apiClient.get(`/api/maintenance-requests/${requests[0].id}/recommendation`);
+      return response.data;
+    }
+
+    return null;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to load technician recommendation.";
+    throw new Error(message);
+  }
+}
+
+export async function submitApprovalDecision(requestId, decision, note = "", scheduledDate = null, workerId = null) {
+  try {
+    const payload = {
+      decision,
+      notes: note,
+      scheduledDate,
+      workerId,
+    };
+    const response = await apiClient.post(`/api/maintenance-requests/${requestId}/approval`, payload);
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to submit approval decision.";
+    throw new Error(message);
+  }
 }
 
 export async function createExternalArrangement(payload) {
