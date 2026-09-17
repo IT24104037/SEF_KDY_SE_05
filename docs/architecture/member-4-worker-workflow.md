@@ -268,16 +268,12 @@ For every screen, test navigation, form validation, loading, empty results,
 success, failure, and role-based visibility from the web before starting API
 replacement.
 
-<<<<<<< Updated upstream
-### UI Phase 2: Complete the Flutter Worker screens
-=======
 ### Deferred UI Phase: Flutter Worker screens
 
 Flutter is intentionally deferred while the React web workflows and backend
 contracts are completed. It remains part of the final Member 4 deliverable and
 must use the same API, DTOs, statuses, identity, and business rules as the web
 application. Do not create a separate mobile-only workflow.
->>>>>>> Stashed changes
 
 Build the Worker Dashboard shell and navigation with mock data:
 
@@ -291,10 +287,6 @@ Build the Worker Dashboard shell and navigation with mock data:
 8. Availability and Profile.
 9. Emergency job indicator.
 
-<<<<<<< Updated upstream
-The Flutter screens should use the same field names and statuses as the React
-screens. Do not create a second Worker or WorkOrder model for mobile.
-=======
 When mobile work resumes, the Flutter screens should use the same field names
 and statuses as the React screens. Do not create a second Worker or WorkOrder
 model for mobile.
@@ -315,7 +307,6 @@ limited to:
 Flutter screens are not a blocker for completing and testing these web slices.
 The mobile phase begins only after the web APIs, authorization rules, status
 transitions, and DTOs are stable.
->>>>>>> Stashed changes
 
 ### API Phase 1: Replace Worker registration mocks
 
@@ -461,12 +452,8 @@ web against PostgreSQL.
 
 For every UI/API slice, verify:
 
-<<<<<<< Updated upstream
-- React or Flutter calls the ASP.NET API rather than using mock data.
-=======
 - React calls the ASP.NET API rather than using mock data. Flutter will follow
   the same contract when the deferred mobile phase begins.
->>>>>>> Stashed changes
 - DTOs are used instead of exposing EF entities.
 - Loading, empty, validation, unauthorized, server-error, and success states
   are implemented.
@@ -476,8 +463,7 @@ For every UI/API slice, verify:
 - The UI uses the shared status vocabulary.
 - The feature is committed on the Member 4 branch with a focused commit.
 
-<<<<<<< Updated upstream
-=======
+
 ## Deferred Mobile Exit Criteria
 
 Start the Flutter phase after all of the following are true:
@@ -489,7 +475,7 @@ Start the Flutter phase after all of the following are true:
 - JWT/RBAC and ownership checks are verified through the web.
 - API DTOs and status transitions are documented and stable.
 
->>>>>>> Stashed changes
+
 ## ADR and Delivery Work
 
 Alongside the vertical slices, Member 4 owns:
