@@ -33,7 +33,7 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
     const next = {};
     if (!isRequired(fullName)) next.fullName = "Full name is required.";
     if (mode === "create" && !isValidMobileNumber(mobileNumber)) {
-      next.mobileNumber = "Enter a valid mobile number (7-15 digits).";
+      next.mobileNumber = "Enter a valid mobile number (exactly 10 digits).";
     }
     if (!isValidEmail(email)) next.email = "Enter a valid email address.";
     if (mode === "create" && !propertyId) next.propertyId = "Select a property.";
@@ -79,7 +79,10 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
           <input
             value={mobileNumber}
             onChange={(e) => setMobileNumber(e.target.value)}
-            placeholder="e.g. 0771234567"
+            placeholder="e.g. 0771234567 (10 digits)"
+            inputMode="numeric"
+            maxLength={10}
+            pattern="[0-9]{10}"
             style={inputStyle}
           />
         </Field>

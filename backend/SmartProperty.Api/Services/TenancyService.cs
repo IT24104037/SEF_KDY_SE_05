@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using SmartProperty.Api.Common;
 using SmartProperty.Api.DTOs.Tenancies;
+using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Entities.Tenancy;
 using SmartProperty.Api.Interfaces;
 using SmartProperty.Api.Repositories.Interfaces;
@@ -9,29 +11,27 @@ namespace SmartProperty.Api.Services;
 public class TenancyService : ITenancyService
 {
     private readonly ITenancyRepository _repository;
+    private readonly IActivationPinGenerator _pinGenerator;
+    private readonly PasswordHasher<User> _passwordHasher = new();
 
-    public TenancyService(ITenancyRepository repository)
+    public TenancyService(ITenancyRepository repository, IActivationPinGenerator pinGenerator)
     {
         _repository = repository;
+        _pinGenerator = pinGenerator;
     }
 
-    public async Task<TenantResponseDto> CreateTenantAsync(CreateTenantDto dto, int ownerUserId)
+    public async Task<CreateTenantResponseDto> CreateTenantAsync(CreateTenantDto dto, int ownerUserId)
     {
         var mobileNumber = dto.MobileNumber.Trim();
-
         var unit = await _repository.GetUnitForOwnerAsync(dto.UnitId, dto.PropertyId, ownerUserId);
         if (unit == null)
         {
             throw new InvalidOperationException("The selected property or unit is not managed by this owner.");
         }
 
-        // Business rule: mobile number must be unique across all tenants —
-        // it's the identifier used later for PIN activation and login.
-        var exists = await _repository.MobileNumberExistsAsync(mobileNumber);
-        if (exists)
+        if (await _repository.MobileNumberExistsAsync(mobileNumber))
         {
-            throw new InvalidOperationException(
-                "A tenant with this mobile number already exists.");
+            throw new InvalidOperationException("A tenant with this mobile number already exists.");
         }
 
         var tenant = new Tenant
@@ -41,28 +41,47 @@ public class TenancyService : ITenancyService
             Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim(),
             PropertyId = dto.PropertyId,
             UnitId = dto.UnitId,
-            IsActive = false, // stays false until the Activation PIN module marks it true
+            IsActive = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         var created = await _repository.AddTenantAsync(tenant);
+        var pin = _pinGenerator.GeneratePin();
+        var pinExpiresAt = DateTime.UtcNow.AddHours(24);
+        await _repository.AddActivationPinAsync(new TenantActivationPin
+        {
+            TenantId = created.Id,
+            PinHash = pin.pinHash,
+            ExpiresAt = pinExpiresAt
+        });
+
         var createdWithDetails = await _repository.GetTenantByIdAsync(created.Id, ownerUserId);
-        return ToResponseDto(createdWithDetails!);
+        var response = ToResponseDto(createdWithDetails!);
+        return new CreateTenantResponseDto
+        {
+            Id = response.Id,
+            UserId = response.UserId,
+            FullName = response.FullName,
+            MobileNumber = response.MobileNumber,
+            Email = response.Email,
+            PropertyId = response.PropertyId,
+            PropertyName = response.PropertyName,
+            UnitId = response.UnitId,
+            UnitName = response.UnitName,
+            IsActive = response.IsActive,
+            CreatedAt = response.CreatedAt,
+            UpdatedAt = response.UpdatedAt,
+            ActivationPin = pin.rawPin,
+            PinExpiresAt = pinExpiresAt
+        };
     }
 
     public async Task<PagedResult<TenantResponseDto>> GetTenantsAsync(TenantQueryParameters query, int ownerUserId)
     {
         var (items, totalCount) = await _repository.GetTenantsAsync(
-            ownerUserId,
-            query.Search,
-            query.IsActive,
-            query.PropertyId,
-            query.UnitId,
-            query.SortBy,
-            query.Descending,
-            query.Page,
-            query.PageSize);
+            ownerUserId, query.Search, query.IsActive, query.PropertyId, query.UnitId,
+            query.SortBy, query.Descending, query.Page, query.PageSize);
 
         return new PagedResult<TenantResponseDto>
         {
@@ -82,21 +101,10 @@ public class TenancyService : ITenancyService
     public async Task<TenantResponseDto?> UpdateTenantAsync(int id, UpdateTenantDto dto, int ownerUserId)
     {
         var tenant = await _repository.GetTenantByIdAsync(id, ownerUserId);
-        if (tenant == null)
-        {
-            return null;
-        }
+        if (tenant == null) return null;
 
-        if (!string.IsNullOrWhiteSpace(dto.FullName))
-        {
-            tenant.FullName = dto.FullName.Trim();
-        }
-
-        if (dto.Email != null)
-        {
-            tenant.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
-        }
-
+        if (!string.IsNullOrWhiteSpace(dto.FullName)) tenant.FullName = dto.FullName.Trim();
+        if (dto.Email != null) tenant.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
         await _repository.UpdateTenantAsync(tenant);
         return ToResponseDto(tenant);
     }
@@ -104,9 +112,8 @@ public class TenancyService : ITenancyService
     public async Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId)
     {
         var tenant = await _repository.GetTenantByIdAsync(dto.TenantId, ownerUserId);
-        if (tenant == null || tenant.UnitId != dto.UnitId ||
-            tenant.Property.IsArchived || tenant.Unit.IsArchived || tenant.Unit.IsDeleted ||
-            tenant.Unit.PropertyId != tenant.PropertyId)
+        if (tenant == null || tenant.UnitId != dto.UnitId || tenant.Property.IsArchived ||
+            tenant.Unit.IsArchived || tenant.Unit.IsDeleted || tenant.Unit.PropertyId != tenant.PropertyId)
         {
             throw new InvalidOperationException("The selected property or unit is not available for tenancy.");
         }
@@ -139,16 +146,46 @@ public class TenancyService : ITenancyService
     {
         var tenancy = await _repository.GetTenancyByIdAsync(tenancyId);
         if (tenancy == null) return false;
-        if (tenancy.Status == TenancyStatus.Ended)
-        {
-            throw new InvalidOperationException("Tenancy is already ended.");
-        }
+        if (tenancy.Status == TenancyStatus.Ended) throw new InvalidOperationException("Tenancy is already ended.");
 
         tenancy.EndDate = dto.EndDate ?? DateTime.UtcNow;
         tenancy.Status = TenancyStatus.Ended;
         await _repository.UpdateTenancyAsync(tenancy);
         return true;
     }
+
+    public async Task<ActivationResultDto> ActivateTenantAsync(ActivateTenantDto dto)
+    {
+        var tenant = await _repository.GetTenantByMobileNumberAsync(dto.MobileNumber.Trim());
+        if (tenant == null) return Failure("Invalid mobile number or PIN.");
+
+        var pin = await _repository.GetLatestUnusedPinAsync(tenant.Id);
+        if (pin == null || pin.ExpiresAt <= DateTime.UtcNow || !_pinGenerator.VerifyPin(dto.Pin, pin.PinHash))
+        {
+            return Failure("Invalid mobile number or PIN.");
+        }
+
+        var roleId = await _repository.GetRoleIdByNameAsync("Tenant");
+        var user = new User
+        {
+            FullName = tenant.FullName,
+            Mobile = tenant.MobileNumber,
+            Email = tenant.Email,
+            PasswordHash = _passwordHasher.HashPassword(null!, dto.Password),
+            RoleId = roleId,
+            IsActive = true
+        };
+
+        var createdUser = await _repository.AddUserAsync(user);
+        tenant.UserId = createdUser.Id;
+        tenant.IsActive = true;
+        pin.IsUsed = true;
+        await _repository.UpdateTenantAsync(tenant);
+        await _repository.UpdateActivationPinAsync(pin);
+        return new ActivationResultDto { Success = true, Message = "Tenant account activated successfully." };
+    }
+
+    private static ActivationResultDto Failure(string message) => new() { Success = false, Message = message };
 
     private static TenancyResponseDto ToTenancyResponseDto(Tenancy? tenancy) => new()
     {
@@ -162,22 +199,19 @@ public class TenancyService : ITenancyService
         CreatedAt = tenancy.CreatedAt
     };
 
-    private static TenantResponseDto ToResponseDto(Tenant tenant)
+    private static TenantResponseDto ToResponseDto(Tenant tenant) => new()
     {
-        return new TenantResponseDto
-        {
-            Id = tenant.Id,
-            UserId = tenant.UserId,
-            FullName = tenant.FullName,
-            MobileNumber = tenant.MobileNumber,
-            Email = tenant.Email,
-            PropertyId = tenant.PropertyId,
-            PropertyName = tenant.Property.Name,
-            UnitId = tenant.UnitId,
-            UnitName = tenant.Unit.UnitLabel,
-            IsActive = tenant.IsActive,
-            CreatedAt = tenant.CreatedAt,
-            UpdatedAt = tenant.UpdatedAt
-        };
-    }
+        Id = tenant.Id,
+        UserId = tenant.UserId,
+        FullName = tenant.FullName,
+        MobileNumber = tenant.MobileNumber,
+        Email = tenant.Email,
+        PropertyId = tenant.PropertyId,
+        PropertyName = tenant.Property.Name,
+        UnitId = tenant.UnitId,
+        UnitName = tenant.Unit.UnitLabel,
+        IsActive = tenant.IsActive,
+        CreatedAt = tenant.CreatedAt,
+        UpdatedAt = tenant.UpdatedAt
+    };
 }
