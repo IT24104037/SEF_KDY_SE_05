@@ -146,7 +146,7 @@ function App() {
         <Route
           path="/owner/work-orders"
           element={
-            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <ProtectedRoute allowedRoles={["PropertyOwner", "MaintenanceWorker"]}>
               <WorkOrdersPage />
             </ProtectedRoute>
           }
@@ -155,7 +155,7 @@ function App() {
         <Route
           path="/owner/work-orders/:id"
           element={
-            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <ProtectedRoute allowedRoles={["PropertyOwner", "MaintenanceWorker"]}>
               <WorkOrderDetailsPage />
             </ProtectedRoute>
           }
