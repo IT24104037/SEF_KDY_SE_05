@@ -28,6 +28,7 @@ import WorkerDashboardPage from "./features/workers/pages/WorkerDashboardPage.js
 import WorkOrdersPage from "./features/workers/pages/WorkOrdersPage.jsx";
 import WorkOrderDetailsPage from "./features/workers/pages/WorkOrderDetailsPage.jsx";
 import ApprovalPage from "./features/ai-workflow/pages/ApprovalPage.jsx";
+import ExternalMaintenancePage from "./features/workers/pages/ExternalMaintenancePage.jsx";
 
 import MaintenanceRequestsPage from "./features/maintenance/pages/MaintenanceRequestsPage.jsx";
 import MaintenanceCategoriesPage from "./features/maintenance/pages/MaintenanceCategoriesPage.jsx";
@@ -148,7 +149,7 @@ function App() {
         <Route
           path="/owner/work-orders"
           element={
-            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <ProtectedRoute allowedRoles={["PropertyOwner", "MaintenanceWorker"]}>
               <WorkOrdersPage />
             </ProtectedRoute>
           }
@@ -157,8 +158,17 @@ function App() {
         <Route
           path="/owner/work-orders/:id"
           element={
-            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+            <ProtectedRoute allowedRoles={["PropertyOwner", "MaintenanceWorker"]}>
               <WorkOrderDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/owner/external-maintenance"
+          element={
+            <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+              <ExternalMaintenancePage />
             </ProtectedRoute>
           }
         />
