@@ -33,6 +33,12 @@ import MaintenanceCategoriesPage from "./features/maintenance/pages/MaintenanceC
 import MaintenanceRequestDetailsPage from "./features/maintenance/pages/MaintenanceRequestDetailsPage.jsx";
 import EmergencyRequestsPage from "./features/maintenance/pages/EmergencyRequestsPage.jsx";
 
+import ReportMaintenancePage  from "./features/maintenance/pages/ReportMaintenancePage.jsx";
+import ReportEmergencyPage from "./features/maintenance/pages/ReportEmergencyPage.jsx";
+import MyMaintenanceRequestsPage  from "./features/maintenance/pages/MyMaintenanceRequestsPage.jsx";  
+import TenantMaintenanceDetailsPage from "./features/maintenance/pages/TenantMaintenanceDetailsPage.jsx";
+
+  
 import TenantListPage from "./features/tenancies/pages/TenantListPage.jsx";
 import AddTenantPage from "./features/tenancies/pages/AddTenantPage.jsx";
 import TenantDetailsPage from "./features/tenancies/pages/TenantDetailsPage.jsx";
@@ -198,6 +204,43 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/tenant/maintenance/report"
+          element={
+           <ProtectedRoute allowedRoles={["Tenant"]}>
+            <ReportMaintenancePage />
+           </ProtectedRoute>
+          }
+          />
+
+          <Route
+            path="/tenant/maintenance/emergency"
+            element={
+              <ProtectedRoute allowedRoles={["Tenant"]}>
+                <ReportEmergencyPage />
+              </ProtectedRoute>
+          }
+          />
+
+          <Route
+            path="/tenant/maintenance/requests"
+            element={
+              <ProtectedRoute allowedRoles={["Tenant"]}>
+                <MyMaintenanceRequestsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/tenant/maintenance/requests/:id"
+            element={
+              <ProtectedRoute allowedRoles={["Tenant"]}>
+                <TenantMaintenanceDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+
+
       </Routes>
     </BrowserRouter>
   );
