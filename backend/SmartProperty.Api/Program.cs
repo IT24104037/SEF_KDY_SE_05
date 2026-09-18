@@ -38,6 +38,7 @@ builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<ITenancyRepository, TenancyRepository>();
 builder.Services.AddScoped<ITenancyService, TenancyService>();
+builder.Services.AddSingleton<IActivationPinGenerator, ActivationPinGenerator>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<
     IMaintenanceCategoryService,

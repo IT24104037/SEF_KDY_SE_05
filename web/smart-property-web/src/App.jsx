@@ -36,6 +36,7 @@ import EmergencyRequestsPage from "./features/maintenance/pages/EmergencyRequest
 import TenantListPage from "./features/tenancies/pages/TenantListPage.jsx";
 import AddTenantPage from "./features/tenancies/pages/AddTenantPage.jsx";
 import TenantDetailsPage from "./features/tenancies/pages/TenantDetailsPage.jsx";
+import TenantActivationPage from "./features/tenancies/pages/TenantActivationPage.jsx";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
@@ -49,6 +50,7 @@ function App() {
         <Route path="/register-owner" element={<OwnerRegisterPage />} />
         <Route path="/register-worker" element={<WorkerRegistrationPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/activate-tenant" element={<TenantActivationPage />} />
 
         <Route
           path="/owner/dashboard"

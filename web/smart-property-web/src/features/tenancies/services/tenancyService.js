@@ -8,6 +8,9 @@ const tenancyService = {
   createTenant: (payload) =>
     apiClient.post("/api/tenants", payload).then((res) => res.data),
 
+  activateTenant: (payload) =>
+    apiClient.post("/api/tenant-activation/activate", payload).then((res) => res.data),
+
   // GET /api/tenants?search=&isActive=&sortBy=&descending=&page=&pageSize=
   getTenants: (params) =>
     apiClient.get("/api/tenants", { params }).then((res) => res.data),
