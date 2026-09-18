@@ -50,6 +50,7 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IWorkerRecommendationService, WorkerRecommendationService>();
+builder.Services.AddScoped<IWorkOrderService, WorkOrderService>();
 
 // --------------------
 // JWT Authentication

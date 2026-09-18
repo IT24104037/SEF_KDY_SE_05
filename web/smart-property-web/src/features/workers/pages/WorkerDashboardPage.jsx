@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   getMyProfile,
   updateMyProfile,
   getMyAvailability,
   updateMyAvailability,
+  getWorkOrders,
 } from "../services/workerService.js";
 
 const DAYS_OF_WEEK = [
@@ -19,6 +21,7 @@ const DAYS_OF_WEEK = [
 function WorkerDashboardPage() {
   const [worker, setWorker] = useState(null);
   const [availability, setAvailability] = useState({ slots: [], freeNow: false });
+  const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingAvailability, setSavingAvailability] = useState(false);
@@ -45,9 +48,10 @@ function WorkerDashboardPage() {
   async function loadAllData() {
     setLoading(true);
     try {
-      const [profileData, availData] = await Promise.all([
-        getMyProfile(),
-        getMyAvailability(),
+      const [profileData, availData, ordersData] = await Promise.all([
+        getMyProfile().catch(() => null),
+        getMyAvailability().catch(() => null),
+        getWorkOrders().catch(() => []),
       ]);
 
       if (profileData) {
@@ -60,6 +64,10 @@ function WorkerDashboardPage() {
 
       if (availData) {
         setAvailability(availData);
+      }
+
+      if (ordersData) {
+        setWorkOrders(ordersData);
       }
     } catch {
       // Worker profile not found or user not authenticated
@@ -185,6 +193,91 @@ function WorkerDashboardPage() {
           </h2>
           <p style={styles.mutedSmall}>Operating radius: within 25 km</p>
         </div>
+      </section>
+
+      {/* Assigned Work Orders Card */}
+      <section style={{ ...styles.card, marginBottom: "24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <div>
+            <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>
+              Assigned Work Orders ({workOrders.length})
+            </h3>
+            <p style={{ margin: "2px 0 0", color: "#64748b", fontSize: "13px" }}>
+              Maintenance jobs currently assigned to you. Click to start, update progress, and submit completion evidence.
+            </p>
+          </div>
+          <Link to="/owner/work-orders" style={{ ...styles.btnPrimary, padding: "8px 14px", textDecoration: "none", fontSize: "13px" }}>
+            View All Jobs
+          </Link>
+        </div>
+
+        {workOrders.length === 0 ? (
+          <p style={{ color: "#64748b", fontSize: "14px", margin: "8px 0" }}>
+            No work orders currently assigned. Approved tenant maintenance jobs will appear here.
+          </p>
+        ) : (
+          <div style={{ display: "grid", gap: "10px" }}>
+            {workOrders.slice(0, 5).map((wo) => (
+              <div
+                key={wo.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "14px 18px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: wo.isEmergency ? "#dc2626" : "#4f46e5" }}>
+                      {wo.isEmergency ? "EMERGENCY" : "NORMAL"}
+                    </span>
+                    <strong style={{ fontSize: "15px", color: "#0f172a" }}>
+                      #{wo.id} · {wo.requestTitle}
+                    </strong>
+                  </div>
+                  <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#64748b" }}>
+                    {wo.propertyName} · Unit {wo.unitLabel} · Scheduled:{" "}
+                    {wo.scheduledDate ? new Date(wo.scheduledDate).toLocaleDateString() : "Pending"}
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "999px",
+                      background: wo.status === "Completed" ? "#dcfce7" : wo.status === "InProgress" ? "#e0f2fe" : "#fef3c7",
+                      color: wo.status === "Completed" ? "#15803d" : wo.status === "InProgress" ? "#0369a1" : "#92400e",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {wo.status}
+                  </span>
+                  <Link
+                    to={`/owner/work-orders/${wo.id}`}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      background: "#0f766e",
+                      color: "#fff",
+                      textDecoration: "none",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Manage Job →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <div style={styles.mainGrid}>
