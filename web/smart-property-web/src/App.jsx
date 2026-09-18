@@ -37,7 +37,8 @@ import ReportMaintenancePage  from "./features/maintenance/pages/ReportMaintenan
 import ReportEmergencyPage from "./features/maintenance/pages/ReportEmergencyPage.jsx";
 import MyMaintenanceRequestsPage  from "./features/maintenance/pages/MyMaintenanceRequestsPage.jsx";  
 import TenantMaintenanceDetailsPage from "./features/maintenance/pages/TenantMaintenanceDetailsPage.jsx";
-
+import OwnerMaintenanceRequestsPage from "./features/maintenance/pages/OwnerMaintenanceRequestsPage.jsx";
+  
   
 import TenantListPage from "./features/tenancies/pages/TenantListPage.jsx";
 import AddTenantPage from "./features/tenancies/pages/AddTenantPage.jsx";
@@ -239,7 +240,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/owner/maintenance"
+            element={
+              <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+                <OwnerMaintenanceRequestsPage />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/owner/maintenance/:id"
+            element={
+              <ProtectedRoute allowedRoles={["PropertyOwner"]}>
+                <MaintenanceRequestDetailsPage />
+              </ProtectedRoute>
+            }
+          />  
 
       </Routes>
     </BrowserRouter>
