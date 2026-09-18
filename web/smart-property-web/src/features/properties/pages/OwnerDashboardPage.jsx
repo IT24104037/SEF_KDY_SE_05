@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getOwnerDashboard } from "../services/ownerDashboardApi.js";
 
@@ -46,6 +47,12 @@ function OwnerDashboardPage() {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
+        <nav style={styles.navigation} aria-label="Owner navigation">
+          <Link to="/owner/dashboard" style={styles.navLink}>Dashboard</Link>
+          <Link to="/owner/properties" style={styles.navLink}>Properties</Link>
+          <Link to="/owner/tenants" style={styles.navLink}>Tenants</Link>
+        </nav>
+
         <h1 style={styles.title}>Owner Dashboard</h1>
         <p style={styles.subtitle}>
           Overview of your properties and units
@@ -82,6 +89,14 @@ function OwnerDashboardPage() {
             value={dashboard.archivedUnits}
           />
         </div>
+
+        <section style={styles.occupancySection}>
+          <h2 style={styles.sectionTitle}>Occupancy</h2>
+          <div style={styles.occupancyGrid}>
+            <StatCard title="Occupied Units" value={dashboard.occupiedUnits} />
+            <StatCard title="Vacant Units" value={dashboard.vacantUnits} />
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -127,9 +142,37 @@ const styles = {
     marginBottom: "30px",
   },
 
+  navigation: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "16px",
+    marginBottom: "28px",
+  },
+
+  navLink: {
+    color: "#2563EB",
+    fontWeight: "600",
+    textDecoration: "none",
+  },
+
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "20px",
+  },
+
+  occupancySection: {
+    marginTop: "36px",
+  },
+
+  sectionTitle: {
+    color: "#17324D",
+    marginBottom: "18px",
+  },
+
+  occupancyGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
     gap: "20px",
   },
 

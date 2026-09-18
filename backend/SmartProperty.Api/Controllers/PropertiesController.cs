@@ -65,6 +65,21 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
+    // GET /api/properties/dashboard
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetOwnerDashboard()
+    {
+        var result = await _propertyService.GetOwnerDashboardAsync(
+            GetUserId());
+
+        if (result == null)
+        {
+            return Forbid();
+        }
+
+        return Ok(result);
+    }
+
     // GET /api/properties/{id}
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetProperty(int id)

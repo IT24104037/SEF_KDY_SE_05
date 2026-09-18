@@ -16,7 +16,7 @@ public class AppDbContext : DbContext
     {
     }
     public DbSet<Tenancy> Tenancies => Set<Tenancy>();
-
+    public DbSet<TenantActivationPin> TenantActivationPins => Set<TenantActivationPin>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new TenantConfiguration());
         modelBuilder.ApplyConfiguration(new TenancyConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantActivationPinConfiguration());
 
         modelBuilder.Entity<Role>()
             .HasIndex(r => r.Name)

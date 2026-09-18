@@ -100,3 +100,52 @@ export async function updateMaintenanceStatus(id, status, note = "") {
 
   return data;
 }
+
+export async function uploadMaintenanceImage(file) {
+  const token = sessionStorage.getItem("token");
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${API_URL}/api/maintenance-images/upload`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Failed to upload maintenance image."
+    );
+  }
+
+  return data.imageUrl;
+}
+
+export async function createMaintenanceRequest(data) {
+  const response = await fetch(
+    `${API_URL}/api/maintenance-requests`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.message || "Failed to create maintenance request."
+    );
+  }
+
+  return result;
+}
