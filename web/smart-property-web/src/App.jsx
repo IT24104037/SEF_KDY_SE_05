@@ -17,6 +17,7 @@ import UnitsPage from "./features/properties/pages/UnitsPage.jsx";
 import AdminHome from "./features/admin/pages/AdminHome.jsx";
 import UserManagementPage from "./features/admin/pages/UserManagementPage.jsx";
 import AdminOwnerVerificationPage from "./features/admin/pages/OwnerVerificationPage.jsx";
+import PropertyVerificationPage from "./features/admin/pages/PropertyVerificationPage.jsx";
 import AiWorkflowPage from "./features/admin/pages/AiWorkflowPage.jsx";
 import ReportsPage from "./features/admin/pages/ReportsPage.jsx";
 import SystemActivityPage from "./features/admin/pages/SystemActivityPage.jsx";
@@ -115,6 +116,7 @@ function App() {
           <Route index element={<AdminHome />} />
           <Route path="users" element={<UserManagementPage />} />
           <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
+          <Route path="property-verification" element={<PropertyVerificationPage />} />
           <Route path="maintenance" element={<MaintenanceRequestsPage />} />
           <Route path="emergencies" element={<EmergencyRequestsPage />} />
           <Route path="categories" element={<MaintenanceCategoriesPage />} />

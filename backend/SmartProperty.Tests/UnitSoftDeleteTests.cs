@@ -139,7 +139,8 @@ public class UnitSoftDeleteTests
         {
             PropertyOwnerId = ownerId,
             Name = "Property A",
-            Address = "1 Main Street"
+            Address = "1 Main Street",
+            VerificationStatus = PropertyVerificationStatus.Approved
         };
         context.Properties.Add(property);
         await context.SaveChangesAsync();

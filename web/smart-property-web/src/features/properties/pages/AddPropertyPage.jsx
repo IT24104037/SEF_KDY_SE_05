@@ -9,6 +9,8 @@ const emptyForm = {
   description: "",
   latitude: "",
   longitude: "",
+  documentType: "",
+  documentUrl: "",
 };
 
 function AddPropertyPage() {
@@ -43,6 +45,8 @@ function AddPropertyPage() {
           form.latitude === "" ? null : Number(form.latitude),
         longitude:
           form.longitude === "" ? null : Number(form.longitude),
+        documentType: form.documentType,
+        documentUrl: form.documentUrl,
       };
 
       await createProperty(propertyData);
@@ -197,6 +201,36 @@ function AddPropertyPage() {
                   width: "100%",
                   padding: "8px",
                 }}
+              />
+            </label>
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label>
+              Verification Document Type
+              <br />
+              <input
+                type="text"
+                name="documentType"
+                value={form.documentType}
+                onChange={handleChange}
+                required
+                style={{ width: "100%", padding: "8px" }}
+              />
+            </label>
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label>
+              Verification Document URL
+              <br />
+              <input
+                type="url"
+                name="documentUrl"
+                value={form.documentUrl}
+                onChange={handleChange}
+                required
+                style={{ width: "100%", padding: "8px" }}
               />
             </label>
           </div>

@@ -23,4 +23,12 @@ public class PropertyResponseDto
     public DateTime UpdatedAt { get; set; }
 
     public bool IsArchived { get; set; }
+
+    public string VerificationStatus { get; set; } = string.Empty;
+
+    public string? RejectionReason { get; set; }
+
+    public DateTime? SubmittedAt { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
 }

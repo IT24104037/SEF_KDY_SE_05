@@ -29,6 +29,10 @@ function AdminLayout() {
             Owner Verification
           </NavLink>
 
+          <NavLink to="/admin/property-verification" style={linkStyle}>
+            Property Verification
+          </NavLink>
+
           <NavLink to="/admin/workers" style={linkStyle}>
             Worker Verification
           </NavLink>
