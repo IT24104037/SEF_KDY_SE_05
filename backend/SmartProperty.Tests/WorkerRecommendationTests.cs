@@ -378,3 +378,4 @@ public class WorkerRecommendationTests
         Assert.Equal("Too costly, will handle via warranty.", savedDecision.Notes);
     }
 }
+

@@ -19,3 +19,4 @@ public interface IWorkerRecommendationService
         int currentUserId,
         string currentUserRole);
 }
+
