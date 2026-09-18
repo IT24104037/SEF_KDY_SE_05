@@ -7,3 +7,4 @@ public class ApprovalRequestDto
     public DateTime? ScheduledDate { get; set; }
     public string? Notes { get; set; }
 }
+
