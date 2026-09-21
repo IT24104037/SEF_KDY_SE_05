@@ -9,6 +9,8 @@ export default function OwnerVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [rejectingOwner, setRejectingOwner] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   async function loadOwners() {
     try {
@@ -26,12 +28,14 @@ export default function OwnerVerificationPage() {
     loadOwners();
   }, []);
 
-  async function handleDecision(ownerId, status) {
+  async function handleDecision(ownerId, status, reason = "") {
     try {
       setError("");
       setMessage("");
-      await updateOwnerVerification(ownerId, status);
+      await updateOwnerVerification(ownerId, status, reason);
       setMessage(`Owner ${status.toLowerCase()} successfully.`);
+      setRejectingOwner(null);
+      setRejectionReason("");
       await loadOwners();
     } catch (err) {
       setError(err.message);
@@ -58,11 +62,38 @@ export default function OwnerVerificationPage() {
             Approve
           </button>
           <button
-            onClick={() => handleDecision(owner.ownerId, "Rejected")}
+            onClick={() => {
+              setRejectingOwner(owner);
+              setRejectionReason("");
+              setError("");
+            }}
             style={{ marginLeft: 8 }}
           >
             Reject
           </button>
+          {rejectingOwner?.ownerId === owner.ownerId && (
+            <div style={styles.rejectionBox}>
+              <h3>Reject Owner Verification</h3>
+              <label>
+                Reason for rejection:
+                <textarea
+                  value={rejectionReason}
+                  onChange={(event) => setRejectionReason(event.target.value)}
+                  rows={4}
+                  required
+                />
+              </label>
+              <button
+                onClick={() => handleDecision(owner.ownerId, "Rejected", rejectionReason)}
+                disabled={!rejectionReason.trim()}
+              >
+                Reject
+              </button>
+              <button onClick={() => setRejectingOwner(null)} style={{ marginLeft: 8 }}>
+                Cancel
+              </button>
+            </div>
+          )}
         </section>
       ))}
     </div>
@@ -76,5 +107,11 @@ const styles = {
     borderRadius: 8,
     padding: 20,
     marginTop: 16,
+  },
+  rejectionBox: {
+    marginTop: 16,
+    padding: 16,
+    border: "1px solid #fca5a5",
+    background: "#fff7f7",
   },
 };

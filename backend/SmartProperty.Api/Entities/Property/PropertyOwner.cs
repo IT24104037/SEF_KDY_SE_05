@@ -13,6 +13,8 @@ public class PropertyOwner
     public OwnerVerificationStatus VerificationStatus { get; set; }
         = OwnerVerificationStatus.PendingVerification;
 
+    public string? RejectionReason { get; set; }
+
     public DateTime? VerifiedAt { get; set; }
 
     public int? VerifiedByAdminId { get; set; }

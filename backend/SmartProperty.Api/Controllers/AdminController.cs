@@ -80,6 +80,15 @@ public class AdminController : ControllerBase
             });
         }
 
+        if (newStatus == OwnerVerificationStatus.Rejected &&
+            string.IsNullOrWhiteSpace(request.RejectionReason))
+        {
+            return BadRequest(new
+            {
+                message = "A rejection reason is required."
+            });
+        }
+
         var owner = await _context.PropertyOwners
             .Include(po => po.User)
             .FirstOrDefaultAsync(po => po.Id == id);
@@ -101,6 +110,9 @@ public class AdminController : ControllerBase
         }
 
         owner.VerificationStatus = newStatus;
+        owner.RejectionReason = newStatus == OwnerVerificationStatus.Rejected
+            ? request.RejectionReason!.Trim()
+            : null;
 
         if (newStatus == OwnerVerificationStatus.Verified)
         {
@@ -121,6 +133,7 @@ public class AdminController : ControllerBase
         {
             ownerId = owner.Id,
             status = owner.VerificationStatus.ToString(),
+            rejectionReason = owner.RejectionReason,
             verifiedAt = owner.VerifiedAt
         });
     }

@@ -52,6 +52,44 @@ public class PropertyVerificationAdminTests
         Assert.Equal("Proof is unclear.", property.RejectionReason);
     }
 
+    [Fact]
+    public async Task RejectOwnerRequiresReason()
+    {
+        await using var context = CreateOwnerContext();
+        var controller = CreateController(context);
+
+        var result = await controller.UpdateOwnerVerification(
+            2,
+            new SmartProperty.Api.DTOs.Auth.OwnerVerificationRequestDto
+            {
+                Status = "Rejected"
+            });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(OwnerVerificationStatus.PendingVerification,
+            (await context.PropertyOwners.SingleAsync()).VerificationStatus);
+    }
+
+    [Fact]
+    public async Task RejectOwnerPersistsReason()
+    {
+        await using var context = CreateOwnerContext();
+        var controller = CreateController(context);
+
+        var result = await controller.UpdateOwnerVerification(
+            2,
+            new SmartProperty.Api.DTOs.Auth.OwnerVerificationRequestDto
+            {
+                Status = "Rejected",
+                RejectionReason = "Ownership document is not clear."
+            });
+
+        Assert.IsType<OkObjectResult>(result);
+        var owner = await context.PropertyOwners.SingleAsync();
+        Assert.Equal(OwnerVerificationStatus.Rejected, owner.VerificationStatus);
+        Assert.Equal("Ownership document is not clear.", owner.RejectionReason);
+    }
+
     private static AdminController CreateController(AppDbContext context)
     {
         var controller = new AdminController(context)
@@ -84,6 +122,29 @@ public class PropertyVerificationAdminTests
             Address = "1 Main Street",
             VerificationStatus = status,
             SubmittedAt = DateTime.UtcNow
+        });
+        context.SaveChanges();
+        return context;
+    }
+
+    private static AppDbContext CreateOwnerContext()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        var context = new AppDbContext(options);
+        context.Users.Add(new SmartProperty.Api.Entities.Identity.User
+        {
+            Id = 10,
+            FullName = "Owner",
+            Email = "owner@example.com",
+            RoleId = 2
+        });
+        context.PropertyOwners.Add(new PropertyOwner
+        {
+            Id = 2,
+            UserId = 10,
+            VerificationStatus = OwnerVerificationStatus.PendingVerification
         });
         context.SaveChanges();
         return context;
