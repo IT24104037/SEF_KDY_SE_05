@@ -4,6 +4,11 @@ import { useAuth } from "../hooks/useAuth";
 
 const navItems = [
   { to: "/tenant/home", label: "My Home" },
+  
+  { to: "/tenant/maintenance/report", label: "Report Maintenance" },
+  { to: "/tenant/maintenance/emergency", label: "Report Emergency" },
+  { to: "/tenant/maintenance/requests", label: "My Maintenance Requests" },
+
   { to: "/tenant/tenancy-history", label: "Tenancy History" },
   { to: "/tenant/notifications", label: "Updates" },
   { to: "/tenant/profile", label: "Profile" },
