@@ -15,6 +15,7 @@ public interface ITenancyService
 
     // ---- Tenancy Management ----
     Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId);
+    Task<List<TenancyResponseDto>?> GetTenanciesForTenantAsync(int tenantId, int ownerUserId);
     Task<TenancyResponseDto?> GetCurrentTenancyAsync(int currentUserId);
     Task<List<TenancyResponseDto>> GetTenancyHistoryAsync(int currentUserId);
     Task<bool> EndTenancyAsync(int tenancyId, EndTenancyDto dto);

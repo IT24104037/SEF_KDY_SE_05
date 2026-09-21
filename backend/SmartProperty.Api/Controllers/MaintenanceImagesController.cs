@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,17 +9,22 @@ namespace SmartProperty.Api.Controllers;
 [Authorize(Roles = "Tenant")]
 public class MaintenanceImagesController : ControllerBase
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _configuration;
 
     public MaintenanceImagesController(
-        IWebHostEnvironment environment)
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration)
     {
-        _environment = environment;
+        _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
     }
 
     [HttpPost("upload")]
+    [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload(
-        [FromForm] IFormFile file)
+        IFormFile file,
+        CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
         {
@@ -39,8 +45,7 @@ public class MaintenanceImagesController : ControllerBase
         {
             return BadRequest(new
             {
-                message =
-                    "Only JPG, PNG and WEBP images are allowed."
+                message = "Only JPG, PNG and WEBP images are allowed."
             });
         }
 
@@ -54,44 +59,115 @@ public class MaintenanceImagesController : ControllerBase
             });
         }
 
-        var webRoot =
-            _environment.WebRootPath ??
-            Path.Combine(
-                _environment.ContentRootPath,
-                "wwwroot");
+        var supabaseUrl =
+            _configuration["Supabase:Url"];
 
-        var uploadFolder = Path.Combine(
-            webRoot,
-            "uploads",
-            "maintenance");
+        var secretKey =
+            _configuration["Supabase:SecretKey"];
 
-        Directory.CreateDirectory(uploadFolder);
+        var bucket =
+            _configuration["Supabase:MaintenanceBucket"];
 
-        var extension =
-            Path.GetExtension(file.FileName)
-                .ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(supabaseUrl))
+        {
+            return StatusCode(500, new
+            {
+                message = "Supabase URL is not configured."
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            return StatusCode(500, new
+            {
+                message = "Supabase secret key is not configured."
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(bucket))
+        {
+            return StatusCode(500, new
+            {
+                message = "Supabase maintenance bucket is not configured."
+            });
+        }
+
+        supabaseUrl = supabaseUrl.TrimEnd('/');
+
+        var extension = file.ContentType switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            "image/webp" => ".webp",
+            _ => ".jpg"
+        };
 
         var fileName =
-            $"{Guid.NewGuid()}{extension}";
+            $"{Guid.NewGuid():N}{extension}";
 
-        var filePath =
-            Path.Combine(uploadFolder, fileName);
+        var objectPath =
+            $"maintenance/{DateTime.UtcNow:yyyy/MM}/{fileName}";
 
-        await using (var stream =
-            new FileStream(
-                filePath,
-                FileMode.Create))
+        var uploadUrl =
+            $"{supabaseUrl}/storage/v1/object/{bucket}/{objectPath}";
+
+        var client =
+            _httpClientFactory.CreateClient();
+
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Post,
+                uploadUrl);
+
+        // sb_secret_ keys must be sent as API keys,
+        // not as Authorization Bearer JWTs.
+        request.Headers.TryAddWithoutValidation(
+            "apikey",
+            secretKey);
+
+        request.Headers.TryAddWithoutValidation(
+            "x-upsert",
+            "false");
+
+        await using var stream =
+            file.OpenReadStream();
+
+        using var content =
+            new StreamContent(stream);
+
+        content.Headers.ContentType =
+            new MediaTypeHeaderValue(
+                file.ContentType);
+
+        request.Content = content;
+
+        var response =
+            await client.SendAsync(
+                request,
+                cancellationToken);
+
+        var responseBody =
+            await response.Content.ReadAsStringAsync(
+                cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
         {
-            await file.CopyToAsync(stream);
+            return StatusCode(502, new
+            {
+                message =
+                    "Failed to upload image to Supabase Storage.",
+                details = responseBody
+            });
         }
 
         var imageUrl =
-            $"{Request.Scheme}://{Request.Host}" +
-            $"/uploads/maintenance/{fileName}";
+            $"{supabaseUrl}/storage/v1/object/public/" +
+            $"{bucket}/{objectPath}";
 
         return Ok(new
         {
-            imageUrl
+            imageUrl,
+            objectPath
         });
     }
 }

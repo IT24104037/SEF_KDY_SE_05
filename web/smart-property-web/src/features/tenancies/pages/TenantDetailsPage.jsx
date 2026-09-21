@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import TenantForm from "../components/TenantForm";
 import tenancyService from "../services/tenancyService";
 
 export default function TenantDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -68,6 +69,9 @@ export default function TenantDetailsPage() {
           <button onClick={() => setEditing(true)} style={buttonStyle}>
             Edit Tenant
           </button>
+          <button onClick={() => navigate(`/owner/tenants/${id}/tenancies`)} style={secondaryButtonStyle}>
+            Manage Tenancies
+          </button>
         </div>
       ) : (
         <TenantForm
@@ -99,4 +103,10 @@ const buttonStyle = {
   cursor: "pointer",
   fontSize: 14,
   marginTop: 8,
+};
+
+const secondaryButtonStyle = {
+  ...buttonStyle,
+  background: "#6B7280",
+  marginLeft: 8,
 };

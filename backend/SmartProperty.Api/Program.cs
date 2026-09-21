@@ -20,7 +20,7 @@ builder.Configuration.AddJsonFile(
     reloadOnChange: true);
 
 builder.Services.AddControllers();
-
+builder.Services.AddHttpClient();
 // --------------------
 // PostgreSQL
 // --------------------
