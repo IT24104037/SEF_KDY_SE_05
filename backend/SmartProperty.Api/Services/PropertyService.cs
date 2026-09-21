@@ -65,7 +65,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return new List<PropertyResponseDto>();
         }
@@ -99,7 +100,8 @@ public class PropertyService : IPropertyService
     var owner = await _context.PropertyOwners
         .FirstOrDefaultAsync(po => po.UserId == userId);
 
-    if (owner == null)
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
         return new List<PropertyResponseDto>();
     }
@@ -137,7 +139,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return null;
         }
@@ -334,7 +337,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return new List<UnitResponseDto>();
         }
@@ -375,7 +379,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return null;
         }
@@ -491,7 +496,8 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
     var owner = await _context.PropertyOwners
         .FirstOrDefaultAsync(po => po.UserId == userId);
 
-    if (owner == null)
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
         return new List<UnitResponseDto>();
     }
@@ -728,6 +734,11 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         .FirstOrDefaultAsync(po => po.UserId == userId);
 
     if (owner == null)
+    {
+        return null;
+    }
+
+    if (owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
         return null;
     }
