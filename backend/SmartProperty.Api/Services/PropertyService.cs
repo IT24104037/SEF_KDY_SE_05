@@ -28,6 +28,12 @@ public class PropertyService : IPropertyService
             return null;
         }
 
+        if (string.IsNullOrWhiteSpace(request.DocumentType) ||
+            string.IsNullOrWhiteSpace(request.DocumentUrl))
+        {
+            return null;
+        }
+
         var property = new Property
         {
             PropertyOwnerId = owner.Id,
@@ -36,10 +42,18 @@ public class PropertyService : IPropertyService
             City = request.City?.Trim(),
             Description = request.Description?.Trim(),
             Latitude = request.Latitude,
-            Longitude = request.Longitude
+            Longitude = request.Longitude,
+            VerificationStatus = PropertyVerificationStatus.UnderReview,
+            SubmittedAt = DateTime.UtcNow
         };
 
         _context.Properties.Add(property);
+        _context.PropertyVerificationDocuments.Add(new PropertyVerificationDocument
+        {
+            Property = property,
+            DocumentType = request.DocumentType.Trim(),
+            DocumentUrl = request.DocumentUrl.Trim()
+        });
         await _context.SaveChangesAsync();
 
         return MapProperty(property);
@@ -51,7 +65,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return new List<PropertyResponseDto>();
         }
@@ -71,7 +86,11 @@ public class PropertyService : IPropertyService
                 Longitude = p.Longitude,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
-                IsArchived = p.IsArchived
+                IsArchived = p.IsArchived,
+                VerificationStatus = p.VerificationStatus.ToString(),
+                RejectionReason = p.RejectionReason,
+                SubmittedAt = p.SubmittedAt,
+                VerifiedAt = p.VerifiedAt
             })
             .ToListAsync();
     }
@@ -81,7 +100,8 @@ public class PropertyService : IPropertyService
     var owner = await _context.PropertyOwners
         .FirstOrDefaultAsync(po => po.UserId == userId);
 
-    if (owner == null)
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
         return new List<PropertyResponseDto>();
     }
@@ -103,7 +123,11 @@ public class PropertyService : IPropertyService
             Longitude = p.Longitude,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt,
-            IsArchived = p.IsArchived
+            IsArchived = p.IsArchived,
+            VerificationStatus = p.VerificationStatus.ToString(),
+            RejectionReason = p.RejectionReason,
+            SubmittedAt = p.SubmittedAt,
+            VerifiedAt = p.VerifiedAt
         })
         .ToListAsync();
 }
@@ -115,7 +139,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return null;
         }
@@ -154,6 +179,11 @@ public class PropertyService : IPropertyService
             return null;
         }
 
+        if (property.VerificationStatus != PropertyVerificationStatus.Approved)
+        {
+            return null;
+        }
+
         property.Name = request.Name.Trim();
         property.Address = request.Address.Trim();
         property.City = request.City?.Trim();
@@ -184,6 +214,7 @@ public class PropertyService : IPropertyService
             .FirstOrDefaultAsync(p =>
                 p.Id == propertyId &&
                 p.PropertyOwnerId == owner.Id &&
+                p.VerificationStatus == PropertyVerificationStatus.Approved &&
                 !p.IsArchived);
 
         if (property == null)
@@ -216,6 +247,7 @@ public class PropertyService : IPropertyService
         .FirstOrDefaultAsync(p =>
             p.Id == propertyId &&
             p.PropertyOwnerId == owner.Id &&
+            p.VerificationStatus == PropertyVerificationStatus.Approved &&
             p.IsArchived);
 
     if (property == null)
@@ -252,6 +284,7 @@ public class PropertyService : IPropertyService
         .FirstOrDefaultAsync(p =>
             p.Id == propertyId &&
             p.PropertyOwnerId == owner.Id &&
+            p.VerificationStatus == PropertyVerificationStatus.Approved &&
             !p.IsArchived);
 
     if (property == null)
@@ -304,7 +337,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return new List<UnitResponseDto>();
         }
@@ -313,6 +347,7 @@ public class PropertyService : IPropertyService
             .AnyAsync(p =>
                 p.Id == propertyId &&
                 p.PropertyOwnerId == owner.Id &&
+                p.VerificationStatus == PropertyVerificationStatus.Approved &&
                 !p.IsArchived);
 
         if (!propertyExists)
@@ -344,7 +379,8 @@ public class PropertyService : IPropertyService
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
-        if (owner == null)
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
             return null;
         }
@@ -382,6 +418,7 @@ public class PropertyService : IPropertyService
             u.Id == unitId &&
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
+            u.Property.VerificationStatus == PropertyVerificationStatus.Approved &&
             !u.IsArchived &&
             !u.IsDeleted &&
             !u.Property.IsArchived);
@@ -435,6 +472,7 @@ public async Task<bool> ArchiveUnitAsync(
             u.Id == unitId &&
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
+            u.Property.VerificationStatus == PropertyVerificationStatus.Approved &&
             !u.IsArchived &&
             !u.IsDeleted &&
             !u.Property.IsArchived);
@@ -458,7 +496,8 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
     var owner = await _context.PropertyOwners
         .FirstOrDefaultAsync(po => po.UserId == userId);
 
-    if (owner == null)
+    if (owner == null ||
+        owner.VerificationStatus != OwnerVerificationStatus.Verified)
     {
         return new List<UnitResponseDto>();
     }
@@ -467,6 +506,7 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
         .AnyAsync(p =>
             p.Id == propertyId &&
             p.PropertyOwnerId == owner.Id &&
+            p.VerificationStatus == PropertyVerificationStatus.Approved &&
             !p.IsArchived);
 
     if (!propertyExists)
@@ -517,6 +557,7 @@ public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
             u.Id == unitId &&
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
+            u.Property.VerificationStatus == PropertyVerificationStatus.Approved &&
             u.IsArchived &&
             !u.IsDeleted &&
             !u.Property.IsArchived);
@@ -580,6 +621,7 @@ public async Task<bool> SoftDeleteUnitAsync(
             u.Id == unitId &&
             u.PropertyId == propertyId &&
             u.Property!.PropertyOwnerId == owner.Id &&
+            u.Property.VerificationStatus == PropertyVerificationStatus.Approved &&
             u.IsArchived &&
             !u.IsDeleted &&
             !u.Property.IsArchived);
@@ -620,6 +662,7 @@ public async Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
         .FirstOrDefaultAsync(p =>
             p.Id == propertyId &&
             p.PropertyOwnerId == owner.Id &&
+            p.VerificationStatus == PropertyVerificationStatus.Approved &&
             !p.IsArchived);
 
     if (property == null)
@@ -695,12 +738,18 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         return null;
     }
 
+    if (owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    {
+        return null;
+    }
+
     var totalProperties = await _context.Properties
         .CountAsync(p => p.PropertyOwnerId == owner.Id);
 
     var activeProperties = await _context.Properties
         .CountAsync(p =>
             p.PropertyOwnerId == owner.Id &&
+            p.VerificationStatus == PropertyVerificationStatus.Approved &&
             !p.IsArchived);
 
     var archivedProperties = await _context.Properties
@@ -709,7 +758,9 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             p.IsArchived);
 
     var propertyIds = await _context.Properties
-        .Where(p => p.PropertyOwnerId == owner.Id)
+        .Where(p => p.PropertyOwnerId == owner.Id &&
+            p.VerificationStatus == PropertyVerificationStatus.Approved &&
+            !p.IsArchived)
         .Select(p => p.Id)
         .ToListAsync();
 
@@ -777,7 +828,11 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             Longitude = property.Longitude,
             CreatedAt = property.CreatedAt,
             UpdatedAt = property.UpdatedAt,
-            IsArchived = property.IsArchived
+            IsArchived = property.IsArchived,
+            VerificationStatus = property.VerificationStatus.ToString(),
+            RejectionReason = property.RejectionReason,
+            SubmittedAt = property.SubmittedAt,
+            VerifiedAt = property.VerifiedAt
         };
     }
 

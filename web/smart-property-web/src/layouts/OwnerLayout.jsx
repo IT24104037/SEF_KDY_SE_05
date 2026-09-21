@@ -2,7 +2,11 @@ import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-const navItems = [{ to: "/owner/tenants", label: "Tenants" }];
+const navItems = [
+  { to: "/owner/dashboard", label: "Dashboard" },
+  { to: "/owner/properties", label: "Properties" },
+  { to: "/owner/tenants", label: "Tenants" },
+];
 
 export default function OwnerLayout() {
   const { user, logout } = useAuth();

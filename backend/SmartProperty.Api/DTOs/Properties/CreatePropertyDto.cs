@@ -18,4 +18,10 @@ public class CreatePropertyDto
     public decimal? Latitude { get; set; }
 
     public decimal? Longitude { get; set; }
+
+    [Required]
+    public string DocumentType { get; set; } = string.Empty;
+
+    [Required]
+    public string DocumentUrl { get; set; } = string.Empty;
 }

@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<PropertyOwner> PropertyOwners => Set<PropertyOwner>();
     public DbSet<OwnerVerificationDocument> OwnerVerificationDocuments => Set<OwnerVerificationDocument>();
+    public DbSet<PropertyVerificationDocument> PropertyVerificationDocuments => Set<PropertyVerificationDocument>();
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<Unit> Units => Set<Unit>();
 
@@ -97,6 +98,18 @@ public class AppDbContext : DbContext
             .WithMany(po => po.Properties)
             .HasForeignKey(p => p.PropertyOwnerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Property>()
+            .HasOne(p => p.VerifiedByAdmin)
+            .WithMany()
+            .HasForeignKey(p => p.VerifiedByAdminId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PropertyVerificationDocument>()
+            .HasOne(d => d.Property)
+            .WithMany(p => p.VerificationDocuments)
+            .HasForeignKey(d => d.PropertyId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Unit>()
             .HasOne(u => u.Property)

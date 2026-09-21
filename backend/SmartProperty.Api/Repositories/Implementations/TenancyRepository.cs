@@ -21,7 +21,10 @@ public class TenancyRepository : ITenancyRepository
 
     public async Task<Tenant?> GetTenantByIdAsync(int id, int ownerUserId) =>
         await _context.Tenants.Include(t => t.Property).Include(t => t.Unit)
-            .FirstOrDefaultAsync(t => t.Id == id && t.Property.PropertyOwner!.UserId == ownerUserId);
+            .FirstOrDefaultAsync(t => t.Id == id &&
+                t.Property.PropertyOwner!.UserId == ownerUserId &&
+                t.Property.VerificationStatus == SmartProperty.Api.Entities.Property.PropertyVerificationStatus.Approved &&
+                !t.Property.IsArchived && !t.Unit.IsArchived && !t.Unit.IsDeleted);
 
     public async Task<Tenant?> GetTenantByIdAsync(int id) =>
         await _context.Tenants.Include(t => t.Property).Include(t => t.Unit)
@@ -39,6 +42,7 @@ public class TenancyRepository : ITenancyRepository
             .FirstOrDefaultAsync(u => u.Id == unitId && u.PropertyId == propertyId &&
                 !u.IsArchived && !u.IsDeleted &&
                 !u.Property!.IsArchived &&
+                u.Property.VerificationStatus == SmartProperty.Api.Entities.Property.PropertyVerificationStatus.Approved &&
                 u.Property.PropertyOwner!.UserId == ownerUserId);
 
     public async Task<(List<Tenant> Items, int TotalCount)> GetTenantsAsync(
@@ -46,7 +50,9 @@ public class TenancyRepository : ITenancyRepository
         string sortBy, bool descending, int page, int pageSize)
     {
         var query = _context.Tenants.Include(t => t.Property).Include(t => t.Unit)
-            .Where(t => t.Property.PropertyOwner!.UserId == ownerUserId);
+            .Where(t => t.Property.PropertyOwner!.UserId == ownerUserId &&
+                t.Property.VerificationStatus == SmartProperty.Api.Entities.Property.PropertyVerificationStatus.Approved &&
+                !t.Property.IsArchived && !t.Unit.IsArchived && !t.Unit.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
         {

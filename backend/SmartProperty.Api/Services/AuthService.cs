@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Auth;
 using SmartProperty.Api.Entities.Identity;
+using SmartProperty.Api.Entities.Property;
 using SmartProperty.Api.Interfaces;
 
 namespace SmartProperty.Api.Services;
@@ -158,7 +159,9 @@ public class AuthService : IAuthService
         City = request.City?.Trim(),
         Description = request.PropertyDescription?.Trim(),
         Latitude = request.Latitude,
-        Longitude = request.Longitude
+        Longitude = request.Longitude,
+        VerificationStatus = PropertyVerificationStatus.UnderReview,
+        SubmittedAt = DateTime.UtcNow
     };
 
     // Save the ownership/management proof.
@@ -170,10 +173,19 @@ public class AuthService : IAuthService
             DocumentUrl = request.DocumentUrl.Trim()
         };
 
+    var propertyDocument =
+        new SmartProperty.Api.Entities.Property.PropertyVerificationDocument
+        {
+            Property = property,
+            DocumentType = request.DocumentType.Trim(),
+            DocumentUrl = request.DocumentUrl.Trim()
+        };
+
     _context.Users.Add(user);
     _context.PropertyOwners.Add(propertyOwner);
     _context.Properties.Add(property);
     _context.OwnerVerificationDocuments.Add(document);
+    _context.PropertyVerificationDocuments.Add(propertyDocument);
 
     await _context.SaveChangesAsync();
 

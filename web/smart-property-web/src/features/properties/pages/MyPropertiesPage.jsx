@@ -372,36 +372,47 @@ function MyPropertiesPage() {
                 )}
 
                 <p>
-                  <strong>Status:</strong> Active
+                  <strong>Status:</strong> {formatVerificationStatus(property.verificationStatus)}
                 </p>
+                {property.verificationStatus === "Rejected" && (
+                  <p>
+                    <strong>Rejection reason:</strong> {property.rejectionReason}
+                  </p>
+                )}
 
                 <div style={{ marginTop: "15px" }}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/owner/properties/${property.id}/units`
-                      )
-                    }
-                  >
-                    Manage Units
-                  </button>
+                  {property.verificationStatus === "Approved" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/owner/properties/${property.id}/units`
+                        )
+                      }
+                    >
+                      Manage Units
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => startEdit(property)}
-                    style={{ marginLeft: "10px" }}
-                  >
-                    Edit
-                  </button>
+                  {property.verificationStatus === "Approved" && (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(property)}
+                      style={{ marginLeft: "10px" }}
+                    >
+                      Edit
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => handleArchive(property.id)}
-                    style={{ marginLeft: "10px" }}
-                  >
-                    Archive
-                  </button>
+                  {property.verificationStatus === "Approved" && (
+                    <button
+                      type="button"
+                      onClick={() => handleArchive(property.id)}
+                      style={{ marginLeft: "10px" }}
+                    >
+                      Archive
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -474,3 +485,7 @@ function MyPropertiesPage() {
 }
 
 export default MyPropertiesPage;
+
+function formatVerificationStatus(status) {
+  return status === "UnderReview" ? "Under Review" : status;
+}

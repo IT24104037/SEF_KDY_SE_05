@@ -1,3 +1,5 @@
+using SmartProperty.Api.Entities.Identity;
+
 namespace SmartProperty.Api.Entities.Property;
 
 public class Property
@@ -7,6 +9,19 @@ public class Property
     public int PropertyOwnerId { get; set; }
 
     public PropertyOwner? PropertyOwner { get; set; }
+
+    public PropertyVerificationStatus VerificationStatus { get; set; }
+        = PropertyVerificationStatus.UnderReview;
+
+    public string? RejectionReason { get; set; }
+
+    public DateTime? SubmittedAt { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
+    public int? VerifiedByAdminId { get; set; }
+
+    public User? VerifiedByAdmin { get; set; }
 
     public string Name { get; set; } = string.Empty;
 
@@ -27,4 +42,14 @@ public class Property
     public bool IsArchived { get; set; }
 
     public ICollection<Unit> Units { get; set; } = new List<Unit>();
+
+    public ICollection<PropertyVerificationDocument> VerificationDocuments { get; set; }
+        = new List<PropertyVerificationDocument>();
+}
+
+public enum PropertyVerificationStatus
+{
+    UnderReview,
+    Approved,
+    Rejected
 }

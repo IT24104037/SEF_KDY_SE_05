@@ -113,6 +113,7 @@ public class TenancyService : ITenancyService
     {
         var tenant = await _repository.GetTenantByIdAsync(dto.TenantId, ownerUserId);
         if (tenant == null || tenant.UnitId != dto.UnitId || tenant.Property.IsArchived ||
+            tenant.Property.VerificationStatus != Entities.Property.PropertyVerificationStatus.Approved ||
             tenant.Unit.IsArchived || tenant.Unit.IsDeleted || tenant.Unit.PropertyId != tenant.PropertyId)
         {
             throw new InvalidOperationException("The selected property or unit is not available for tenancy.");

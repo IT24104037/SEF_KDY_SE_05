@@ -14,19 +14,23 @@ async function request(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.message || "Verification request failed.");
+    throw new Error(data.message || "Property verification request failed.");
   }
 
   return data;
 }
 
-export function getPendingOwners() {
-  return request("/api/admin/owners/pending");
+export function getPendingProperties() {
+  return request("/api/admin/properties/pending");
 }
 
-export function updateOwnerVerification(ownerId, status, rejectionReason) {
-  return request(`/api/admin/owners/${ownerId}/verification`, {
+export function approveProperty(propertyId) {
+  return request(`/api/admin/properties/${propertyId}/approve`, { method: "PUT" });
+}
+
+export function rejectProperty(propertyId, rejectionReason) {
+  return request(`/api/admin/properties/${propertyId}/reject`, {
     method: "PUT",
-    body: JSON.stringify({ status, rejectionReason }),
+    body: JSON.stringify({ rejectionReason }),
   });
 }
