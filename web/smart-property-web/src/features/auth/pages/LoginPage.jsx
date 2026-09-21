@@ -92,6 +92,14 @@ function LoginPage() {
         >
           Register as Property Owner
         </button>
+
+        <button
+          type="button"
+          style={styles.activateButton}
+          onClick={() => navigate("/activate-tenant")}
+        >
+          Activate My Account
+        </button>
       </form>
     </div>
   );
@@ -148,6 +156,14 @@ const styles = {
     borderRadius: "6px",
     backgroundColor: "#FFFFFF",
     color: "#1F8A8A",
+    cursor: "pointer",
+  },
+
+  activateButton: {
+    padding: "10px",
+    border: "none",
+    backgroundColor: "transparent",
+    color: "#17324D",
     cursor: "pointer",
   },
 
