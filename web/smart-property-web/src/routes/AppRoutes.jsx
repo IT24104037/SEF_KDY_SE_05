@@ -13,6 +13,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import AdminHome from "../features/admin/pages/AdminHome";
 import UserManagementPage from "../features/admin/pages/UserManagementPage";
 import AdminOwnerVerificationPage from "../features/admin/pages/OwnerVerificationPage";
+import PropertyVerificationPage from "../features/admin/pages/PropertyVerificationPage";
 import AiWorkflowPage from "../features/admin/pages/AiWorkflowPage";
 import ReportsPage from "../features/admin/pages/ReportsPage";
 import SystemActivityPage from "../features/admin/pages/SystemActivityPage";
@@ -65,17 +66,19 @@ export default function AppRoutes() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={["PropertyOwner"]} />}>
-            <Route element={<OwnerLayout />}>
-              <Route path="/owner/tenants" element={<TenantListPage />} />
-              <Route path="/owner/tenants/add" element={<AddTenantPage />} />
-              <Route path="/owner/tenants/:id" element={<TenantDetailsPage />} />
-              <Route path="/owner/tenants/:tenantId/tenancies" element={<CurrentTenanciesPage />} />
-              <Route path="/owner/tenants/:tenantId/tenancy-history" element={<TenancyHistoryPage />} />
+            <Route element={<OwnerVerificationRoute />}>
+              <Route element={<OwnerLayout />}>
+                <Route path="/owner/tenants" element={<TenantListPage />} />
+                <Route path="/owner/tenants/add" element={<AddTenantPage />} />
+                <Route path="/owner/tenants/:id" element={<TenantDetailsPage />} />
+                <Route path="/owner/tenants/:tenantId/tenancies" element={<CurrentTenanciesPage />} />
+                <Route path="/owner/tenants/:tenantId/tenancy-history" element={<TenancyHistoryPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>
 
-        <Route path="/owner" element={<Navigate to="/owner/tenants" replace />} />
+        <Route path="/owner" element={<Navigate to="/owner/dashboard" replace />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={["PropertyOwner"]} />}>
@@ -119,6 +122,7 @@ export default function AppRoutes() {
 
               <Route path="users" element={<UserManagementPage />} />
               <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
+              <Route path="property-verification" element={<PropertyVerificationPage />} />
               <Route path="maintenance" element={<AdminMaintenanceRequestsPage />} />
               <Route path="emergencies" element={<EmergencyRequestsPage />} />
               <Route path="categories" element={<MaintenanceCategoriesPage />} />
