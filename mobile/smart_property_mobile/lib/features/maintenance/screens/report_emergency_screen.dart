@@ -6,21 +6,21 @@ import 'package:image_picker/image_picker.dart';
 import '../services/image_picker_service.dart';
 import '../services/maintenance_service.dart';
 
-class ReportMaintenanceScreen extends StatefulWidget {
+class ReportEmergencyScreen extends StatefulWidget {
   final String token;
 
-  const ReportMaintenanceScreen({
+  const ReportEmergencyScreen({
     super.key,
     required this.token,
   });
 
   @override
-  State<ReportMaintenanceScreen> createState() =>
-      _ReportMaintenanceScreenState();
+  State<ReportEmergencyScreen> createState() =>
+      _ReportEmergencyScreenState();
 }
 
-class _ReportMaintenanceScreenState
-    extends State<ReportMaintenanceScreen> {
+class _ReportEmergencyScreenState
+    extends State<ReportEmergencyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
 
@@ -30,11 +30,21 @@ class _ReportMaintenanceScreenState
   final ImagePickerService _imagePickerService =
       ImagePickerService();
 
+  String? _emergencyType;
   XFile? _selectedImage;
 
   bool _submitting = false;
   String? _errorMessage;
   String? _successMessage;
+
+  final List<String> _emergencyTypes = [
+    'Major Water Leak',
+    'Electrical Hazard',
+    'Fire or Smoke',
+    'Gas Leak',
+    'Security Issue',
+    'Other',
+  ];
 
   @override
   void dispose() {
@@ -71,15 +81,6 @@ class _ReportMaintenanceScreenState
       return;
     }
 
-    if (_selectedImage == null) {
-      setState(() {
-        _errorMessage =
-            'A photo is required for a normal maintenance request.';
-      });
-
-      return;
-    }
-
     try {
       setState(() {
         _submitting = true;
@@ -87,20 +88,24 @@ class _ReportMaintenanceScreenState
         _successMessage = null;
       });
 
-      // Step 1: Upload image.
-      final imageUrl =
-          await _maintenanceService.uploadImage(
-        file: _selectedImage!,
-        token: widget.token,
-      );
+      String? imageUrl;
 
-      // Step 2: Create maintenance request.
+      // Photo is optional for emergency.
+      if (_selectedImage != null) {
+        imageUrl =
+            await _maintenanceService.uploadImage(
+          file: _selectedImage!,
+          token: widget.token,
+        );
+      }
+
       final result =
           await _maintenanceService.createMaintenanceRequest(
         token: widget.token,
         description:
             _descriptionController.text.trim(),
-        requestType: 'NORMAL',
+        requestType: 'EMERGENCY',
+        emergencyType: _emergencyType,
         imageUrl: imageUrl,
       );
 
@@ -108,9 +113,10 @@ class _ReportMaintenanceScreenState
 
       setState(() {
         _successMessage =
-            'Maintenance request #${result['id']} submitted successfully.';
+            'Emergency request #${result['id']} submitted successfully.';
 
         _descriptionController.clear();
+        _emergencyType = null;
         _selectedImage = null;
       });
     } catch (error) {
@@ -136,7 +142,7 @@ class _ReportMaintenanceScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Report Maintenance'),
+        title: const Text('Report Emergency'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -148,7 +154,7 @@ class _ReportMaintenanceScreenState
                   CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Report a Maintenance Problem',
+                  'Emergency Maintenance',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -157,11 +163,56 @@ class _ReportMaintenanceScreenState
 
                 const SizedBox(height: 8),
 
-                const Text(
-                  'Your property and unit will be identified automatically from your active tenancy.',
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius:
+                        BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Emergency requests are treated as Critical priority.',
+                  ),
                 ),
 
                 const SizedBox(height: 24),
+
+                DropdownButtonFormField<String>(
+                  initialValue: _emergencyType,
+                  decoration: const InputDecoration(
+                    labelText: 'Emergency Type',
+                    border:
+                        OutlineInputBorder(),
+                  ),
+                  items: _emergencyTypes
+                      .map(
+                        (type) =>
+                            DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: _submitting
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _emergencyType =
+                                value;
+                          });
+                        },
+                  validator: (value) {
+                    if (value == null ||
+                        value.isEmpty) {
+                      return 'Please select an emergency type.';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
 
                 TextFormField(
                   controller:
@@ -170,17 +221,16 @@ class _ReportMaintenanceScreenState
                   maxLines: 5,
                   decoration:
                       const InputDecoration(
-                    labelText:
-                        'Problem Description',
+                    labelText: 'Description',
                     hintText:
-                        'Example: Water is leaking under the kitchen sink.',
+                        'Describe the emergency and where it is happening.',
                     border:
                         OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null ||
                         value.trim().isEmpty) {
-                      return 'Please describe the maintenance problem.';
+                      return 'Please describe the emergency.';
                     }
 
                     return null;
@@ -190,7 +240,7 @@ class _ReportMaintenanceScreenState
                 const SizedBox(height: 20),
 
                 const Text(
-                  'Photo *',
+                  'Photo (Optional)',
                   style: TextStyle(
                     fontWeight:
                         FontWeight.bold,
@@ -253,7 +303,7 @@ class _ReportMaintenanceScreenState
                 else
                   Container(
                     width: double.infinity,
-                    height: 160,
+                    height: 120,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       border: Border.all(
@@ -272,27 +322,10 @@ class _ReportMaintenanceScreenState
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 20),
 
-                  Container(
-                    width: double.infinity,
-                    padding:
-                        const EdgeInsets.all(
-                      12,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          Colors.red.shade50,
-                      borderRadius:
-                          BorderRadius.circular(
-                        8,
-                      ),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color:
-                            Colors.red.shade700,
-                      ),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.red,
                     ),
                   ),
                 ],
@@ -300,27 +333,10 @@ class _ReportMaintenanceScreenState
                 if (_successMessage != null) ...[
                   const SizedBox(height: 20),
 
-                  Container(
-                    width: double.infinity,
-                    padding:
-                        const EdgeInsets.all(
-                      12,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          Colors.green.shade50,
-                      borderRadius:
-                          BorderRadius.circular(
-                        8,
-                      ),
-                    ),
-                    child: Text(
-                      _successMessage!,
-                      style: TextStyle(
-                        color:
-                            Colors.green.shade700,
-                      ),
+                  Text(
+                    _successMessage!,
+                    style: const TextStyle(
+                      color: Colors.green,
                     ),
                   ),
                 ],
@@ -342,7 +358,7 @@ class _ReportMaintenanceScreenState
                       child: Text(
                         _submitting
                             ? 'Submitting...'
-                            : 'Submit Maintenance Request',
+                            : 'Submit Emergency Request',
                       ),
                     ),
                   ),

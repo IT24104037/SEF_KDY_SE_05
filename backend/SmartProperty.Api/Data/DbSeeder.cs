@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.Entities.Identity;
+using SmartProperty.Api.Entities.Property;
 
 namespace SmartProperty.Api.Data;
 
@@ -89,5 +90,17 @@ public static class DbSeeder
         owner.PasswordHash = passwordHasher.HashPassword(owner, password);
         context.Users.Add(owner);
         await context.SaveChangesAsync();
+
+        var poExists = await context.PropertyOwners.AnyAsync(po => po.UserId == owner.Id);
+        if (!poExists)
+        {
+            context.PropertyOwners.Add(new PropertyOwner
+            {
+                UserId = owner.Id,
+                VerificationStatus = OwnerVerificationStatus.Verified,
+                VerifiedAt = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        }
     }
 }
