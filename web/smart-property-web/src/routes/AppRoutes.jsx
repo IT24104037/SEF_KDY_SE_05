@@ -25,6 +25,7 @@ import WorkerDashboardPage from "../features/workers/pages/WorkerDashboardPage";
 import WorkOrdersPage from "../features/workers/pages/WorkOrdersPage";
 import WorkOrderDetailsPage from "../features/workers/pages/WorkOrderDetailsPage";
 import ExternalMaintenancePage from "../features/workers/pages/ExternalMaintenancePage";
+import WorkersPage from "../features/workers/pages/WorkersPage";
 
 import OwnerDashboardPage from "../features/properties/pages/OwnerDashboardPage";
 import OwnerVerificationPage from "../features/properties/pages/OwnerVerificationPage";
@@ -58,8 +59,9 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register-owner" element={<OwnerRegisterPage />} />
       <Route path="/activate-tenant" element={<TenantActivationPage />} />
-        <Route path="/" element={<Navigate to="/owner/tenants" replace />} />
-
+      <Route path="/" element={<Navigate to="/owner/tenants" replace />} />
+      <Route  path="/register-worker" element={<WorkerRegistrationPage />}/>
+  
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={["PropertyOwner"]} />}>
             <Route element={<OwnerLayout />}>
@@ -95,25 +97,23 @@ export default function AppRoutes() {
               <Route path="/tenant/tenancy-history" element={<TenantTenancyHistoryPage />} />
               <Route path="/tenant/profile" element={<ProfilePage />} />
               <Route path="/tenant/notifications" element={<NotificationsPage />} />
+               <Route path="/tenant/maintenance/report" element={<ReportMaintenancePage />} />
+            <Route path="/tenant/maintenance/emergency" element={<ReportEmergencyPage />} />
+            <Route path="/tenant/maintenance/requests" element={<MyMaintenanceRequestsPage />} />
+            <Route path="/tenant/maintenance/requests/:id" element={<TenantMaintenanceDetailsPage />} />
             </Route>
           </Route>
         </Route>
 
         <Route path="/tenant" element={<Navigate to="/tenant/home" replace />} />
-
-        <Route element={<ProtectedRoute />}>
-          <Route element={<RoleRoute allowedRoles={["Tenant"]} />}>
-            <Route path="/tenant/maintenance/report" element={<ReportMaintenancePage />} />
-            <Route path="/tenant/maintenance/emergency" element={<ReportEmergencyPage />} />
-            <Route path="/tenant/maintenance/requests" element={<MyMaintenanceRequestsPage />} />
-            <Route path="/tenant/maintenance/requests/:id" element={<TenantMaintenanceDetailsPage />} />
-          </Route>
-        </Route>
-
+        
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={["Admin"]} />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminHome />} />
+              <Route path="workers" element={<WorkersPage />} />
+              <Route path="maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
+
               <Route path="users" element={<UserManagementPage />} />
               <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
               <Route path="maintenance" element={<AdminMaintenanceRequestsPage />} />
