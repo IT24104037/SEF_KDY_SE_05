@@ -1,19 +1,9 @@
-import { Navigate } from "react-router-dom";
-import { getRole, getToken } from "../utils/auth";
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
-function ProtectedRoute({ children, allowedRoles }) {
-  const token = getToken();
-  const role = getRole();
-
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return children;
+// Wrap any route group that needs a logged-in user, regardless of role.
+export default function ProtectedRoute() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 }
-
-export default ProtectedRoute;

@@ -136,8 +136,20 @@ public class TenancyService : ITenancyService
         return ToTenancyResponseDto((await _repository.GetTenancyByIdAsync(created.Id))!);
     }
 
-    public async Task<TenancyResponseDto?> GetCurrentTenancyAsync(int currentUserId) =>
-        ToTenancyResponseDto(await _repository.GetActiveTenancyByUserIdAsync(currentUserId));
+    public async Task<List<TenancyResponseDto>?> GetTenanciesForTenantAsync(int tenantId, int ownerUserId)
+    {
+        var tenant = await _repository.GetTenantByIdAsync(tenantId, ownerUserId);
+        if (tenant == null) return null;
+
+        var tenancies = await _repository.GetTenanciesByTenantIdAsync(tenantId);
+        return tenancies.Select(ToTenancyResponseDto).ToList();
+    }
+
+    public async Task<TenancyResponseDto?> GetCurrentTenancyAsync(int currentUserId)
+    {
+        var tenancy = await _repository.GetActiveTenancyByUserIdAsync(currentUserId);
+        return tenancy == null ? null : ToTenancyResponseDto(tenancy);
+    }
 
     public async Task<List<TenancyResponseDto>> GetTenancyHistoryAsync(int currentUserId) =>
         (await _repository.GetTenancyHistoryByUserIdAsync(currentUserId)).Select(ToTenancyResponseDto).ToList();
