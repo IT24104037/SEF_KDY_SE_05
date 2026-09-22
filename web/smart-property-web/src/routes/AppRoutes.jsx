@@ -34,6 +34,7 @@ import OwnerVerificationPage from "../features/properties/pages/OwnerVerificatio
 import MyPropertiesPage from "../features/properties/pages/MyPropertiesPage";
 import AddPropertyPage from "../features/properties/pages/AddPropertyPage";
 import UnitsPage from "../features/properties/pages/UnitsPage";
+import OwnerProfilePage from "../features/properties/pages/OwnerProfilePage";
 
 import ApprovalPage from "../features/ai-workflow/pages/ApprovalPage";
 import ReportMaintenancePage from "../features/maintenance/pages/ReportMaintenancePage";
@@ -64,34 +65,28 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to="/owner/tenants" replace />} />
       <Route  path="/register-worker" element={<WorkerRegistrationPage />}/>
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<RoleRoute allowedRoles={["PropertyOwner"]} />}>
-            <Route element={<OwnerVerificationRoute />}>
-              <Route element={<OwnerLayout />}>
-                <Route path="/owner/tenants" element={<TenantListPage />} />
-                <Route path="/owner/tenants/add" element={<AddTenantPage />} />
-                <Route path="/owner/tenants/:id" element={<TenantDetailsPage />} />
-                <Route path="/owner/tenants/:tenantId/tenancies" element={<CurrentTenanciesPage />} />
-                <Route path="/owner/tenants/:tenantId/tenancy-history" element={<TenancyHistoryPage />} />
-              </Route>
-            </Route>
-          </Route>
-        </Route>
-
         <Route path="/owner" element={<Navigate to="/owner/dashboard" replace />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<RoleRoute allowedRoles={["PropertyOwner"]} />}>
             <Route path="/owner/verification" element={<OwnerVerificationPage />} />
             <Route element={<OwnerVerificationRoute />}>
-              <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
-              <Route path="/owner/properties" element={<MyPropertiesPage />} />
-              <Route path="/owner/properties/add" element={<AddPropertyPage />} />
-              <Route path="/owner/properties/:propertyId/units" element={<UnitsPage />} />
-              <Route path="/owner/approval" element={<ApprovalPage />} />
-              <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
-              <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
-              <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
+              <Route element={<OwnerLayout />}>
+                <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
+                <Route path="/owner/properties" element={<MyPropertiesPage />} />
+                <Route path="/owner/properties/add" element={<AddPropertyPage />} />
+                <Route path="/owner/properties/:propertyId/units" element={<UnitsPage />} />
+                <Route path="/owner/tenants" element={<TenantListPage />} />
+                <Route path="/owner/tenants/add" element={<AddTenantPage />} />
+                <Route path="/owner/tenants/:id" element={<TenantDetailsPage />} />
+                <Route path="/owner/tenants/:tenantId/tenancies" element={<CurrentTenanciesPage />} />
+                <Route path="/owner/tenants/:tenantId/tenancy-history" element={<TenancyHistoryPage />} />
+                <Route path="/owner/profile" element={<OwnerProfilePage />} />
+                <Route path="/owner/approval" element={<ApprovalPage />} />
+                <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
+                <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
+                <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>

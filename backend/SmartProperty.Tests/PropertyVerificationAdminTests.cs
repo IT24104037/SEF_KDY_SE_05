@@ -90,6 +90,23 @@ public class PropertyVerificationAdminTests
         Assert.Equal("Ownership document is not clear.", owner.RejectionReason);
     }
 
+    [Fact]
+    public async Task GetPendingProperties_ReturnsOwnerEmail()
+    {
+        await using var context = CreateContext(PropertyVerificationStatus.UnderReview);
+        var controller = CreateController(context);
+
+        var result = await controller.GetPendingProperties();
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var properties = Assert.IsAssignableFrom<System.Collections.IEnumerable>(okResult.Value);
+        var firstProperty = properties.Cast<object>().First();
+        var emailProp = firstProperty.GetType().GetProperty("ownerEmail");
+        Assert.NotNull(emailProp);
+        var emailValue = emailProp.GetValue(firstProperty)?.ToString();
+        Assert.Equal("mohamed@example.com", emailValue);
+    }
+
     private static AdminController CreateController(AppDbContext context)
     {
         var controller = new AdminController(context)
@@ -114,12 +131,31 @@ public class PropertyVerificationAdminTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var context = new AppDbContext(options);
+
+        var user = new SmartProperty.Api.Entities.Identity.User
+        {
+            Id = 10,
+            FullName = "mohamed",
+            Email = "mohamed@example.com",
+            RoleId = 2
+        };
+        var owner = new PropertyOwner
+        {
+            Id = 1,
+            UserId = 10,
+            User = user,
+            VerificationStatus = OwnerVerificationStatus.Verified
+        };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+
         context.Properties.Add(new Property
         {
             Id = 1,
             PropertyOwnerId = 1,
+            PropertyOwner = owner,
             Name = "Review Property",
-            Address = "1 Main Street",
+            Address = "no.6",
             VerificationStatus = status,
             SubmittedAt = DateTime.UtcNow
         });

@@ -115,6 +115,25 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
+    // PUT /api/properties/{id}/resubmit
+    [HttpPut("{id:int}/resubmit")]
+    public async Task<IActionResult> ResubmitProperty(
+        int id,
+        [FromBody] ResubmitPropertyDto request)
+    {
+        var result = await _propertyService.ResubmitRejectedPropertyAsync(
+            GetUserId(),
+            id,
+            request);
+
+        if (result == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }
+
     // DELETE /api/properties/{id}
     // Uses archive instead of permanently deleting the property.
     [HttpDelete("{id:int}")]
