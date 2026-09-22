@@ -1,8 +1,8 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SmartProperty.Api.DTOs.Properties;
 
-public class UpdatePropertyDto
+public class ResubmitPropertyDto
 {
     [Required]
     [StringLength(150)]
@@ -19,9 +19,18 @@ public class UpdatePropertyDto
 
     public decimal? Longitude { get; set; }
 
-    [StringLength(100)]
-    public string? DocumentType { get; set; }
+    public List<int> RemovedDocumentIds { get; set; } = new();
 
+    public List<NewVerificationDocumentDto> NewDocuments { get; set; } = new();
+}
+
+public class NewVerificationDocumentDto
+{
+    [Required]
+    [StringLength(100)]
+    public string DocumentType { get; set; } = string.Empty;
+
+    [Required]
     [StringLength(1000)]
-    public string? DocumentUrl { get; set; }
+    public string DocumentUrl { get; set; } = string.Empty;
 }

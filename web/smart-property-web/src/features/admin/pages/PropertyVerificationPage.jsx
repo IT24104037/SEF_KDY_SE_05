@@ -62,11 +62,19 @@ export default function PropertyVerificationPage() {
           <p>Address: {property.address}</p>
           <p>Status: {property.status}</p>
           {property.documents.map((document) => (
-            <p key={document.id}>
-              Proof: <a href={document.documentUrl} target="_blank" rel="noreferrer">
-                {document.documentType}
-              </a>
-            </p>
+            <div key={document.id}>
+              <p>Verification Document Type: {document.documentType}</p>
+              <p>
+                Verification Document:{" "}
+                <a
+                  href={document.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {document.documentUrl}
+                </a>
+              </p>
+            </div>
           ))}
           <button onClick={() => handleApprove(property.propertyId)}>Approve</button>
           <button onClick={() => handleReject(property.propertyId)} style={{ marginLeft: 8 }}>

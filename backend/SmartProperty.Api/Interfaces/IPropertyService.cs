@@ -23,6 +23,11 @@ public interface IPropertyService
         int propertyId,
         UpdatePropertyDto request);
 
+    Task<PropertyResponseDto?> ResubmitRejectedPropertyAsync(
+        int userId,
+        int propertyId,
+        ResubmitPropertyDto request);
+
     Task<bool> ArchivePropertyAsync(
         int userId,
         int propertyId);

@@ -71,28 +71,13 @@ public class PropertyService : IPropertyService
             return new List<PropertyResponseDto>();
         }
 
-        return await _context.Properties
+        var properties = await _context.Properties
+            .Include(p => p.VerificationDocuments)
             .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived)
             .OrderBy(p => p.Name)
-            .Select(p => new PropertyResponseDto
-            {
-                Id = p.Id,
-                PropertyOwnerId = p.PropertyOwnerId,
-                Name = p.Name,
-                Address = p.Address,
-                City = p.City,
-                Description = p.Description,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                IsArchived = p.IsArchived,
-                VerificationStatus = p.VerificationStatus.ToString(),
-                RejectionReason = p.RejectionReason,
-                SubmittedAt = p.SubmittedAt,
-                VerifiedAt = p.VerifiedAt
-            })
             .ToListAsync();
+
+        return properties.Select(p => MapProperty(p)).ToList();
     }
     public async Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
     int userId)
@@ -146,6 +131,7 @@ public class PropertyService : IPropertyService
         }
 
         var property = await _context.Properties
+            .Include(p => p.VerificationDocuments)
             .FirstOrDefaultAsync(p =>
                 p.Id == propertyId &&
                 p.PropertyOwnerId == owner.Id &&
@@ -193,6 +179,145 @@ public class PropertyService : IPropertyService
         property.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        return MapProperty(property);
+    }
+
+    public async Task<PropertyResponseDto?> ResubmitRejectedPropertyAsync(
+        int userId,
+        int propertyId,
+        ResubmitPropertyDto request)
+    {
+        var owner = await _context.PropertyOwners
+            .FirstOrDefaultAsync(po => po.UserId == userId);
+
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
+        {
+            return null;
+        }
+
+        // Load the property together with its current documents so we can
+        // validate removed IDs and compute the post-operation document count
+        // before committing anything.
+        var property = await _context.Properties
+            .Include(p => p.VerificationDocuments)
+            .FirstOrDefaultAsync(p =>
+                p.Id == propertyId &&
+                p.PropertyOwnerId == owner.Id &&
+                p.VerificationStatus == PropertyVerificationStatus.Rejected &&
+                !p.IsArchived);
+
+        if (property == null)
+        {
+            return null;
+        }
+
+        // Validate that every ID in RemovedDocumentIds belongs to THIS property.
+        // Returning null here is treated as a 404/bad-request by the controller.
+        if (request.RemovedDocumentIds.Count > 0)
+        {
+            var propertyDocIds = property.VerificationDocuments
+                .Select(d => d.Id)
+                .ToHashSet();
+
+            foreach (var idToRemove in request.RemovedDocumentIds)
+            {
+                if (!propertyDocIds.Contains(idToRemove))
+                {
+                    // ID does not belong to this property — reject the whole request.
+                    return null;
+                }
+            }
+        }
+
+        // Validate new documents: each entry must supply both fields.
+        foreach (var newDoc in request.NewDocuments)
+        {
+            if (string.IsNullOrWhiteSpace(newDoc.DocumentType) ||
+                string.IsNullOrWhiteSpace(newDoc.DocumentUrl))
+            {
+                return null;
+            }
+        }
+
+        // Compute how many documents will remain after removes + adds.
+        int survivingExisting = property.VerificationDocuments
+            .Count(d => !request.RemovedDocumentIds.Contains(d.Id));
+        int totalAfter = survivingExisting + request.NewDocuments.Count;
+
+        if (totalAfter < 1)
+        {
+            // The owner must retain at least one verification document.
+            return null;
+        }
+
+        // Execute the entire operation atomically.
+        var isRelational = _context.Database.IsRelational();
+        var transaction = isRelational ? await _context.Database.BeginTransactionAsync() : null;
+        try
+        {
+            // Remove documents the owner explicitly marked for removal.
+            if (request.RemovedDocumentIds.Count > 0)
+            {
+                var docsToRemove = property.VerificationDocuments
+                    .Where(d => request.RemovedDocumentIds.Contains(d.Id))
+                    .ToList();
+
+                _context.PropertyVerificationDocuments.RemoveRange(docsToRemove);
+            }
+
+            // Add new documents.
+            foreach (var newDoc in request.NewDocuments)
+            {
+                _context.PropertyVerificationDocuments.Add(new PropertyVerificationDocument
+                {
+                    PropertyId = property.Id,
+                    DocumentType = newDoc.DocumentType.Trim(),
+                    DocumentUrl = newDoc.DocumentUrl.Trim()
+                });
+            }
+
+            // Update property fields and reset verification status.
+            property.Name = request.Name.Trim();
+            property.Address = request.Address.Trim();
+            property.City = request.City?.Trim();
+            property.Description = request.Description?.Trim();
+            property.Latitude = request.Latitude;
+            property.Longitude = request.Longitude;
+            property.VerificationStatus = PropertyVerificationStatus.UnderReview;
+            property.RejectionReason = null;
+            property.SubmittedAt = DateTime.UtcNow;
+            property.VerifiedAt = null;
+            property.VerifiedByAdminId = null;
+            property.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+        }
+        catch
+        {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+
+        // Reload the updated property with its final documents for the response.
+        await _context.Entry(property)
+            .Collection(p => p.VerificationDocuments)
+            .LoadAsync();
 
         return MapProperty(property);
     }
@@ -832,7 +957,15 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             VerificationStatus = property.VerificationStatus.ToString(),
             RejectionReason = property.RejectionReason,
             SubmittedAt = property.SubmittedAt,
-            VerifiedAt = property.VerifiedAt
+            VerifiedAt = property.VerifiedAt,
+            Documents = (property.VerificationDocuments ?? new List<PropertyVerificationDocument>())
+                .Select(d => new PropertyVerificationDocumentDto
+                {
+                    Id = d.Id,
+                    DocumentType = d.DocumentType,
+                    DocumentUrl = d.DocumentUrl
+                })
+                .ToList()
         };
     }
 

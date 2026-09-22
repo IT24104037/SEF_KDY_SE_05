@@ -31,4 +31,6 @@ public class PropertyResponseDto
     public DateTime? SubmittedAt { get; set; }
 
     public DateTime? VerifiedAt { get; set; }
+
+    public List<PropertyVerificationDocumentDto> Documents { get; set; } = new();
 }
