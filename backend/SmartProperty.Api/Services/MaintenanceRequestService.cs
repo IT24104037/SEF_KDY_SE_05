@@ -24,9 +24,27 @@ public class MaintenanceRequestService : IMaintenanceRequestService
     int currentUserId,
     CreateMaintenanceRequestDto dto)
 {
-    // Find tenant profile linked to the logged-in user.
+    if (dto == null)
+    {
+        throw new ArgumentNullException(nameof(dto));
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.Description))
+    {
+        throw new InvalidOperationException(
+            "Description is required.");
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.RequestType))
+    {
+        throw new InvalidOperationException(
+            "Request type is required.");
+    }
+
+    // Find tenant profile linked to logged-in user.
     var tenant = await _context.Tenants
-        .FirstOrDefaultAsync(x => x.UserId == currentUserId);
+        .FirstOrDefaultAsync(x =>
+            x.UserId == currentUserId);
 
     if (tenant == null)
     {
@@ -40,7 +58,7 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             "An active tenant account is required.");
     }
 
-    // Find the tenant's current active tenancy.
+    // Find active tenancy.
     var activeTenancy = await _context.Tenancies
         .AsNoTracking()
         .FirstOrDefaultAsync(x =>
@@ -54,7 +72,7 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             "No active tenancy was found for this tenant.");
     }
 
-    // Get the unit from the active tenancy.
+    // Find unit connected to active tenancy.
     var unit = await _context.Units
         .AsNoTracking()
         .FirstOrDefaultAsync(x =>
@@ -78,7 +96,7 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             "Request type must be NORMAL or EMERGENCY.");
     }
 
-    // Normal maintenance requires a photo.
+    // Normal maintenance requires an image.
     if (requestType == "NORMAL" &&
         string.IsNullOrWhiteSpace(dto.ImageUrl))
     {
@@ -86,7 +104,7 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             "A photo is required for a normal maintenance request.");
     }
 
-    // Emergency requires emergency type.
+    // Emergency request requires emergency type.
     if (requestType == "EMERGENCY" &&
         string.IsNullOrWhiteSpace(dto.EmergencyType))
     {
@@ -94,75 +112,91 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             "Emergency type is required.");
     }
 
-    var request = new MaintenanceRequest
+    await using var transaction =
+        await _context.Database.BeginTransactionAsync();
+
+    try
     {
-        TenantId = tenant.Id,
+        var now = DateTime.UtcNow;
 
-        // Real tenancy relationship.
-        TenancyId = activeTenancy.Id,
-
-        // Property and unit come from the active tenancy,
-        // not from values entered by the tenant.
-        UnitId = unit.Id,
-        PropertyId = unit.PropertyId,
-
-        Description = dto.Description.Trim(),
-
-        RequestType = requestType,
-
-        EmergencyType =
-            requestType == "EMERGENCY"
-                ? dto.EmergencyType?.Trim()
-                : null,
-
-        Status =
-            requestType == "EMERGENCY"
-                ? "Emergency"
-                : "Submitted",
-
-        Priority =
-            requestType == "EMERGENCY"
-                ? "Critical"
-                : null,
-
-        CreatedAt = DateTime.UtcNow,
-        UpdatedAt = DateTime.UtcNow
-    };
-
-    _context.MaintenanceRequests.Add(request);
-
-    // Save first so request.Id is generated.
-    await _context.SaveChangesAsync();
-
-    // Photo required for NORMAL, optional for EMERGENCY.
-    if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
-    {
-        var image = new MaintenanceImage
+        var request = new MaintenanceRequest
         {
-            MaintenanceRequestId = request.Id,
-            ImageUrl = dto.ImageUrl.Trim(),
-            CreatedAt = DateTime.UtcNow
+            TenantId = tenant.Id,
+
+            TenancyId = activeTenancy.Id,
+
+            UnitId = unit.Id,
+            PropertyId = unit.PropertyId,
+
+            Description = dto.Description.Trim(),
+
+            RequestType = requestType,
+
+            EmergencyType =
+                requestType == "EMERGENCY"
+                    ? dto.EmergencyType?.Trim()
+                    : null,
+
+            Status =
+                requestType == "EMERGENCY"
+                    ? "Emergency"
+                    : "Submitted",
+
+            Priority =
+                requestType == "EMERGENCY"
+                    ? "Critical"
+                    : null,
+
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
-        _context.MaintenanceImages.Add(image);
+        _context.MaintenanceRequests.Add(request);
+
+        // Save first so PostgreSQL generates request.Id.
+        await _context.SaveChangesAsync();
+
+        // Save image metadata in MaintenanceImages.
+        if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+        {
+            var maintenanceImage =
+                new MaintenanceImage
+                {
+                    MaintenanceRequestId = request.Id,
+                    ImageUrl = dto.ImageUrl.Trim(),
+                    CreatedAt = now
+                };
+
+            _context.MaintenanceImages.Add(
+                maintenanceImage);
+        }
+
+        // Save initial status history.
+        var history =
+            new MaintenanceStatusHistory
+            {
+                MaintenanceRequestId = request.Id,
+                OldStatus = string.Empty,
+                NewStatus = request.Status,
+                ChangedByUserId = currentUserId,
+                Note = "Maintenance request created.",
+                ChangedAt = now
+            };
+
+        _context.MaintenanceStatusHistories.Add(
+            history);
+
+        await _context.SaveChangesAsync();
+
+        await transaction.CommitAsync();
+
+        return await BuildDtoAsync(request);
     }
-
-    // Initial status history.
-    var history = new MaintenanceStatusHistory
+    catch
     {
-        MaintenanceRequestId = request.Id,
-        OldStatus = string.Empty,
-        NewStatus = request.Status,
-        ChangedByUserId = currentUserId,
-        Note = "Maintenance request created.",
-        ChangedAt = DateTime.UtcNow
-    };
-
-    _context.MaintenanceStatusHistories.Add(history);
-
-    await _context.SaveChangesAsync();
-
-    return await BuildDtoAsync(request);
+        await transaction.RollbackAsync();
+        throw;
+    }
 }
 
     // ---------------------------------------------------------
