@@ -40,7 +40,7 @@ export default function MyTenancyPage() {
       ) : (
         <div style={{ background: "#fff", border: "1px solid #DDE3E9", borderRadius: 8, padding: 20, maxWidth: 420 }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: "#17324D" }}>
-            Unit #{tenancy.unitId}
+            Unit {tenancy.unitName || `#${tenancy.unitId}`}
           </div>
           <p style={{ color: "#6B7280" }}>
             Move-in date: {new Date(tenancy.startDate).toLocaleDateString()}
