@@ -117,21 +117,34 @@ public class TenancyRepository : ITenancyRepository
     }
 
     public async Task<Tenancy?> GetTenancyByIdAsync(int id) =>
-        await _context.Tenancies.Include(t => t.Tenant).FirstOrDefaultAsync(t => t.Id == id);
+    await _context.Tenancies
+        .Include(t => t.Tenant)
+            .ThenInclude(tenant => tenant!.Unit)
+        .FirstOrDefaultAsync(t => t.Id == id);
 
     public async Task<Tenancy?> GetActiveTenancyByUserIdAsync(int userId) =>
-        await _context.Tenancies.Include(t => t.Tenant)
-            .FirstOrDefaultAsync(t => t.Tenant!.UserId == userId && t.Status == TenancyStatus.Active);
+    await _context.Tenancies
+        .Include(t => t.Tenant)
+            .ThenInclude(tenant => tenant!.Unit)
+        .FirstOrDefaultAsync(t =>
+            t.Tenant!.UserId == userId &&
+            t.Status == TenancyStatus.Active);
 
     public async Task<List<Tenancy>> GetTenancyHistoryByUserIdAsync(int userId) =>
-        await _context.Tenancies.Include(t => t.Tenant)
-            .Where(t => t.Tenant!.UserId == userId)
-            .OrderByDescending(t => t.StartDate).ToListAsync();
+    await _context.Tenancies
+        .Include(t => t.Tenant)
+            .ThenInclude(tenant => tenant!.Unit)
+        .Where(t => t.Tenant!.UserId == userId)
+        .OrderByDescending(t => t.StartDate)
+        .ToListAsync();
 
     public async Task<List<Tenancy>> GetTenanciesByTenantIdAsync(int tenantId) =>
-        await _context.Tenancies.Include(t => t.Tenant)
-            .Where(t => t.TenantId == tenantId)
-            .OrderByDescending(t => t.StartDate).ToListAsync();
+    await _context.Tenancies
+        .Include(t => t.Tenant)
+            .ThenInclude(tenant => tenant!.Unit)
+        .Where(t => t.TenantId == tenantId)
+        .OrderByDescending(t => t.StartDate)
+        .ToListAsync();
 
     public async Task UpdateTenancyAsync(Tenancy tenancy)
     {

@@ -22,7 +22,8 @@ export default function TenancyTable({ tenancies = [], showEndAction = false, on
           }}
         >
           <div>
-            <div style={{ fontWeight: 600 }}>Unit #{t.unitId}</div>
+            <div style={{ fontWeight: 600 }}> Unit {t.unitName || `#${t.unitId}`}           
+            </div>
             <div style={{ color: "#6B7280", fontSize: 13 }}>
               {new Date(t.startDate).toLocaleDateString()} —{" "}
               {t.endDate ? new Date(t.endDate).toLocaleDateString() : "Present"}
