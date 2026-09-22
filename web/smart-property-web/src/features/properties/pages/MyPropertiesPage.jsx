@@ -214,42 +214,39 @@ function MyPropertiesPage() {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: "30px 20px",
-      }}
-    >
+    <div>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "10px",
+          marginBottom: "6px",
         }}
       >
-        <h1>My Properties</h1>
+        <h1 style={{ margin: 0, color: "#17324D", fontSize: "24px", fontWeight: "700" }}>My Properties</h1>
 
         <button
           type="button"
           onClick={() => navigate("/owner/properties/add")}
+          style={btnStyles.primary}
         >
           + Add Property
         </button>
       </div>
 
-      <p>
+      <p style={{ color: "#6B7280", marginBottom: "24px", marginTop: "4px" }}>
         Manage your properties and keep their information up to date.
       </p>
 
       {error && (
         <div
           style={{
-            padding: "12px",
+            padding: "12px 16px",
             marginBottom: "20px",
-            border: "1px solid #dc2626",
+            border: "1px solid #fca5a5",
             borderRadius: "6px",
+            backgroundColor: "#fef2f2",
+            color: "#b91c1c",
           }}
         >
           {error}
@@ -259,10 +256,12 @@ function MyPropertiesPage() {
       {success && (
         <div
           style={{
-            padding: "12px",
+            padding: "12px 16px",
             marginBottom: "20px",
-            border: "1px solid #16a34a",
+            border: "1px solid #86efac",
             borderRadius: "6px",
+            backgroundColor: "#f0fdf4",
+            color: "#15803d",
           }}
         >
           {success}
@@ -272,10 +271,12 @@ function MyPropertiesPage() {
       {editingId && (
         <section
           style={{
-            border: "1px solid #ddd",
+            border: "1px solid #e5e7eb",
             borderRadius: "8px",
-            padding: "20px",
+            padding: "24px",
             marginBottom: "30px",
+            backgroundColor: "#ffffff",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           }}
         >
           <h2>
@@ -538,7 +539,7 @@ function MyPropertiesPage() {
               </>
             )}
 
-            <button type="submit" disabled={saving}>
+            <button type="submit" disabled={saving} style={saving ? btnStyles.primaryDisabled : btnStyles.primary}>
               {saving
                 ? "Saving..."
                 : editingStatus === "Rejected"
@@ -549,7 +550,7 @@ function MyPropertiesPage() {
             <button
               type="button"
               onClick={resetForm}
-              style={{ marginLeft: "10px" }}
+              style={{ ...btnStyles.secondary, marginLeft: "10px" }}
             >
               Cancel
             </button>
@@ -559,7 +560,7 @@ function MyPropertiesPage() {
 
       {/* Active Properties */}
       <section>
-        <h2>Property List</h2>
+        <h2 style={{ color: "#17324D", fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>Property List</h2>
 
         {loading ? (
           <p>Loading properties...</p>
@@ -578,9 +579,11 @@ function MyPropertiesPage() {
               <div
                 key={property.id}
                 style={{
-                  border: "1px solid #ddd",
+                  border: "1px solid #e5e7eb",
                   borderRadius: "8px",
                   padding: "20px",
+                  backgroundColor: "#ffffff",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                 }}
               >
                 <h3>{property.name}</h3>
@@ -611,11 +614,12 @@ function MyPropertiesPage() {
                   </p>
                 )}
 
-                <div style={{ marginTop: "15px" }}>
+                <div style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {property.verificationStatus === "Rejected" && (
                     <button
                       type="button"
                       onClick={() => startEdit(property)}
+                      style={btnStyles.warning}
                     >
                       Edit / Resubmit
                     </button>
@@ -629,6 +633,7 @@ function MyPropertiesPage() {
                           `/owner/properties/${property.id}/units`
                         )
                       }
+                      style={btnStyles.primary}
                     >
                       Manage Units
                     </button>
@@ -638,7 +643,7 @@ function MyPropertiesPage() {
                     <button
                       type="button"
                       onClick={() => startEdit(property)}
-                      style={{ marginLeft: "10px" }}
+                      style={btnStyles.secondary}
                     >
                       Edit
                     </button>
@@ -648,7 +653,7 @@ function MyPropertiesPage() {
                     <button
                       type="button"
                       onClick={() => handleArchive(property.id)}
-                      style={{ marginLeft: "10px" }}
+                      style={btnStyles.danger}
                     >
                       Archive
                     </button>
@@ -662,7 +667,7 @@ function MyPropertiesPage() {
 
       {/* Archived Properties */}
       <section style={{ marginTop: "40px" }}>
-        <h2>Archived Properties</h2>
+        <h2 style={{ color: "#17324D", fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>Archived Properties</h2>
 
         {loading ? (
           <p>Loading archived properties...</p>
@@ -681,9 +686,11 @@ function MyPropertiesPage() {
               <div
                 key={property.id}
                 style={{
-                  border: "1px solid #ddd",
+                  border: "1px solid #e5e7eb",
                   borderRadius: "8px",
                   padding: "20px",
+                  backgroundColor: "#ffffff",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                 }}
               >
                 <h3>{property.name}</h3>
@@ -712,6 +719,7 @@ function MyPropertiesPage() {
                 <button
                   type="button"
                   onClick={() => handleRestore(property.id)}
+                  style={btnStyles.secondary}
                 >
                   Restore
                 </button>
@@ -729,3 +737,54 @@ export default MyPropertiesPage;
 function formatVerificationStatus(status) {
   return status === "UnderReview" ? "Under Review" : status;
 }
+
+const btnStyles = {
+  primary: {
+    backgroundColor: "#1f8a8a",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "8px 14px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+  primaryDisabled: {
+    backgroundColor: "#a3bfbf",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "8px 14px",
+    cursor: "not-allowed",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+  secondary: {
+    backgroundColor: "transparent",
+    color: "#374151",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    padding: "8px 14px",
+    cursor: "pointer",
+    fontSize: "14px",
+  },
+  warning: {
+    backgroundColor: "#f59e0b",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "8px 14px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+  danger: {
+    backgroundColor: "transparent",
+    color: "#b91c1c",
+    border: "1px solid #fca5a5",
+    borderRadius: "6px",
+    padding: "8px 14px",
+    cursor: "pointer",
+    fontSize: "14px",
+  },
+};

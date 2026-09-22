@@ -59,6 +59,7 @@ export default function PropertyVerificationPage() {
         <section key={property.propertyId} style={styles.card}>
           <h2>{property.name}</h2>
           <p>Owner: {property.ownerName}</p>
+          <p>Email: {property.ownerEmail}</p>
           <p>Address: {property.address}</p>
           <p>Status: {property.status}</p>
           {property.documents.map((document) => (

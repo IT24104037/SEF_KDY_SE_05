@@ -53,13 +53,15 @@ export default function TenantListPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ color: "#17324D" }}>Tenants</h2>
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+        <h1 style={{ margin: 0, color: "#17324D", fontSize: "24px", fontWeight: "700" }}>Tenants</h1>
         <Link to="/owner/tenants/add" style={{ ...buttonStyle, textDecoration: "none" }}>
           + Add Tenant
         </Link>
       </div>
+
+      <p style={{ color: "#6B7280", marginBottom: "20px", marginTop: "4px" }}>Manage your tenants and tenancy agreements.</p>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <input
