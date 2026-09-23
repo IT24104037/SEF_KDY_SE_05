@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerWorker } from "../services/workerService.js";
+import { registerWorker, uploadWorkerProof } from "../services/workerService.js";
 
 const skillOptions = ["Plumbing", "Electrical", "HVAC", "Carpentry", "Masonry"];
 
@@ -15,7 +15,10 @@ function WorkerRegistrationPage() {
     skills: [],
     serviceArea: "",
     proofDocumentName: "",
+    proofDocumentUrl: "",
   });
+  const [localPreview, setLocalPreview] = useState("");
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -31,6 +34,42 @@ function WorkerRegistrationPage() {
         ? current.skills.filter((item) => item !== skill)
         : [...current.skills, skill],
     }));
+  }
+
+  async function handleFileChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLocalPreview(typeof reader.result === "string" ? reader.result : "");
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      setUploadingDoc(true);
+      const res = await uploadWorkerProof(file);
+      setForm((current) => ({
+        ...current,
+        proofDocumentName: res.fileName || file.name,
+        proofDocumentUrl: res.documentUrl,
+      }));
+    } catch {
+      // If direct upload fails, fallback to Data URL
+      reader.onloadend = () => {
+        const dataUrl = typeof reader.result === "string" ? reader.result : "";
+        setLocalPreview(dataUrl);
+        setForm((current) => ({
+          ...current,
+          proofDocumentName: file.name,
+          proofDocumentUrl: dataUrl,
+        }));
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingDoc(false);
+    }
   }
 
   async function handleSubmit(event) {
@@ -67,6 +106,7 @@ function WorkerRegistrationPage() {
         skills: form.skills,
         serviceArea: form.serviceArea,
         proofDocumentName: form.proofDocumentName,
+        proofDocumentUrl: form.proofDocumentUrl,
       });
       setSubmitted(true);
     } catch (submitError) {
@@ -117,8 +157,35 @@ function WorkerRegistrationPage() {
           </div>
         </fieldset>
 
-        <label style={styles.uploadField}>Trade license or proof document<input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(event) => setForm((current) => ({ ...current, proofDocumentName: event.target.files?.[0]?.name || "" }))} required /></label>
-        {form.proofDocumentName && <p style={styles.fileName}>Selected: {form.proofDocumentName}</p>}
+        <label style={styles.uploadField}>
+          Trade license or proof document
+          <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileChange} required />
+        </label>
+        {uploadingDoc && (
+          <p style={{ margin: "6px 0", color: "#0284c7", fontSize: "13px" }}>
+            ⏳ Uploading proof document to server...
+          </p>
+        )}
+        {form.proofDocumentName && (
+          <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "12px", background: "#e0f2fe", color: "#0369a1", padding: "4px 8px", borderRadius: "4px", fontWeight: 700 }}>
+              {form.proofDocumentName.split(".").pop()?.toUpperCase()}
+            </span>
+            <span style={styles.fileName}>{form.proofDocumentName}</span>
+            {form.proofDocumentUrl && !uploadingDoc && (
+              <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>✓ Attached</span>
+            )}
+          </div>
+        )}
+        {localPreview && localPreview.startsWith("data:image/") && (
+          <div style={{ marginTop: "10px" }}>
+            <img
+              src={localPreview}
+              alt="Proof Document Preview"
+              style={{ maxHeight: "140px", borderRadius: "6px", border: "1px solid #dde3e9" }}
+            />
+          </div>
+        )}
         {error && <p style={styles.error}>{error}</p>}
 
         <div style={styles.actions}>

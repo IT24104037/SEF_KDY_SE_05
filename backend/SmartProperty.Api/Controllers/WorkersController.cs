@@ -17,6 +17,35 @@ public class WorkersController : ControllerBase
         _workerService = workerService;
     }
 
+    // POST /api/workers/upload-proof
+    [AllowAnonymous]
+    [HttpPost("upload-proof")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadProof([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Please select a document or image." });
+        }
+
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "workers");
+        if (!Directory.Exists(uploadsDir))
+        {
+            Directory.CreateDirectory(uploadsDir);
+        }
+
+        var safeFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+        var filePath = Path.Combine(uploadsDir, safeFileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var documentUrl = $"/uploads/workers/{safeFileName}";
+        return Ok(new { documentUrl, fileName = file.FileName });
+    }
+
     // POST /api/workers/register
     [AllowAnonymous]
     [HttpPost("register")]
