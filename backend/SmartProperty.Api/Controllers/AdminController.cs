@@ -22,6 +22,40 @@ public class AdminController : ControllerBase
         _context = context;
     }
 
+    // GET /api/admin/owners
+    [HttpGet("owners")]
+    public async Task<IActionResult> GetAllOwners()
+    {
+        var owners = await _context.PropertyOwners
+            .AsNoTracking()
+            .Include(po => po.User)
+            .Include(po => po.VerificationDocuments)
+            .OrderByDescending(po => po.VerificationStatus == OwnerVerificationStatus.PendingVerification ? 1 : 0)
+            .ThenByDescending(po => po.CreatedAt)
+            .Select(po => new
+            {
+                ownerId = po.Id,
+                userId = po.UserId,
+                fullName = po.User!.FullName,
+                email = po.User.Email,
+                mobile = po.User.Mobile,
+                status = po.VerificationStatus.ToString(),
+                rejectionReason = po.RejectionReason,
+                verifiedAt = po.VerifiedAt,
+                createdAt = po.CreatedAt,
+                documents = po.VerificationDocuments.Select(d => new
+                {
+                    d.Id,
+                    d.DocumentType,
+                    d.DocumentUrl,
+                    d.UploadedAt
+                })
+            })
+            .ToListAsync();
+
+        return Ok(owners);
+    }
+
     // GET /api/admin/owners/pending
     [HttpGet("owners/pending")]
     public async Task<IActionResult> GetPendingOwners()
@@ -137,6 +171,44 @@ public class AdminController : ControllerBase
             rejectionReason = owner.RejectionReason,
             verifiedAt = owner.VerifiedAt
         });
+    }
+
+    // GET /api/admin/properties
+    [HttpGet("properties")]
+    public async Task<IActionResult> GetAllProperties()
+    {
+        var properties = await _context.Properties
+            .AsNoTracking()
+            .Include(p => p.PropertyOwner)
+            .ThenInclude(po => po!.User)
+            .Include(p => p.VerificationDocuments)
+            .OrderByDescending(p => p.VerificationStatus == PropertyVerificationStatus.UnderReview ? 1 : 0)
+            .ThenByDescending(p => p.SubmittedAt)
+            .Select(p => new
+            {
+                propertyId = p.Id,
+                ownerId = p.PropertyOwnerId,
+                ownerName = p.PropertyOwner!.User!.FullName,
+                ownerEmail = p.PropertyOwner!.User!.Email,
+                name = p.Name,
+                address = p.Address,
+                city = p.City,
+                description = p.Description,
+                status = p.VerificationStatus.ToString(),
+                rejectionReason = p.RejectionReason,
+                submittedAt = p.SubmittedAt,
+                verifiedAt = p.VerifiedAt,
+                documents = p.VerificationDocuments.Select(d => new
+                {
+                    d.Id,
+                    d.DocumentType,
+                    d.DocumentUrl,
+                    d.UploadedAt
+                })
+            })
+            .ToListAsync();
+
+        return Ok(properties);
     }
 
     // GET /api/admin/properties/pending
