@@ -15,4 +15,12 @@ public class UnitResponseDto
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    public string OccupancyStatus { get; set; } = "Vacant";
+
+    public int? CurrentTenantId { get; set; }
+
+    public string? CurrentTenantName { get; set; }
+
+    public int? ActiveTenancyId { get; set; }
 }

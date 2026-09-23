@@ -11,6 +11,7 @@ import {
   createBulkUnits,
 } from "../services/unitService.js";
 import { getProperty } from "../services/propertyService.js";
+import tenancyService from "../../tenancies/services/tenancyService.js";
 
 const emptyForm = {
   unitLabel: "",
@@ -168,6 +169,29 @@ function UnitsPage() {
       await softDeleteUnit(propertyId, id);
       await loadUnits();
       setSuccess("Archived unit deleted. Its historical records have been preserved.");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleEndTenancy(tenancyId) {
+    if (!tenancyId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to end this tenancy? The unit will become vacant."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+
+      await tenancyService.endTenancy(tenancyId);
+      await loadUnits();
+      setSuccess("Tenancy ended successfully. Unit is now vacant.");
     } catch (err) {
       setError(err.message);
     }
@@ -430,10 +454,37 @@ function UnitsPage() {
                 )}
 
                 <p>
-                  <strong>Status:</strong> Active
+                  <strong>Status:</strong>{" "}
+                  <span
+                    style={{
+                      display: "inline-block",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      backgroundColor:
+                        unit.occupancyStatus === "Occupied"
+                          ? "#fee2e2"
+                          : "#dcfce7",
+                      color:
+                        unit.occupancyStatus === "Occupied"
+                          ? "#991b1b"
+                          : "#166534",
+                    }}
+                  >
+                    {unit.occupancyStatus === "Occupied"
+                      ? "OCCUPIED"
+                      : "VACANT"}
+                  </span>
                 </p>
 
-                <div style={{ marginTop: "15px" }}>
+                {unit.occupancyStatus === "Occupied" && unit.currentTenantName && (
+                  <p>
+                    <strong>Current Tenant:</strong> {unit.currentTenantName}
+                  </p>
+                )}
+
+                <div style={{ marginTop: "15px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <button
                     type="button"
                     onClick={() => startEdit(unit)}
@@ -441,10 +492,41 @@ function UnitsPage() {
                     Edit
                   </button>
 
+                  {unit.occupancyStatus === "Occupied" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleEndTenancy(unit.activeTenancyId)}
+                      style={{
+                        backgroundColor: "#dc2626",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "6px 12px",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      End Tenancy
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/owner/tenants/add")}
+                      style={{
+                        backgroundColor: "#16a34a",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "6px 12px",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Assign Tenant
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => handleArchive(unit.id)}
-                    style={{ marginLeft: "10px" }}
                   >
                     Archive
                   </button>

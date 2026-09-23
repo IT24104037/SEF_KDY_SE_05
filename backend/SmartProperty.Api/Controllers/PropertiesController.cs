@@ -265,31 +265,31 @@ public async Task<IActionResult> GetArchivedUnits(int id)
 
         if (!result)
         {
-            return NotFound();
+            return BadRequest(new { message = "Cannot archive unit. The unit was not found or has an active tenancy." });
         }
 
-    return NoContent();
-}
-
-// DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
-// Soft deletes an archived unit while preserving its database record.
-[HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
-public async Task<IActionResult> SoftDeleteUnit(
-    int propertyId,
-    int unitId)
-{
-    var result = await _propertyService.SoftDeleteUnitAsync(
-        GetUserId(),
-        propertyId,
-        unitId);
-
-    if (!result)
-    {
-        return NotFound(new { message = "Archived unit was not found or cannot be deleted." });
+        return NoContent();
     }
 
-    return NoContent();
-}
+    // DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
+    // Soft deletes an archived unit while preserving its database record.
+    [HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
+    public async Task<IActionResult> SoftDeleteUnit(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.SoftDeleteUnitAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (!result)
+        {
+            return BadRequest(new { message = "Cannot delete unit. The archived unit was not found or has an active tenancy." });
+        }
+
+        return NoContent();
+    }
 
 [HttpPut("{propertyId:int}/units/{unitId:int}/restore")]
 public async Task<IActionResult> RestoreUnit(
