@@ -13,6 +13,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import AdminHome from "../features/admin/pages/AdminHome";
 import UserManagementPage from "../features/admin/pages/UserManagementPage";
 import AdminOwnerVerificationPage from "../features/admin/pages/OwnerVerificationPage";
+import OwnerProfileRequestsPage from "../features/admin/pages/OwnerProfileRequestsPage";
 import PropertyVerificationPage from "../features/admin/pages/PropertyVerificationPage";
 import AiWorkflowPage from "../features/admin/pages/AiWorkflowPage";
 import ReportsPage from "../features/admin/pages/ReportsPage";
@@ -120,6 +121,7 @@ export default function AppRoutes() {
 
               <Route path="users" element={<UserManagementPage />} />
               <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
+              <Route path="owner-profile-requests" element={<OwnerProfileRequestsPage />} />
               <Route path="property-verification" element={<PropertyVerificationPage />} />
               <Route path="maintenance" element={<AdminMaintenanceRequestsPage />} />
               <Route path="emergencies" element={<EmergencyRequestsPage />} />
