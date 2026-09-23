@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<PropertyOwner> PropertyOwners => Set<PropertyOwner>();
     public DbSet<OwnerVerificationDocument> OwnerVerificationDocuments => Set<OwnerVerificationDocument>();
+    public DbSet<OwnerProfileChangeRequest> OwnerProfileChangeRequests => Set<OwnerProfileChangeRequest>();
     public DbSet<PropertyVerificationDocument> PropertyVerificationDocuments => Set<PropertyVerificationDocument>();
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<Unit> Units => Set<Unit>();
@@ -92,6 +93,31 @@ public class AppDbContext : DbContext
             .WithMany(po => po.VerificationDocuments)
             .HasForeignKey(d => d.PropertyOwnerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<OwnerProfileChangeRequest>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.RequestedFullName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.RequestedEmail)
+                .HasMaxLength(256);
+
+            entity.Property(x => x.RequestedMobile)
+                .HasMaxLength(20);
+
+            entity.HasOne(x => x.PropertyOwner)
+                .WithMany()
+                .HasForeignKey(x => x.PropertyOwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.ReviewedByAdmin)
+                .WithMany()
+                .HasForeignKey(x => x.ReviewedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<Property>()
             .HasOne(p => p.PropertyOwner)

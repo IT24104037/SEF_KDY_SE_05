@@ -29,6 +29,10 @@ function AdminLayout() {
             Owner Verification
           </NavLink>
 
+          <NavLink to="/admin/owner-profile-requests" style={linkStyle}>
+            Profile Change Requests
+          </NavLink>
+
           <NavLink to="/admin/property-verification" style={linkStyle}>
             Property Verification
           </NavLink>

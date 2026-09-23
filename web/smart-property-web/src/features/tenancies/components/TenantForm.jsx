@@ -5,7 +5,7 @@ import tenancyService from "../services/tenancyService";
 // Reusable form for both creating and editing a Tenant.
 // mode="create": shows FullName + MobileNumber + Email, calls onSubmit with all 3.
 // mode="edit": hides MobileNumber (not editable), calls onSubmit with FullName + Email only.
-export default function TenantForm({ mode = "create", initialValues = {}, onSubmit, submitLabel }) {
+export default function TenantForm({ mode = "create", initialValues = {}, isContextAware = false, onSubmit, submitLabel }) {
   const [fullName, setFullName] = useState(initialValues.fullName || "");
   const [mobileNumber, setMobileNumber] = useState(initialValues.mobileNumber || "");
   const [email, setEmail] = useState(initialValues.email || "");
@@ -28,6 +28,11 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
       tenancyService.getOptions().then(setOptions).catch(() => setSubmitError("Could not load properties."));
     }
   }, [mode]);
+
+  useEffect(() => {
+    if (initialValues.propertyId) setPropertyId(String(initialValues.propertyId));
+    if (initialValues.unitId) setUnitId(String(initialValues.unitId));
+  }, [initialValues.propertyId, initialValues.unitId]);
 
   const validate = () => {
     const next = {};
@@ -91,30 +96,58 @@ export default function TenantForm({ mode = "create", initialValues = {}, onSubm
       {mode === "create" && (
         <>
           <Field label="Property" error={errors.propertyId}>
-            <select value={propertyId} onChange={(e) => { setPropertyId(e.target.value); setUnitId(""); }} style={inputStyle}>
+            <select
+              value={propertyId}
+              onChange={(e) => {
+                if (!isContextAware) {
+                  setPropertyId(e.target.value);
+                  setUnitId("");
+                }
+              }}
+              disabled={isContextAware}
+              style={{
+                ...inputStyle,
+                backgroundColor: isContextAware ? "#F3F4F6" : "#ffffff",
+                cursor: isContextAware ? "not-allowed" : "default",
+              }}
+            >
               <option value="">Select property</option>
-              {options.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
+              {options.map((property) => (
+                <option key={property.id} value={property.id}>
+                  {property.name}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Unit" error={errors.unitId}>
             <select
               value={unitId}
-              onChange={(e) => setUnitId(e.target.value)}
-              disabled={!propertyId || availableUnits.length === 0}
-              style={inputStyle}
+              onChange={(e) => {
+                if (!isContextAware) {
+                  setUnitId(e.target.value);
+                }
+              }}
+              disabled={isContextAware || !propertyId || availableUnits.length === 0}
+              style={{
+                ...inputStyle,
+                backgroundColor: isContextAware ? "#F3F4F6" : "#ffffff",
+                cursor: isContextAware ? "not-allowed" : "default",
+              }}
             >
               <option value="">
                 {!propertyId
                   ? "Select a property first"
                   : availableUnits.length === 0
-                    ? "No vacant units available"
-                    : "Select unit"}
+                  ? "No vacant units available"
+                  : "Select unit"}
               </option>
               {availableUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>{unit.unitLabel}</option>
+                <option key={unit.id} value={unit.id}>
+                  {unit.unitLabel}
+                </option>
               ))}
             </select>
-            {propertyId && availableUnits.length === 0 && (
+            {!isContextAware && propertyId && availableUnits.length === 0 && (
               <p style={{ color: "#6B7280", fontSize: 12, margin: "4px 0 0" }}>
                 This property has no vacant units. <a href="/owner/properties">Manage properties and units</a>.
               </p>

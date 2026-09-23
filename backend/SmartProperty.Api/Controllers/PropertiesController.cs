@@ -265,31 +265,31 @@ public async Task<IActionResult> GetArchivedUnits(int id)
 
         if (!result)
         {
-            return NotFound();
+            return BadRequest(new { message = "Cannot archive unit. The unit was not found or has an active tenancy." });
         }
 
-    return NoContent();
-}
-
-// DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
-// Soft deletes an archived unit while preserving its database record.
-[HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
-public async Task<IActionResult> SoftDeleteUnit(
-    int propertyId,
-    int unitId)
-{
-    var result = await _propertyService.SoftDeleteUnitAsync(
-        GetUserId(),
-        propertyId,
-        unitId);
-
-    if (!result)
-    {
-        return NotFound(new { message = "Archived unit was not found or cannot be deleted." });
+        return NoContent();
     }
 
-    return NoContent();
-}
+    // DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
+    // Soft deletes an archived unit while preserving its database record.
+    [HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
+    public async Task<IActionResult> SoftDeleteUnit(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.SoftDeleteUnitAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (!result)
+        {
+            return BadRequest(new { message = "Cannot delete unit. The archived unit was not found or has an active tenancy." });
+        }
+
+        return NoContent();
+    }
 
 [HttpPut("{propertyId:int}/units/{unitId:int}/restore")]
 public async Task<IActionResult> RestoreUnit(
@@ -319,6 +319,30 @@ public async Task<IActionResult> RestoreUnit(
 
     return NoContent();
 }
+
+    // GET /api/properties/{propertyId}/units/{unitId}/tenancy-history/export
+    [HttpGet("{propertyId:int}/units/{unitId:int}/tenancy-history/export")]
+    public async Task<IActionResult> ExportUnitTenancyHistory(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.ExportUnitTenancyHistoryAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "Property or unit was not found, or you do not have permission to access it." });
+        }
+
+        var fileName = $"{result.Value.UnitLabel}_Tenancy_History.xlsx";
+
+        return File(
+            result.Value.FileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName);
+    }
 
     // POST /api/properties/{propertyId}/units/bulk
     [HttpPost("{propertyId:int}/units/bulk")]

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.Data;
+using SmartProperty.Api.DTOs.Admin;
 using SmartProperty.Api.DTOs.Auth;
 using SmartProperty.Api.DTOs.Properties;
 using SmartProperty.Api.Entities.Property;
@@ -290,6 +291,152 @@ public class AdminController : ControllerBase
             propertyId = property.Id,
             status = property.VerificationStatus.ToString(),
             property.RejectionReason
+        });
+    }
+
+    // GET /api/admin/owners/profile-change-requests/pending
+    [HttpGet("owners/profile-change-requests/pending")]
+    public async Task<IActionResult> GetPendingOwnerProfileChangeRequests()
+    {
+        var requests = await _context.OwnerProfileChangeRequests
+            .AsNoTracking()
+            .Include(r => r.PropertyOwner)
+                .ThenInclude(po => po!.User)
+            .Where(r => r.Status == OwnerProfileChangeRequestStatus.Pending)
+            .OrderBy(r => r.CreatedAt)
+            .Select(r => new
+            {
+                requestId = r.Id,
+                ownerId = r.PropertyOwnerId,
+                userId = r.PropertyOwner!.UserId,
+                currentFullName = r.PropertyOwner.User!.FullName,
+                currentEmail = r.PropertyOwner.User.Email,
+                currentMobile = r.PropertyOwner.User.Mobile,
+                requestedFullName = r.RequestedFullName,
+                requestedEmail = r.RequestedEmail,
+                requestedMobile = r.RequestedMobile,
+                status = r.Status.ToString(),
+                createdAt = r.CreatedAt
+            })
+            .ToListAsync();
+
+        return Ok(requests);
+    }
+
+    // PUT /api/admin/owners/profile-change-requests/{id:int}/approve
+    [HttpPut("owners/profile-change-requests/{id:int}/approve")]
+    public async Task<IActionResult> ApproveOwnerProfileChangeRequest(int id)
+    {
+        if (!TryGetAdminId(out var adminId))
+        {
+            return Unauthorized();
+        }
+
+        var profileRequest = await _context.OwnerProfileChangeRequests
+            .Include(r => r.PropertyOwner)
+                .ThenInclude(po => po!.User)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (profileRequest == null)
+        {
+            return NotFound(new { message = "Profile change request was not found." });
+        }
+
+        if (profileRequest.Status != OwnerProfileChangeRequestStatus.Pending)
+        {
+            return BadRequest(new { message = "Only pending profile change requests can be approved." });
+        }
+
+        var user = profileRequest.PropertyOwner?.User;
+        if (user == null)
+        {
+            return NotFound(new { message = "Associated user record was not found." });
+        }
+
+        var reqEmail = profileRequest.RequestedEmail;
+        var reqMobile = profileRequest.RequestedMobile;
+
+        var hasDuplicate = await _context.Users.AnyAsync(u =>
+            u.Id != user.Id &&
+            ((reqEmail != null && u.Email != null && u.Email.ToLower() == reqEmail.ToLower()) ||
+             (reqMobile != null && u.Mobile != null && u.Mobile == reqMobile)));
+
+        if (hasDuplicate)
+        {
+            return Conflict(new { message = "Requested email or mobile is already in use by another user account." });
+        }
+
+        user.FullName = profileRequest.RequestedFullName.Trim();
+        user.Email = reqEmail;
+        user.Mobile = reqMobile;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        profileRequest.Status = OwnerProfileChangeRequestStatus.Approved;
+        profileRequest.RejectionReason = null;
+        profileRequest.ReviewedByAdminId = adminId;
+        profileRequest.ReviewedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            requestId = profileRequest.Id,
+            status = profileRequest.Status.ToString(),
+            reviewedAt = profileRequest.ReviewedAt,
+            user = new
+            {
+                user.Id,
+                user.FullName,
+                user.Email,
+                user.Mobile
+            }
+        });
+    }
+
+    // PUT /api/admin/owners/profile-change-requests/{id:int}/reject
+    [HttpPut("owners/profile-change-requests/{id:int}/reject")]
+    public async Task<IActionResult> RejectOwnerProfileChangeRequest(
+        int id,
+        [FromBody] RejectProfileChangeRequestDto dto)
+    {
+        if (!TryGetAdminId(out var adminId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.RejectionReason))
+        {
+            return BadRequest(new { message = "A rejection reason is required." });
+        }
+
+        var profileRequest = await _context.OwnerProfileChangeRequests
+            .Include(r => r.PropertyOwner)
+                .ThenInclude(po => po!.User)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (profileRequest == null)
+        {
+            return NotFound(new { message = "Profile change request was not found." });
+        }
+
+        if (profileRequest.Status != OwnerProfileChangeRequestStatus.Pending)
+        {
+            return BadRequest(new { message = "Only pending profile change requests can be rejected." });
+        }
+
+        profileRequest.Status = OwnerProfileChangeRequestStatus.Rejected;
+        profileRequest.RejectionReason = dto.RejectionReason.Trim();
+        profileRequest.ReviewedByAdminId = adminId;
+        profileRequest.ReviewedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            requestId = profileRequest.Id,
+            status = profileRequest.Status.ToString(),
+            rejectionReason = profileRequest.RejectionReason,
+            reviewedAt = profileRequest.ReviewedAt
         });
     }
 

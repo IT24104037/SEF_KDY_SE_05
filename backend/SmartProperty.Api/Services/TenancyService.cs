@@ -226,7 +226,7 @@ public class TenancyService : ITenancyService
         StartDate = startDateUtc,
         EndDate = endDateUtc,
 
-        Status = endDateUtc.HasValue
+        Status = (endDateUtc.HasValue && endDateUtc.Value <= DateTime.UtcNow)
             ? TenancyStatus.Ended
             : TenancyStatus.Active,
 
