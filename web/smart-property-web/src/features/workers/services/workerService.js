@@ -1,5 +1,19 @@
 import apiClient from "../../../api/apiClient.js";
 
+export async function uploadWorkerProof(file) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post("/api/workers/upload-proof", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to upload document.";
+    throw new Error(message);
+  }
+}
+
 export async function registerWorker(payload) {
   try {
     const response = await apiClient.post("/api/workers/register", {
