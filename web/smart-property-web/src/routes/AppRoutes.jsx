@@ -42,6 +42,7 @@ import ReportEmergencyPage from "../features/maintenance/pages/ReportEmergencyPa
 import MyMaintenanceRequestsPage from "../features/maintenance/pages/MyMaintenanceRequestsPage";
 import TenantMaintenanceDetailsPage from "../features/maintenance/pages/TenantMaintenanceDetailsPage";
 import OwnerMaintenanceRequestsPage from "../features/maintenance/pages/OwnerMaintenanceRequestsPage";
+import OwnerEmergencyRequestsPage from "../features/maintenance/pages/OwnerEmergencyRequestsPage";
 import MaintenanceRequestDetailsPage from "../features/maintenance/pages/MaintenanceRequestDetailsPage";
 
 import TenantListPage from "../features/tenancies/pages/TenantListPage";
@@ -86,6 +87,8 @@ export default function AppRoutes() {
                 <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
                 <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
                 <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
+                <Route path="/owner/emergency" element={<OwnerEmergencyRequestsPage />} />
+                <Route path="/owner/emergency/:id" element={<MaintenanceRequestDetailsPage />} />
               </Route>
             </Route>
           </Route>
