@@ -7,6 +7,7 @@ using SmartProperty.Api.Entities.Maintenance;
 using SmartProperty.Api.Entities.Worker;
 using SmartProperty.Api.Entities.AgenticAI;
 
+
 namespace SmartProperty.Api.Data;
 
 public class AppDbContext : DbContext
@@ -41,7 +42,11 @@ public class AppDbContext : DbContext
     public DbSet<ValidationResult> ValidationResults => Set<ValidationResult>();
     public DbSet<ApprovalDecision> ApprovalDecisions => Set<ApprovalDecision>();
 
-
+public DbSet<MaintenanceAnalysisResult> MaintenanceAnalysisResults
+{
+    get;
+    set;
+}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -11,6 +11,9 @@ using SmartProperty.Api.Repositories;
 using SmartProperty.Api.Repositories.Implementations;
 using SmartProperty.Api.Repositories.Interfaces;
 using SmartProperty.Api.Services;
+using SmartProperty.Api.AgenticAI.Agents;
+using SmartProperty.Api.AgenticAI.Validators;
+using SmartProperty.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +24,10 @@ builder.Configuration.AddJsonFile(
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<MaintenanceAnalysisAgent>();
+builder.Services.AddScoped<AgentOutputValidator>();
+builder.Services.AddScoped<Agent2MaintenanceAnalysisService>();
+
 // --------------------
 // PostgreSQL
 // --------------------
