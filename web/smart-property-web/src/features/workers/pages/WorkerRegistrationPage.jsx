@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerWorker, uploadWorkerProof } from "../services/workerService.js";
+import { registerWorker } from "../services/workerService.js";
 
 const skillOptions = ["Plumbing", "Electrical", "HVAC", "Carpentry", "Masonry"];
 
@@ -17,8 +17,6 @@ function WorkerRegistrationPage() {
     proofDocumentName: "",
     proofDocumentUrl: "",
   });
-  const [localPreview, setLocalPreview] = useState("");
-  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -34,42 +32,6 @@ function WorkerRegistrationPage() {
         ? current.skills.filter((item) => item !== skill)
         : [...current.skills, skill],
     }));
-  }
-
-  async function handleFileChange(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Show local preview immediately
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLocalPreview(typeof reader.result === "string" ? reader.result : "");
-    };
-    reader.readAsDataURL(file);
-
-    try {
-      setUploadingDoc(true);
-      const res = await uploadWorkerProof(file);
-      setForm((current) => ({
-        ...current,
-        proofDocumentName: res.fileName || file.name,
-        proofDocumentUrl: res.documentUrl,
-      }));
-    } catch {
-      // If direct upload fails, fallback to Data URL
-      reader.onloadend = () => {
-        const dataUrl = typeof reader.result === "string" ? reader.result : "";
-        setLocalPreview(dataUrl);
-        setForm((current) => ({
-          ...current,
-          proofDocumentName: file.name,
-          proofDocumentUrl: dataUrl,
-        }));
-      };
-      reader.readAsDataURL(file);
-    } finally {
-      setUploadingDoc(false);
-    }
   }
 
   async function handleSubmit(event) {
@@ -91,22 +53,28 @@ function WorkerRegistrationPage() {
       return;
     }
 
-    if (!form.proofDocumentName) {
-      setError("Upload a proof document before submitting.");
+    const docUrl = form.proofDocumentUrl?.trim();
+    if (!docUrl) {
+      setError("Please provide a link to your trade license or certificate (e.g. Google Drive link).");
+      return;
+    }
+
+    if (!docUrl.startsWith("http://") && !docUrl.startsWith("https://")) {
+      setError("Document link must be a valid web URL starting with https:// (e.g. Google Drive or OneDrive link).");
       return;
     }
 
     setLoading(true);
     try {
       await registerWorker({
-        fullName: form.fullName,
-        email: form.email,
-        mobile: form.mobile,
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        mobile: form.mobile.trim(),
         password: form.password,
         skills: form.skills,
-        serviceArea: form.serviceArea,
-        proofDocumentName: form.proofDocumentName,
-        proofDocumentUrl: form.proofDocumentUrl,
+        serviceArea: form.serviceArea.trim(),
+        proofDocumentName: form.proofDocumentName?.trim() || "Trade Proof Document",
+        proofDocumentUrl: docUrl,
       });
       setSubmitted(true);
     } catch (submitError) {
@@ -137,12 +105,12 @@ function WorkerRegistrationPage() {
         <p style={styles.muted}>Submit your trade details and service area for Admin verification.</p>
 
         <div style={styles.grid}>
-          <label style={styles.field}>Full name<input name="fullName" value={form.fullName} onChange={updateField} required /></label>
-          <label style={styles.field}>Email<input name="email" type="email" value={form.email} onChange={updateField} required /></label>
-          <label style={styles.field}>Mobile number<input name="mobile" value={form.mobile} onChange={updateField} required /></label>
-          <label style={styles.field}>Password<input name="password" type="password" value={form.password} onChange={updateField} placeholder="Min 6 characters" required /></label>
-          <label style={styles.field}>Confirm password<input name="confirmPassword" type="password" value={form.confirmPassword} onChange={updateField} required /></label>
-          <label style={styles.field}>Service area<input name="serviceArea" value={form.serviceArea} onChange={updateField} placeholder="e.g. Colombo 05, within 15 km" required /></label>
+          <label style={styles.field}>Full name<input style={styles.input} name="fullName" value={form.fullName} onChange={updateField} required /></label>
+          <label style={styles.field}>Email<input style={styles.input} name="email" type="email" value={form.email} onChange={updateField} required /></label>
+          <label style={styles.field}>Mobile number<input style={styles.input} name="mobile" value={form.mobile} onChange={updateField} required /></label>
+          <label style={styles.field}>Password<input style={styles.input} name="password" type="password" value={form.password} onChange={updateField} placeholder="Min 6 characters" required /></label>
+          <label style={styles.field}>Confirm password<input style={styles.input} name="confirmPassword" type="password" value={form.confirmPassword} onChange={updateField} required /></label>
+          <label style={styles.field}>Service area<input style={styles.input} name="serviceArea" value={form.serviceArea} onChange={updateField} placeholder="e.g. Colombo 05, within 15 km" required /></label>
         </div>
 
         <fieldset style={styles.fieldset}>
@@ -157,35 +125,54 @@ function WorkerRegistrationPage() {
           </div>
         </fieldset>
 
-        <label style={styles.uploadField}>
-          Trade license or proof document
-          <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileChange} required />
-        </label>
-        {uploadingDoc && (
-          <p style={{ margin: "6px 0", color: "#0284c7", fontSize: "13px" }}>
-            ⏳ Uploading proof document to server...
-          </p>
-        )}
-        {form.proofDocumentName && (
-          <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "12px", background: "#e0f2fe", color: "#0369a1", padding: "4px 8px", borderRadius: "4px", fontWeight: 700 }}>
-              {form.proofDocumentName.split(".").pop()?.toUpperCase()}
-            </span>
-            <span style={styles.fileName}>{form.proofDocumentName}</span>
-            {form.proofDocumentUrl && !uploadingDoc && (
-              <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>✓ Attached</span>
+        <fieldset style={styles.fieldset}>
+          <legend style={{ fontWeight: 700, color: "#17324d", padding: "0 6px" }}>
+            Trade License or Proof Document (Google Drive / Cloud Link)
+          </legend>
+          <div style={{ display: "grid", gap: "14px", marginTop: "8px" }}>
+            <label style={styles.field}>
+              Document title / certificate name
+              <input
+                style={styles.input}
+                name="proofDocumentName"
+                value={form.proofDocumentName}
+                onChange={updateField}
+                placeholder="e.g. NVQ Level 4 Plumbing Certificate / Electrical License"
+              />
+            </label>
+
+            <label style={styles.field}>
+              Public document link (Google Drive, OneDrive, Dropbox, etc.) *
+              <input
+                style={styles.input}
+                type="url"
+                name="proofDocumentUrl"
+                value={form.proofDocumentUrl}
+                onChange={updateField}
+                placeholder="https://drive.google.com/file/d/... or any cloud document link"
+                required
+              />
+            </label>
+
+            <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "6px", padding: "12px", fontSize: "13px", color: "#0369a1", lineHeight: 1.5 }}>
+              💡 <strong>Google Drive Tip:</strong> Upload your certificate to Google Drive, right-click the file, click <strong>Share</strong>, set General Access to <strong>"Anyone with the link can view"</strong>, copy the link, and paste it above so the Admin can inspect it.
+            </div>
+
+            {form.proofDocumentUrl && (form.proofDocumentUrl.startsWith("http://") || form.proofDocumentUrl.startsWith("https://")) && (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <a
+                  href={form.proofDocumentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#0284c7", fontSize: "13px", fontWeight: 700, textDecoration: "underline" }}
+                >
+                  🔗 Test link in new tab before submitting
+                </a>
+              </div>
             )}
           </div>
-        )}
-        {localPreview && localPreview.startsWith("data:image/") && (
-          <div style={{ marginTop: "10px" }}>
-            <img
-              src={localPreview}
-              alt="Proof Document Preview"
-              style={{ maxHeight: "140px", borderRadius: "6px", border: "1px solid #dde3e9" }}
-            />
-          </div>
-        )}
+        </fieldset>
+
         {error && <p style={styles.error}>{error}</p>}
 
         <div style={styles.actions}>
@@ -205,6 +192,7 @@ const styles = {
   muted: { color: "#6b7280", lineHeight: 1.6 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "18px", marginTop: "26px" },
   field: { display: "grid", gap: "7px", fontWeight: 600, fontSize: "14px" },
+  input: { padding: "10px 12px", border: "1px solid #dde3e9", borderRadius: "6px", fontSize: "14px", width: "100%", boxSizing: "border-box" },
   fieldset: { margin: "26px 0 20px", padding: "18px", border: "1px solid #dde3e9", borderRadius: "6px" },
   skillGrid: { display: "flex", flexWrap: "wrap", gap: "14px", marginTop: "10px" },
   checkboxLabel: { display: "flex", gap: "8px", alignItems: "center", fontWeight: 400 },
