@@ -107,6 +107,51 @@ public class PropertyVerificationAdminTests
         Assert.Equal("mohamed@example.com", emailValue);
     }
 
+    [Fact]
+    public async Task GetAllOwners_ReturnsAllOwnersIncludingApprovedAndRejected()
+    {
+        await using var context = CreateOwnerContext();
+        var user2 = new SmartProperty.Api.Entities.Identity.User { Id = 11, FullName = "Verified Owner", Email = "vowner@example.com", RoleId = 2 };
+        context.Users.Add(user2);
+        context.PropertyOwners.Add(new PropertyOwner
+        {
+            Id = 3,
+            UserId = 11,
+            VerificationStatus = OwnerVerificationStatus.Verified
+        });
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context);
+        var result = await controller.GetAllOwners();
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var owners = Assert.IsAssignableFrom<System.Collections.IEnumerable>(okResult.Value);
+        Assert.Equal(2, owners.Cast<object>().Count());
+    }
+
+    [Fact]
+    public async Task GetAllProperties_ReturnsAllPropertiesIncludingApprovedAndRejected()
+    {
+        await using var context = CreateContext(PropertyVerificationStatus.UnderReview);
+        context.Properties.Add(new Property
+        {
+            Id = 2,
+            PropertyOwnerId = 1,
+            Name = "Approved Property",
+            Address = "no.7",
+            VerificationStatus = PropertyVerificationStatus.Approved,
+            SubmittedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context);
+        var result = await controller.GetAllProperties();
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var properties = Assert.IsAssignableFrom<System.Collections.IEnumerable>(okResult.Value);
+        Assert.Equal(2, properties.Cast<object>().Count());
+    }
+
     private static AdminController CreateController(AppDbContext context)
     {
         var controller = new AdminController(context)

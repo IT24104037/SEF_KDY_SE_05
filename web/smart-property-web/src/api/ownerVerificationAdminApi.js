@@ -20,6 +20,10 @@ async function request(path, options = {}) {
   return data;
 }
 
+export function getAllOwners() {
+  return request("/api/admin/owners");
+}
+
 export function getPendingOwners() {
   return request("/api/admin/owners/pending");
 }
