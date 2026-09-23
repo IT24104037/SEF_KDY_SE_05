@@ -74,6 +74,15 @@ function WorkersPage() {
 		return /\.pdf($|\?)/i.test(target);
 	}
 
+	function getGoogleDriveEmbedUrl(url) {
+		if (!url) return null;
+		const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+		if (match && match[1]) {
+			return `https://drive.google.com/file/d/${match[1]}/preview`;
+		}
+		return null;
+	}
+
 	function handleViewDocument(worker) {
 		if (!worker) return;
 		const fullUrl = resolveDocumentUrl(worker.proofDocumentUrl);
@@ -99,7 +108,6 @@ function WorkersPage() {
 		<div>
 			<div style={styles.header}>
 				<div><p style={styles.eyebrow}>Admin workspace</p><h1 style={styles.title}>Worker verification</h1><p style={styles.muted}>Review trade proof before workers can receive official jobs.</p></div>
-				<a href="/register-worker" style={styles.link}>Open registration preview</a>
 			</div>
 
 			<form style={styles.filters} onSubmit={handleSearch}>
@@ -128,7 +136,7 @@ function WorkersPage() {
 										style={{ ...styles.viewDocButton, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}
 										title="Open Proof Document in new tab"
 									>
-										🔍 View Doc
+										↗ Open Doc
 									</a>
 								) : (
 									<span style={{ color: "#94a3b8", fontSize: "12px" }}>No doc</span>
@@ -156,17 +164,22 @@ function WorkersPage() {
 
 						{/* Proof Document Review Box */}
 						{(() => {
-							const docUrl = resolveDocumentUrl(selectedWorker.proofDocumentUrl);
+							const rawUrl = selectedWorker.proofDocumentUrl;
+							const docUrl = resolveDocumentUrl(rawUrl);
 							const isImg = isImageDoc(docUrl, selectedWorker.proofDocumentName);
 							const isPdf = isPdfDoc(docUrl, selectedWorker.proofDocumentName);
+							const gDriveEmbed = getGoogleDriveEmbedUrl(rawUrl);
+							const isCloudLink = rawUrl?.includes("drive.google.com") || rawUrl?.includes("onedrive") || rawUrl?.includes("dropbox.com");
 
 							return (
 								<div style={styles.docBox}>
 									<div style={styles.docHeader}>
 										<div>
-											<strong style={{ fontSize: "12px", color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.5px" }}>Proof Document</strong>
+											<strong style={{ fontSize: "12px", color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+												{isCloudLink ? "🌐 Cloud Document Link" : "📄 Trade Proof Document"}
+											</strong>
 											<p style={{ margin: "2px 0 0", fontWeight: 700, color: "#1e293b", fontSize: "14px" }}>
-												📄 {selectedWorker.proofDocumentName || "Trade_Certificate"}
+												{selectedWorker.proofDocumentName || "Trade Certificate / License"}
 											</p>
 										</div>
 										<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -183,7 +196,7 @@ function WorkersPage() {
 														gap: "4px"
 													}}
 												>
-													🔍 Open in New Tab
+													↗ Open Document
 												</a>
 											)}
 											{docUrl && (
@@ -200,7 +213,16 @@ function WorkersPage() {
 
 									{showPreview && docUrl && (
 										<div style={{ marginTop: "14px", borderRadius: "8px", overflow: "hidden", border: "1px solid #cbd5e1", background: "#f8fafc" }}>
-											{isImg ? (
+											{gDriveEmbed ? (
+												<div style={{ padding: "6px" }}>
+													<iframe
+														src={gDriveEmbed}
+														title="Google Drive Document Preview"
+														style={{ width: "100%", height: "380px", border: 0, borderRadius: "6px" }}
+														allow="autoplay"
+													/>
+												</div>
+											) : isImg ? (
 												<div style={{ padding: "16px", textAlign: "center", background: "#0f172a" }}>
 													<img
 														src={docUrl}
@@ -217,17 +239,17 @@ function WorkersPage() {
 													/>
 												</div>
 											) : (
-												<div style={{ padding: "16px", textAlign: "center" }}>
-													<p style={{ margin: "0 0 10px", color: "#475569" }}>
-														File format cannot be previewed inline: <strong>{selectedWorker.proofDocumentName || "Document"}</strong>
+												<div style={{ padding: "20px", textAlign: "center" }}>
+													<p style={{ margin: "0 0 12px", color: "#334155", fontSize: "14px" }}>
+														Document Link: <strong>{selectedWorker.proofDocumentName || "Trade Certificate"}</strong>
 													</p>
 													<a
 														href={docUrl}
 														target="_blank"
 														rel="noopener noreferrer"
-														style={{ ...styles.primaryButton, display: "inline-block", textDecoration: "none" }}
+														style={{ ...styles.primaryButton, display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none" }}
 													>
-														Download / View File
+														↗ Open Document ({docUrl.length > 40 ? docUrl.substring(0, 40) + "..." : docUrl})
 													</a>
 												</div>
 											)}
@@ -236,7 +258,7 @@ function WorkersPage() {
 
 									{!docUrl && (
 										<div style={{ marginTop: "10px", padding: "10px", background: "#f8fafc", borderRadius: "6px", fontSize: "13px", color: "#64748b" }}>
-											No proof document was provided for this application.
+											No proof document link was provided for this application.
 										</div>
 									)}
 								</div>
