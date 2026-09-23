@@ -10,6 +10,10 @@ public class MaintenanceRequestDto
 
     public int PropertyId { get; set; }
 
+    public string? PropertyName { get; set; }
+    public string? PropertyAddress { get; set; }
+    public string? UnitName { get; set; }   
+
     public int UnitId { get; set; }
 
     public string Description { get; set; } = string.Empty;

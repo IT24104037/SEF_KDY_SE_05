@@ -136,6 +136,10 @@ function MaintenanceRequestDetailsPage() {
           </p>
 
           <p>
+           <strong>Address:</strong>{" "}
+           {request.propertyAddress || "-"}
+           </p>
+          <p>
             <strong>Unit ID:</strong>{" "}
             {request.unitId}
           </p>
