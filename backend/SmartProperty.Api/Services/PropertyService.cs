@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Properties;
@@ -1028,5 +1029,67 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             ActiveTenancyId = activeTenancy?.Id
         };
     }
-    
+
+    public async Task<(byte[] FileBytes, string UnitLabel)?> ExportUnitTenancyHistoryAsync(
+        int userId,
+        int propertyId,
+        int unitId)
+    {
+        var owner = await _context.PropertyOwners
+            .FirstOrDefaultAsync(po => po.UserId == userId);
+
+        if (owner == null || owner.VerificationStatus != OwnerVerificationStatus.Verified)
+        {
+            return null;
+        }
+
+        var unit = await _context.Units
+            .Include(u => u.Property)
+            .FirstOrDefaultAsync(u =>
+                u.Id == unitId &&
+                u.PropertyId == propertyId &&
+                u.Property!.PropertyOwnerId == owner.Id);
+
+        if (unit == null)
+        {
+            return null;
+        }
+
+        var tenancies = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .Where(t => t.UnitId == unitId)
+            .OrderByDescending(t => t.StartDate)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Tenancy History");
+
+        worksheet.Cell(1, 1).Value = "Tenant Name";
+        worksheet.Cell(1, 2).Value = "Start Date";
+        worksheet.Cell(1, 3).Value = "End Date";
+        worksheet.Cell(1, 4).Value = "Status";
+
+        var headerRange = worksheet.Range(1, 1, 1, 4);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#1F8A8A");
+        headerRange.Style.Font.FontColor = XLColor.White;
+
+        int row = 2;
+        foreach (var tenancy in tenancies)
+        {
+            worksheet.Cell(row, 1).Value = tenancy.Tenant?.FullName ?? "N/A";
+            worksheet.Cell(row, 2).Value = tenancy.StartDate.ToString("dd/MM/yyyy");
+            worksheet.Cell(row, 3).Value = tenancy.EndDate.HasValue
+                ? tenancy.EndDate.Value.ToString("dd/MM/yyyy")
+                : "";
+            worksheet.Cell(row, 4).Value = tenancy.Status.ToString();
+            row++;
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return (stream.ToArray(), unit.UnitLabel);
+    }
 }

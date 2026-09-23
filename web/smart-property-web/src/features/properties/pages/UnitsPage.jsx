@@ -9,6 +9,7 @@ import {
   restoreUnit,
   softDeleteUnit,
   createBulkUnits,
+  downloadUnitTenancyHistory,
 } from "../services/unitService.js";
 import { getProperty } from "../services/propertyService.js";
 import tenancyService from "../../tenancies/services/tenancyService.js";
@@ -25,6 +26,8 @@ function UnitsPage() {
   const [property, setProperty] = useState(null);
   const [units, setUnits] = useState([]);
   const [archivedUnits, setArchivedUnits] = useState([]);
+  const [selectedHistoryUnitId, setSelectedHistoryUnitId] = useState("");
+  const [downloadingHistory, setDownloadingHistory] = useState(false);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -194,6 +197,35 @@ function UnitsPage() {
       setSuccess("Tenancy ended successfully. Unit is now vacant.");
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  async function handleDownloadHistory() {
+    if (!selectedHistoryUnitId) return;
+
+    const allUnitsList = [...units, ...archivedUnits];
+    const targetUnit = allUnitsList.find(
+      (u) => String(u.id) === String(selectedHistoryUnitId)
+    );
+
+    if (!targetUnit) return;
+
+    try {
+      setDownloadingHistory(true);
+      setError("");
+      setSuccess("");
+
+      await downloadUnitTenancyHistory(
+        propertyId,
+        targetUnit.id,
+        targetUnit.unitLabel
+      );
+
+      setSuccess(`Downloaded tenancy history for Unit ${targetUnit.unitLabel}.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDownloadingHistory(false);
     }
   }
 
@@ -420,7 +452,64 @@ function UnitsPage() {
       </section>
 
       <section>
-        <h2>Unit List</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+            flexWrap: "wrap",
+            gap: "15px",
+          }}
+        >
+          <h2 style={{ margin: 0 }}>Unit List</h2>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <select
+              value={selectedHistoryUnitId}
+              onChange={(e) => setSelectedHistoryUnitId(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                fontSize: "14px",
+              }}
+            >
+              <option value="">Select unit for history</option>
+              {units.concat(archivedUnits).map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.unitLabel} {u.isArchived ? "(Archived)" : ""}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              disabled={!selectedHistoryUnitId || downloadingHistory}
+              onClick={handleDownloadHistory}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: selectedHistoryUnitId
+                  ? "#1F8A8A"
+                  : "#9ca3af",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: selectedHistoryUnitId ? "pointer" : "not-allowed",
+              }}
+            >
+              {downloadingHistory ? "Downloading..." : "Download History"}
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <p>Loading units...</p>
@@ -510,7 +599,11 @@ function UnitsPage() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigate("/owner/tenants/add")}
+                      onClick={() =>
+                        navigate(
+                          `/owner/tenants/add?propertyId=${propertyId}&unitId=${unit.id}`
+                        )
+                      }
                       style={{
                         backgroundColor: "#16a34a",
                         color: "#ffffff",

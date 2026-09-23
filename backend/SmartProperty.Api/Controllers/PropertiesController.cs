@@ -320,6 +320,30 @@ public async Task<IActionResult> RestoreUnit(
     return NoContent();
 }
 
+    // GET /api/properties/{propertyId}/units/{unitId}/tenancy-history/export
+    [HttpGet("{propertyId:int}/units/{unitId:int}/tenancy-history/export")]
+    public async Task<IActionResult> ExportUnitTenancyHistory(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.ExportUnitTenancyHistoryAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "Property or unit was not found, or you do not have permission to access it." });
+        }
+
+        var fileName = $"{result.Value.UnitLabel}_Tenancy_History.xlsx";
+
+        return File(
+            result.Value.FileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName);
+    }
+
     // POST /api/properties/{propertyId}/units/bulk
     [HttpPost("{propertyId:int}/units/bulk")]
     public async Task<IActionResult> CreateBulkUnits(

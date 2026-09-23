@@ -312,6 +312,67 @@ public class UnitOccupancyTests
         Assert.Equal(tenancyResponse.Id, occupiedUnit.ActiveTenancyId);
     }
 
+    [Fact]
+    public async Task ExportUnitTenancyHistoryAsync_ValidOwner_ReturnsExcelFileAndCorrectLabel()
+    {
+        await using var context = CreateContext();
+        var property = await AddVerifiedOwnerAndPropertyAsync(context, ownerId: 1, userId: 101);
+        var unit = new Unit { PropertyId = property.Id, UnitLabel = "A-4" };
+        context.Units.Add(unit);
+        await context.SaveChangesAsync();
+
+        var tenant = new Tenant
+        {
+            PropertyId = property.Id,
+            UnitId = unit.Id,
+            FullName = "Michel Tenant",
+            MobileNumber = "+123450000"
+        };
+        context.Tenants.Add(tenant);
+        await context.SaveChangesAsync();
+
+        context.Tenancies.Add(new Tenancy
+        {
+            TenantId = tenant.Id,
+            UnitId = unit.Id,
+            StartDate = DateTime.UtcNow.AddMonths(-1),
+            Status = TenancyStatus.Active
+        });
+        await context.SaveChangesAsync();
+
+        var service = new PropertyService(context);
+        var result = await service.ExportUnitTenancyHistoryAsync(101, property.Id, unit.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal("A-4", result!.Value.UnitLabel);
+        Assert.NotEmpty(result.Value.FileBytes);
+    }
+
+    [Fact]
+    public async Task ExportUnitTenancyHistoryAsync_UnauthorizedOwner_ReturnsNull()
+    {
+        await using var context = CreateContext();
+        var property = await AddVerifiedOwnerAndPropertyAsync(context, ownerId: 1, userId: 101);
+        
+        context.PropertyOwners.Add(new PropertyOwner
+        {
+            Id = 2,
+            UserId = 202,
+            VerificationStatus = OwnerVerificationStatus.Verified
+        });
+        await context.SaveChangesAsync();
+
+        var unit = new Unit { PropertyId = property.Id, UnitLabel = "B-1" };
+        context.Units.Add(unit);
+        await context.SaveChangesAsync();
+
+        var service = new PropertyService(context);
+        
+        // Owner 202 requesting Owner 101's unit history should be blocked
+        var result = await service.ExportUnitTenancyHistoryAsync(202, property.Id, unit.Id);
+        Assert.Null(result);
+    }
+
     private static AppDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

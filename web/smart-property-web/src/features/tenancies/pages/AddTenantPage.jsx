@@ -1,11 +1,16 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import TenantForm from "../components/TenantForm";
 import tenancyService from "../services/tenancyService";
 
 export default function AddTenantPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [created, setCreated] = useState(null); // holds the CreateTenantResponseDto
+
+  const initialPropertyId = searchParams.get("propertyId") || "";
+  const initialUnitId = searchParams.get("unitId") || "";
+  const isContextAware = Boolean(initialPropertyId && initialUnitId);
 
   const handleCreate = async (payload) => {
     const result = await tenancyService.createTenant(payload);
@@ -68,7 +73,13 @@ export default function AddTenantPage() {
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ color: "#17324D" }}>Add Tenant</h2>
-      <TenantForm mode="create" onSubmit={handleCreate} submitLabel="Add Tenant" />
+      <TenantForm
+        mode="create"
+        initialValues={{ propertyId: initialPropertyId, unitId: initialUnitId }}
+        isContextAware={isContextAware}
+        onSubmit={handleCreate}
+        submitLabel="Add Tenant"
+      />
     </div>
   );
 }

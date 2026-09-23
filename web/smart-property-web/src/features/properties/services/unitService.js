@@ -172,3 +172,29 @@ export async function softDeleteUnit(propertyId, unitId) {
 
   return true;
 }
+
+export async function downloadUnitTenancyHistory(propertyId, unitId, unitLabel) {
+  const response = await fetch(
+    `${API_URL}/api/properties/${propertyId}/units/${unitId}/tenancy-history/export`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return handleResponse(response);
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${unitLabel}_Tenancy_History.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}

@@ -82,4 +82,9 @@ public interface IPropertyService
 
     Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         int userId);
+
+    Task<(byte[] FileBytes, string UnitLabel)?> ExportUnitTenancyHistoryAsync(
+        int userId,
+        int propertyId,
+        int unitId);
 }
