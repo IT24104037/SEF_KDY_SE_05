@@ -224,6 +224,8 @@ public class MaintenanceRequestService : IMaintenanceRequestService
 
         var query = _context.MaintenanceRequests
             .Include(x => x.Category)
+            .Include(x => x.Property)
+            .Include(x => x.Unit)
             .AsNoTracking()
             .AsQueryable();
 
@@ -376,6 +378,8 @@ public class MaintenanceRequestService : IMaintenanceRequestService
     {
         var request = await _context.MaintenanceRequests
             .Include(x => x.Category)
+            .Include(x => x.Property)
+            .Include(x => x.Unit)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (request == null)
@@ -403,8 +407,10 @@ public class MaintenanceRequestService : IMaintenanceRequestService
         string currentUserRole,
         UpdateMaintenanceRequestDto dto)
     {
-        var request = await _context.MaintenanceRequests
+       var request = await _context.MaintenanceRequests
             .Include(x => x.Category)
+            .Include(x => x.Property)
+            .Include(x => x.Unit)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (request == null)
@@ -466,6 +472,8 @@ public class MaintenanceRequestService : IMaintenanceRequestService
     {
         var request = await _context.MaintenanceRequests
             .Include(x => x.Category)
+            .Include(x => x.Property)
+            .Include(x => x.Unit)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (request == null)
@@ -732,6 +740,9 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             TenancyId = request.TenancyId,
             PropertyId = request.PropertyId,
             UnitId = request.UnitId,
+            PropertyName = request.Property?.Name,
+            PropertyAddress = request.Property?.Address,
+            UnitName = request.Unit?.UnitLabel,
             Description = request.Description,
             CategoryId = request.CategoryId,
             CategoryName =
