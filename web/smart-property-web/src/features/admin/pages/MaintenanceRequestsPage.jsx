@@ -9,11 +9,10 @@ function MaintenanceRequestsPage() {
   const [error, setError] = useState("");
 
   const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
 
   useEffect(() => {
     loadRequests();
-  }, [statusFilter, typeFilter]);
+  }, [statusFilter]);
 
   const loadRequests = async () => {
     try {
@@ -23,6 +22,7 @@ function MaintenanceRequestsPage() {
       const token = sessionStorage.getItem("token");
 
       const params = new URLSearchParams({
+        requestType: "NORMAL",
         page: "1",
         pageSize: "50",
         sortBy: "createdAt",
@@ -31,10 +31,6 @@ function MaintenanceRequestsPage() {
 
       if (statusFilter) {
         params.append("status", statusFilter);
-      }
-
-      if (typeFilter) {
-        params.append("requestType", typeFilter);
       }
 
       const response = await fetch(
@@ -48,6 +44,7 @@ function MaintenanceRequestsPage() {
 
       if (!response.ok) {
         const message = await response.text();
+
         throw new Error(
           message || "Could not load maintenance requests."
         );
@@ -62,7 +59,12 @@ function MaintenanceRequestsPage() {
           []
       );
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+
+      setError(
+        err.message ||
+          "Failed to load maintenance requests."
+      );
     } finally {
       setLoading(false);
     }
@@ -71,7 +73,10 @@ function MaintenanceRequestsPage() {
   return (
     <div>
       <h1>Maintenance Requests</h1>
-      <p>View and manage maintenance requests.</p>
+
+      <p>
+        View and manage normal maintenance requests.
+      </p>
 
       <div
         style={{
@@ -89,30 +94,42 @@ function MaintenanceRequestsPage() {
           style={styles.select}
         >
           <option value="">All Statuses</option>
-          <option value="Submitted">Submitted</option>
-          <option value="Analysing">Analysing</option>
+
+          <option value="Submitted">
+            Submitted
+          </option>
+
+          <option value="Analysing">
+            Analysing
+          </option>
+
           <option value="NeedsMoreInfo">
             Needs More Info
           </option>
-          <option value="Assigned">Assigned</option>
+
+          <option value="Approved">
+            Approved
+          </option>
+
+          <option value="Rejected">
+            Rejected
+          </option>
+
+          <option value="Assigned">
+            Assigned
+          </option>
+
           <option value="InProgress">
             In Progress
           </option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-          <option value="Emergency">Emergency</option>
-        </select>
 
-        <select
-          value={typeFilter}
-          onChange={(e) =>
-            setTypeFilter(e.target.value)
-          }
-          style={styles.select}
-        >
-          <option value="">All Types</option>
-          <option value="NORMAL">Normal</option>
-          <option value="EMERGENCY">Emergency</option>
+          <option value="Completed">
+            Completed
+          </option>
+
+          <option value="Cancelled">
+            Cancelled
+          </option>
         </select>
 
         <button
@@ -123,7 +140,9 @@ function MaintenanceRequestsPage() {
         </button>
       </div>
 
-      {loading && <p>Loading...</p>}
+      {loading && (
+        <p>Loading maintenance requests...</p>
+      )}
 
       {error && (
         <p style={{ color: "#D64545" }}>
@@ -134,7 +153,7 @@ function MaintenanceRequestsPage() {
       {!loading &&
         !error &&
         requests.length === 0 && (
-          <p>No maintenance requests found.</p>
+          <p>No normal maintenance requests found.</p>
         )}
 
       {!loading &&
@@ -145,14 +164,26 @@ function MaintenanceRequestsPage() {
               <thead>
                 <tr>
                   <th style={styles.th}>ID</th>
-                  <th style={styles.th}>Type</th>
-                  <th style={styles.th}>Description</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Priority</th>
                   <th style={styles.th}>Property</th>
                   <th style={styles.th}>Unit</th>
-                  <th style={styles.th}>Created</th>
-                  <th style={styles.th}>Action</th>
+                  <th style={styles.th}>
+                    Description
+                  </th>
+                  <th style={styles.th}>
+                    Category
+                  </th>
+                  <th style={styles.th}>
+                    Priority
+                  </th>
+                  <th style={styles.th}>
+                    Status
+                  </th>
+                  <th style={styles.th}>
+                    Created
+                  </th>
+                  <th style={styles.th}>
+                    Action
+                  </th>
                 </tr>
               </thead>
 
@@ -160,11 +191,18 @@ function MaintenanceRequestsPage() {
                 {requests.map((request) => (
                   <tr key={request.id}>
                     <td style={styles.td}>
-                      {request.id}
+                      #{request.id}
                     </td>
 
                     <td style={styles.td}>
-                      {request.requestType}
+                      {request.propertyName ||
+                        `#${request.propertyId}`}
+                    </td>
+
+                    <td style={styles.td}>
+                      {request.unitName ||
+                        request.unitLabel ||
+                        `#${request.unitId}`}
                     </td>
 
                     <td style={styles.td}>
@@ -172,24 +210,18 @@ function MaintenanceRequestsPage() {
                     </td>
 
                     <td style={styles.td}>
+                      {request.categoryName ||
+                        "Not analysed"}
+                    </td>
+
+                    <td style={styles.td}>
+                      {request.priority ||
+                        "Pending"}
+                    </td>
+
+                    <td style={styles.td}>
                       {request.status}
                     </td>
-
-                    <td style={styles.td}>
-                      {request.priority || "-"}
-                    </td>
-
-                    <td style={styles.td}>
-                      {request.propertyName ||
-                        request.propertyId ||
-                        "-"}
-                    </td>
-
-                   <td style={styles.td}>
-                      {request.unitName ||
-                        request.unitLabel ||
-                        `#${request.unitId}`}
-                   </td>
 
                     <td style={styles.td}>
                       {request.createdAt

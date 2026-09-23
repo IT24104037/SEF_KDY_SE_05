@@ -31,6 +31,14 @@ function OwnerLayout() {
             Tenants
           </NavLink>
 
+          <NavLink to="/owner/maintenance" style={linkStyle}>
+              Maintenance Requests
+          </NavLink>
+
+          <NavLink to="/owner/emergency" style={linkStyle}>
+              Emergency Requests
+          </NavLink>
+
           <NavLink to="/owner/profile" style={linkStyle}>
             Profile
           </NavLink>
@@ -130,4 +138,4 @@ const styles = {
   },
 };
 
-export default OwnerLayout;
+export default OwnerLayout;

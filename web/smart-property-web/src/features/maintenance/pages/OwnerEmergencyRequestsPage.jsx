@@ -3,14 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 import { getMaintenanceRequests } from "../services/maintenanceApi.js";
 
-function OwnerMaintenanceRequestsPage() {
+function OwnerEmergencyRequestsPage() {
   const navigate = useNavigate();
 
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-
-  const [priority, setPriority] = useState("");
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -27,8 +25,7 @@ function OwnerMaintenanceRequestsPage() {
       const result = await getMaintenanceRequests({
         search,
         status,
-        requestType: "NORMAL",
-        priority,
+        requestType: "EMERGENCY",
         page,
         pageSize: 10,
         sortBy: "createdAt",
@@ -39,7 +36,8 @@ function OwnerMaintenanceRequestsPage() {
       setTotalPages(result.totalPages || 0);
       setTotalCount(result.totalCount || 0);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err.message || "Failed to load emergency requests.");
     } finally {
       setLoading(false);
     }
@@ -47,7 +45,7 @@ function OwnerMaintenanceRequestsPage() {
 
   useEffect(() => {
     loadRequests();
-  }, [page, status, priority]);
+  }, [page, status]);
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -62,12 +60,17 @@ function OwnerMaintenanceRequestsPage() {
   function clearFilters() {
     setSearch("");
     setStatus("");
-    setPriority("");
-    setPage(1);
+
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      loadRequests();
+    }
   }
 
   function formatDate(value) {
     if (!value) return "-";
+
     return new Date(value).toLocaleString();
   }
 
@@ -76,10 +79,11 @@ function OwnerMaintenanceRequestsPage() {
       <div style={styles.container}>
         <div style={styles.heading}>
           <div>
-            <h1>Maintenance Requests</h1>
+            <h1 style={styles.title}>Emergency Requests</h1>
 
             <p style={styles.subtitle}>
-              View maintenance requests from tenants in your properties.
+              View emergency maintenance requests from tenants in your
+              properties.
             </p>
           </div>
 
@@ -92,7 +96,7 @@ function OwnerMaintenanceRequestsPage() {
           <input
             style={styles.input}
             type="text"
-            placeholder="Search description or category"
+            placeholder="Search description"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -106,32 +110,14 @@ function OwnerMaintenanceRequestsPage() {
             }}
           >
             <option value="">All Status</option>
-            <option value="Submitted">Submitted</option>
-            <option value="Analysing">Analysing</option>
-            <option value="NeedsMoreInfo">Needs More Info</option>
+            <option value="Emergency">Emergency</option>
             <option value="Assigned">Assigned</option>
             <option value="InProgress">In Progress</option>
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
           </select>
 
-        
-          <select
-            style={styles.input}
-            value={priority}
-            onChange={(e) => {
-              setPriority(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">All Priorities</option>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Critical">Critical</option>
-          </select>
-
-          <button style={styles.searchButton}>
+          <button type="submit" style={styles.searchButton}>
             Search
           </button>
 
@@ -151,10 +137,10 @@ function OwnerMaintenanceRequestsPage() {
         )}
 
         {loading ? (
-          <p>Loading maintenance requests...</p>
+          <p>Loading emergency requests...</p>
         ) : requests.length === 0 ? (
           <div style={styles.empty}>
-            No maintenance requests found.
+            No emergency requests found.
           </div>
         ) : (
           <>
@@ -166,8 +152,7 @@ function OwnerMaintenanceRequestsPage() {
                     <th style={styles.th}>Property</th>
                     <th style={styles.th}>Unit</th>
                     <th style={styles.th}>Description</th>
-                    <th style={styles.th}>Type</th>
-                    <th style={styles.th}>Category</th>
+                    <th style={styles.th}>Emergency Type</th>
                     <th style={styles.th}>Priority</th>
                     <th style={styles.th}>Status</th>
                     <th style={styles.th}>Created</th>
@@ -181,29 +166,29 @@ function OwnerMaintenanceRequestsPage() {
                       <td style={styles.td}>
                         #{request.id}
                       </td>
-                    
-                      <td>
-                          {request.propertyName || `#${request.propertyId}`}
-                        </td>
 
-                        <td>
-                          {request.unitName || `#${request.unitId}`}
-                        </td>
+                      <td style={styles.td}>
+                        {request.propertyName ||
+                          `#${request.propertyId}`}
+                      </td>
+
+                      <td style={styles.td}>
+                        {request.unitName ||
+                          `#${request.unitId}`}
+                      </td>
 
                       <td style={styles.td}>
                         {request.description}
                       </td>
 
                       <td style={styles.td}>
-                        {request.requestType}
+                        {request.emergencyType || "-"}
                       </td>
 
                       <td style={styles.td}>
-                        {request.categoryName || "Not analysed"}
-                      </td>
-
-                      <td style={styles.td}>
-                        {request.priority || "Pending"}
+                        <span style={styles.criticalBadge}>
+                          {request.priority || "Critical"}
+                        </span>
                       </td>
 
                       <td style={styles.td}>
@@ -219,7 +204,7 @@ function OwnerMaintenanceRequestsPage() {
                           style={styles.viewButton}
                           onClick={() =>
                             navigate(
-                              `/owner/maintenance/${request.id}`
+                              `/owner/emergency/${request.id}`
                             )
                           }
                         >
@@ -282,6 +267,11 @@ const styles = {
     alignItems: "center",
     flexWrap: "wrap",
     gap: "20px",
+  },
+
+  title: {
+    margin: 0,
+    color: "#17324d",
   },
 
   subtitle: {
@@ -349,6 +339,15 @@ const styles = {
     borderBottom: "1px solid #e5e7eb",
   },
 
+  criticalBadge: {
+    display: "inline-block",
+    padding: "4px 9px",
+    borderRadius: "12px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    fontWeight: "600",
+  },
+
   viewButton: {
     padding: "7px 12px",
     border: "none",
@@ -382,4 +381,4 @@ const styles = {
   },
 };
 
-export default OwnerMaintenanceRequestsPage;
+export default OwnerEmergencyRequestsPage;
