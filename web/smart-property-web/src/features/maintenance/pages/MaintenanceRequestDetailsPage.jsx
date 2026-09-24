@@ -1,17 +1,24 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import {
   getMaintenanceRequestById,
   getMaintenanceHistory,
   updateMaintenanceStatus,
 } from "../services/maintenanceApi.js";
+import {
+  startPlannerWorkflow,
+  getWorkflowByRequestId,
+} from "../../ai-workflow/services/aiWorkflowService.js";
 
 function MaintenanceRequestDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [request, setRequest] = useState(null);
   const [history, setHistory] = useState([]);
+  const [aiWorkflow, setAiWorkflow] = useState(null);
+  const [startingPlanner, setStartingPlanner] = useState(false);
 
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectBox, setShowRejectBox] = useState(false);
@@ -26,17 +33,34 @@ function MaintenanceRequestDetailsPage() {
       setLoading(true);
       setError("");
 
-      const [requestData, historyData] = await Promise.all([
+      const [requestData, historyData, workflowData] = await Promise.all([
         getMaintenanceRequestById(id),
         getMaintenanceHistory(id),
+        getWorkflowByRequestId(id).catch(() => null),
       ]);
 
       setRequest(requestData);
       setHistory(historyData || []);
+      setAiWorkflow(workflowData || null);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleStartPlanner() {
+    try {
+      setStartingPlanner(true);
+      setError("");
+      setMessage("");
+      const result = await startPlannerWorkflow(id);
+      setAiWorkflow(result);
+      setMessage("Agent 1 Planner workflow started successfully!");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setStartingPlanner(false);
     }
   }
 
@@ -353,6 +377,61 @@ function MaintenanceRequestDetailsPage() {
           )}
         </div>
       )}
+
+      {/* AGENT 1 PLANNING SECTION */}
+      <div style={styles.card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <h2>AI Maintenance Planning (Agent 1 - Planner & Coordinator)</h2>
+          {aiWorkflow && (
+            <span style={{ backgroundColor: "#e0e7ff", color: "#3730a3", fontSize: "12px", fontWeight: "600", padding: "4px 10px", borderRadius: "6px" }}>
+              Status: {aiWorkflow.status}
+            </span>
+          )}
+        </div>
+
+        {aiWorkflow ? (
+          <div>
+            <p style={styles.helpText}>
+              Agent 1 has synthesized property & maintenance context for this request.
+            </p>
+            {aiWorkflow.plannerOutput && (
+              <div style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "12px 16px", marginTop: "8px" }}>
+                <p style={{ margin: "0 0 4px 0", fontSize: "13px" }}>
+                  <strong>Assigned Trade:</strong> {aiWorkflow.plannerOutput.requiredTrade} | <strong>Urgency:</strong> {aiWorkflow.plannerOutput.urgency} | <strong>Est. Duration:</strong> {aiWorkflow.plannerOutput.estimatedDuration}
+                </p>
+                <p style={{ margin: 0, fontSize: "13px", color: "#374151" }}>
+                  {aiWorkflow.plannerOutput.summary}
+                </p>
+              </div>
+            )}
+            <div style={{ marginTop: "16px" }}>
+              <button
+                type="button"
+                style={{ backgroundColor: "#4f46e5", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+                onClick={() => navigate(`/owner/ai-workflow/${aiWorkflow.id}`)}
+              >
+                View Full AI Planning Details →
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p style={styles.helpText}>
+              No Agent 1 Planning workflow has been started for this maintenance request yet.
+            </p>
+            <div style={{ marginTop: "12px" }}>
+              <button
+                type="button"
+                style={{ backgroundColor: "#4f46e5", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+                onClick={handleStartPlanner}
+                disabled={startingPlanner}
+              >
+                {startingPlanner ? "Starting Agent 1 Planner..." : "⚡ Start Agent 1 Planner"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* NORMAL MAINTENANCE */}
       {!isEmergency && (
