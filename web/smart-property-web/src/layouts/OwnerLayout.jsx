@@ -1,59 +1,145 @@
-import React from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { getFullName } from "../utils/auth.js";
 
-const navItems = [
-  { to: "/owner/dashboard", label: "Dashboard" },
-  { to: "/owner/properties", label: "Properties" },
-  { to: "/owner/tenants", label: "Tenants" },
-];
+function OwnerLayout() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-export default function OwnerLayout() {
-  const { user, logout } = useAuth();
+  function handleLogout() {
+    sessionStorage.clear();
+    navigate("/login");
+  }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <aside style={{ width: 220, background: "#17324D", color: "#fff", padding: 20 }}>
-        <h3 style={{ marginTop: 0 }}>Smart Property</h3>
-        <p style={{ fontSize: 13, opacity: 0.8 }}>{user?.fullName}</p>
+    <div style={styles.container}>
+      <aside style={styles.sidebar}>
+        <h2 style={styles.logo}>Smart Property</h2>
 
-        <nav style={{ marginTop: 20 }}>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              style={({ isActive }) => ({
-                display: "block",
-                padding: "10px 0",
-                color: isActive ? "#1F8A8A" : "#fff",
-                textDecoration: "none",
-                fontWeight: isActive ? 600 : 400,
-              })}
-            >
-              {item.label}
-            </NavLink>
-          ))}
+        <p style={styles.role}>Owner</p>
+
+        <nav style={styles.nav}>
+          <NavLink to="/owner/dashboard" end style={linkStyle}>
+            Dashboard
+          </NavLink>
+
+          <NavLink to="/owner/properties" style={linkStyle}>
+            Properties
+          </NavLink>
+
+          <NavLink to="/owner/tenants" style={linkStyle}>
+            Tenants
+          </NavLink>
+
+          <NavLink to="/owner/maintenance" style={linkStyle}>
+              Maintenance Requests
+          </NavLink>
+
+          <NavLink to="/owner/emergency" style={linkStyle}>
+              Emergency Requests
+          </NavLink>
+
+          <NavLink to="/owner/maintenance-history" style={linkStyle}>
+            Maintenance History
+          </NavLink>
+
+          <NavLink to="/owner/profile" style={linkStyle}>
+            Profile
+          </NavLink>
         </nav>
 
-        <button
-          onClick={logout}
-          style={{
-            marginTop: 32,
-            background: "transparent",
-            border: "1px solid #fff",
-            color: "#fff",
-            borderRadius: 6,
-            padding: "8px 12px",
-            cursor: "pointer",
-          }}
-        >
-          Log out
+        <button style={styles.logoutButton} onClick={handleLogout}>
+          Logout
         </button>
       </aside>
 
-      <main style={{ flex: 1, background: "#F5F7FA" }}>
-        <Outlet />
+      <main style={styles.main}>
+        <header style={styles.header}>
+          <div>
+            <h3 style={{ margin: 0 }}>Owner Portal</h3>
+            <p style={{ margin: "4px 0", color: "#6b7280" }}>
+              Welcome, {user?.fullName || getFullName()}
+            </p>
+          </div>
+        </header>
+
+        <section style={styles.content}>
+          <Outlet />
+        </section>
       </main>
     </div>
   );
 }
+
+function linkStyle({ isActive }) {
+  return {
+    textDecoration: "none",
+    padding: "12px 14px",
+    borderRadius: "6px",
+    color: isActive ? "#ffffff" : "#d1d5db",
+    backgroundColor: isActive ? "#1f8a8a" : "transparent",
+  };
+}
+
+const styles = {
+  container: {
+    display: "flex",
+    minHeight: "100vh",
+    backgroundColor: "#f5f7fa",
+  },
+
+  sidebar: {
+    width: "250px",
+    backgroundColor: "#17324d",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    flexShrink: 0,
+  },
+
+  logo: {
+    color: "#ffffff",
+    marginBottom: "4px",
+    marginTop: 0,
+  },
+
+  role: {
+    color: "#9ca3af",
+    marginBottom: "30px",
+    marginTop: "4px",
+  },
+
+  nav: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flex: 1,
+  },
+
+  logoutButton: {
+    padding: "12px",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    backgroundColor: "#ffffff",
+    color: "#17324d",
+    fontWeight: "600",
+  },
+
+  main: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  header: {
+    backgroundColor: "#ffffff",
+    padding: "20px 30px",
+    borderBottom: "1px solid #e5e7eb",
+  },
+
+  content: {
+    padding: "30px",
+  },
+};
+
+export default OwnerLayout;

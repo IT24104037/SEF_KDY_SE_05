@@ -23,6 +23,11 @@ public interface IPropertyService
         int propertyId,
         UpdatePropertyDto request);
 
+    Task<PropertyResponseDto?> ResubmitRejectedPropertyAsync(
+        int userId,
+        int propertyId,
+        ResubmitPropertyDto request);
+
     Task<bool> ArchivePropertyAsync(
         int userId,
         int propertyId);
@@ -77,4 +82,9 @@ public interface IPropertyService
 
     Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         int userId);
+
+    Task<(byte[] FileBytes, string UnitLabel)?> ExportUnitTenancyHistoryAsync(
+        int userId,
+        int propertyId,
+        int unitId);
 }

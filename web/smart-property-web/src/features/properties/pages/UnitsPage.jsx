@@ -9,8 +9,10 @@ import {
   restoreUnit,
   softDeleteUnit,
   createBulkUnits,
+  downloadUnitTenancyHistory,
 } from "../services/unitService.js";
 import { getProperty } from "../services/propertyService.js";
+import tenancyService from "../../tenancies/services/tenancyService.js";
 
 const emptyForm = {
   unitLabel: "",
@@ -24,6 +26,8 @@ function UnitsPage() {
   const [property, setProperty] = useState(null);
   const [units, setUnits] = useState([]);
   const [archivedUnits, setArchivedUnits] = useState([]);
+  const [selectedHistoryUnitId, setSelectedHistoryUnitId] = useState("");
+  const [downloadingHistory, setDownloadingHistory] = useState(false);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -170,6 +174,58 @@ function UnitsPage() {
       setSuccess("Archived unit deleted. Its historical records have been preserved.");
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  async function handleEndTenancy(tenancyId) {
+    if (!tenancyId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to end this tenancy? The unit will become vacant."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+
+      await tenancyService.endTenancy(tenancyId);
+      await loadUnits();
+      setSuccess("Tenancy ended successfully. Unit is now vacant.");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleDownloadHistory() {
+    if (!selectedHistoryUnitId) return;
+
+    const allUnitsList = [...units, ...archivedUnits];
+    const targetUnit = allUnitsList.find(
+      (u) => String(u.id) === String(selectedHistoryUnitId)
+    );
+
+    if (!targetUnit) return;
+
+    try {
+      setDownloadingHistory(true);
+      setError("");
+      setSuccess("");
+
+      await downloadUnitTenancyHistory(
+        propertyId,
+        targetUnit.id,
+        targetUnit.unitLabel
+      );
+
+      setSuccess(`Downloaded tenancy history for Unit ${targetUnit.unitLabel}.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDownloadingHistory(false);
     }
   }
 
@@ -396,7 +452,64 @@ function UnitsPage() {
       </section>
 
       <section>
-        <h2>Unit List</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+            flexWrap: "wrap",
+            gap: "15px",
+          }}
+        >
+          <h2 style={{ margin: 0 }}>Unit List</h2>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <select
+              value={selectedHistoryUnitId}
+              onChange={(e) => setSelectedHistoryUnitId(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                fontSize: "14px",
+              }}
+            >
+              <option value="">Select unit for history</option>
+              {units.concat(archivedUnits).map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.unitLabel} {u.isArchived ? "(Archived)" : ""}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              disabled={!selectedHistoryUnitId || downloadingHistory}
+              onClick={handleDownloadHistory}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: selectedHistoryUnitId
+                  ? "#1F8A8A"
+                  : "#9ca3af",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: selectedHistoryUnitId ? "pointer" : "not-allowed",
+              }}
+            >
+              {downloadingHistory ? "Downloading..." : "Download History"}
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <p>Loading units...</p>
@@ -430,10 +543,37 @@ function UnitsPage() {
                 )}
 
                 <p>
-                  <strong>Status:</strong> Active
+                  <strong>Status:</strong>{" "}
+                  <span
+                    style={{
+                      display: "inline-block",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      backgroundColor:
+                        unit.occupancyStatus === "Occupied"
+                          ? "#fee2e2"
+                          : "#dcfce7",
+                      color:
+                        unit.occupancyStatus === "Occupied"
+                          ? "#991b1b"
+                          : "#166534",
+                    }}
+                  >
+                    {unit.occupancyStatus === "Occupied"
+                      ? "OCCUPIED"
+                      : "VACANT"}
+                  </span>
                 </p>
 
-                <div style={{ marginTop: "15px" }}>
+                {unit.occupancyStatus === "Occupied" && unit.currentTenantName && (
+                  <p>
+                    <strong>Current Tenant:</strong> {unit.currentTenantName}
+                  </p>
+                )}
+
+                <div style={{ marginTop: "15px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <button
                     type="button"
                     onClick={() => startEdit(unit)}
@@ -441,10 +581,45 @@ function UnitsPage() {
                     Edit
                   </button>
 
+                  {unit.occupancyStatus === "Occupied" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleEndTenancy(unit.activeTenancyId)}
+                      style={{
+                        backgroundColor: "#dc2626",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "6px 12px",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      End Tenancy
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/owner/tenants/add?propertyId=${propertyId}&unitId=${unit.id}`
+                        )
+                      }
+                      style={{
+                        backgroundColor: "#16a34a",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "6px 12px",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Assign Tenant
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => handleArchive(unit.id)}
-                    style={{ marginLeft: "10px" }}
                   >
                     Archive
                   </button>

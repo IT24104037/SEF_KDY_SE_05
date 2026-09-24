@@ -19,7 +19,8 @@ public class TenancyService : ITenancyService
         _repository = repository;
         _pinGenerator = pinGenerator;
     }
-
+    
+    
     public async Task<CreateTenantResponseDto> CreateTenantAsync(CreateTenantDto dto, int ownerUserId)
     {
         var mobileNumber = dto.MobileNumber.Trim();
@@ -109,35 +110,146 @@ public class TenancyService : ITenancyService
         return ToResponseDto(tenant);
     }
 
-    public async Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId)
+    public async Task<TenancyResponseDto> CreateTenancyAsync(
+    CreateTenancyDto dto,
+    int ownerUserId)
+{
+    var tenant = await _repository.GetTenantByIdAsync(
+        dto.TenantId,
+        ownerUserId);
+
+    if (tenant == null)
     {
-        var tenant = await _repository.GetTenantByIdAsync(dto.TenantId, ownerUserId);
-        if (tenant == null || tenant.UnitId != dto.UnitId || tenant.Property.IsArchived ||
-            tenant.Property.VerificationStatus != Entities.Property.PropertyVerificationStatus.Approved ||
-            tenant.Unit.IsArchived || tenant.Unit.IsDeleted || tenant.Unit.PropertyId != tenant.PropertyId)
-        {
-            throw new InvalidOperationException("The selected property or unit is not available for tenancy.");
-        }
-
-        if (await _repository.HasActiveTenancyForUnitAsync(dto.UnitId))
-        {
-            throw new InvalidOperationException("The unit already has an active tenancy.");
-        }
-
-        var tenancy = new Tenancy
-        {
-            TenantId = dto.TenantId,
-            UnitId = dto.UnitId,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
-            Status = dto.EndDate.HasValue ? TenancyStatus.Ended : TenancyStatus.Active
-        };
-
-        var created = await _repository.AddTenancyAsync(tenancy);
-        return ToTenancyResponseDto((await _repository.GetTenancyByIdAsync(created.Id))!);
+        throw new InvalidOperationException(
+            "Tenant was not found or does not belong to this owner.");
     }
 
-    public async Task<List<TenancyResponseDto>?> GetTenanciesForTenantAsync(int tenantId, int ownerUserId)
+    // Use the unit already assigned to this tenant.
+    if (tenant.UnitId != dto.UnitId)
+    {
+        throw new InvalidOperationException(
+            "The selected unit does not match the tenant's assigned unit.");
+    }
+
+    if (tenant.Property == null || tenant.Unit == null)
+    {
+        throw new InvalidOperationException(
+            "The tenant's property or unit details could not be loaded.");
+    }
+
+    if (tenant.Property.IsArchived)
+    {
+        throw new InvalidOperationException(
+            "The tenant's property is archived.");
+    }
+
+    if (tenant.Property.VerificationStatus !=
+        Entities.Property.PropertyVerificationStatus.Approved)
+    {
+        throw new InvalidOperationException(
+            "The property must be approved before creating a tenancy.");
+    }
+
+    if (tenant.Unit.IsArchived || tenant.Unit.IsDeleted)
+    {
+        throw new InvalidOperationException(
+            "The tenant's assigned unit is unavailable.");
+    }
+
+    if (tenant.Unit.PropertyId != tenant.PropertyId)
+    {
+        throw new InvalidOperationException(
+            "The assigned unit does not belong to the tenant's property.");
+    }
+
+    // Prevent duplicate/current tenancy for this tenant.
+    var tenantTenancies =
+        await _repository.GetTenanciesByTenantIdAsync(
+            tenant.Id);
+
+    var existingActiveTenancy =
+        tenantTenancies.FirstOrDefault(x =>
+            x.Status == TenancyStatus.Active &&
+            x.EndDate == null);
+
+    if (existingActiveTenancy != null)
+    {
+        throw new InvalidOperationException(
+            "This tenant already has an active tenancy.");
+    }
+
+    // Prevent two tenants occupying the same unit.
+    if (await _repository.HasActiveTenancyForUnitAsync(
+        tenant.UnitId))
+    {
+        throw new InvalidOperationException(
+            "The assigned unit already has an active tenancy.");
+    }
+
+    var startDateUtc = dto.StartDate.Kind switch
+    {
+    DateTimeKind.Utc => dto.StartDate,
+    DateTimeKind.Local => dto.StartDate.ToUniversalTime(),
+    _ => DateTime.SpecifyKind(
+        dto.StartDate,
+        DateTimeKind.Utc)
+    };
+
+    DateTime? endDateUtc = dto.EndDate.HasValue
+        ? dto.EndDate.Value.Kind switch
+        {
+            DateTimeKind.Utc =>
+                dto.EndDate.Value,
+
+            DateTimeKind.Local =>
+                dto.EndDate.Value.ToUniversalTime(),
+
+            _ =>
+                DateTime.SpecifyKind(
+                    dto.EndDate.Value,
+                    DateTimeKind.Utc)
+        }
+        : null;
+
+    if (endDateUtc.HasValue &&
+        endDateUtc.Value <= startDateUtc)
+    {
+        throw new InvalidOperationException(
+            "End date must be after the start date.");
+    }
+
+    var tenancy = new Tenancy
+    {
+        TenantId = tenant.Id,
+        UnitId = tenant.UnitId,
+
+        StartDate = startDateUtc,
+        EndDate = endDateUtc,
+
+        Status = (endDateUtc.HasValue && endDateUtc.Value <= DateTime.UtcNow)
+            ? TenancyStatus.Ended
+            : TenancyStatus.Active,
+
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    var created =
+        await _repository.AddTenancyAsync(tenancy);
+
+    var createdWithDetails =
+        await _repository.GetTenancyByIdAsync(created.Id);
+
+    if (createdWithDetails == null)
+    {
+        throw new InvalidOperationException(
+            "Tenancy was created but could not be loaded.");
+    }
+
+    return ToTenancyResponseDto(createdWithDetails);
+}
+
+       public async Task<List<TenancyResponseDto>?> GetTenanciesForTenantAsync(int tenantId, int ownerUserId)
     {
         var tenant = await _repository.GetTenantByIdAsync(tenantId, ownerUserId);
         if (tenant == null) return null;
@@ -206,6 +318,7 @@ public class TenancyService : ITenancyService
         TenantId = tenancy.TenantId,
         TenantFullName = tenancy.Tenant?.FullName ?? string.Empty,
         UnitId = tenancy.UnitId,
+        UnitName = tenancy.Tenant?.Unit?.UnitLabel ?? string.Empty,
         StartDate = tenancy.StartDate,
         EndDate = tenancy.EndDate,
         Status = tenancy.Status,

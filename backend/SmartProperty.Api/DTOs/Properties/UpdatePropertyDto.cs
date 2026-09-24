@@ -18,4 +18,10 @@ public class UpdatePropertyDto
     public decimal? Latitude { get; set; }
 
     public decimal? Longitude { get; set; }
+
+    [StringLength(100)]
+    public string? DocumentType { get; set; }
+
+    [StringLength(1000)]
+    public string? DocumentUrl { get; set; }
 }

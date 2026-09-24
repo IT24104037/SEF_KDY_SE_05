@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "../../../api/apiClient";
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5144";
 
 function getAuthHeaders() {
   const token = sessionStorage.getItem("token");
@@ -102,31 +104,22 @@ export async function updateMaintenanceStatus(id, status, note = "") {
 }
 
 export async function uploadMaintenanceImage(file) {
-  const token = sessionStorage.getItem("token");
-
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(
-    `${API_URL}/api/maintenance-images/upload`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    }
-  );
+  try {
+    const response = await apiClient.post(
+      "/api/maintenance-images/upload",
+      formData
+    );
 
-  const data = await response.json();
-
-  if (!response.ok) {
+    return response.data.imageUrl;
+  } catch (error) {
     throw new Error(
-      data.message || "Failed to upload maintenance image."
+      error.response?.data?.message ||
+      "Failed to upload maintenance image."
     );
   }
-
-  return data.imageUrl;
 }
 
 export async function createMaintenanceRequest(data) {
@@ -148,4 +141,38 @@ export async function createMaintenanceRequest(data) {
   }
 
   return result;
+  
+}
+
+export async function archiveMaintenanceRequest(id) {
+  try {
+    const response = await apiClient.put(
+      `/api/maintenance-requests/${id}/archive`
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to remove maintenance request."
+    );
+  }
+}
+
+export async function getMaintenanceHistoryRequests(params = {}) {
+  try {
+    const response = await apiClient.get(
+      "/api/maintenance-requests/history-list",
+      {
+        params,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to load maintenance history."
+    );
+  }
 }

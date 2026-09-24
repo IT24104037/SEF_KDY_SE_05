@@ -1,7 +1,9 @@
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Properties;
 using SmartProperty.Api.Entities.Property;
+using SmartProperty.Api.Entities.Tenancy;
 using SmartProperty.Api.Interfaces;
 
 namespace SmartProperty.Api.Services;
@@ -71,28 +73,13 @@ public class PropertyService : IPropertyService
             return new List<PropertyResponseDto>();
         }
 
-        return await _context.Properties
+        var properties = await _context.Properties
+            .Include(p => p.VerificationDocuments)
             .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived)
             .OrderBy(p => p.Name)
-            .Select(p => new PropertyResponseDto
-            {
-                Id = p.Id,
-                PropertyOwnerId = p.PropertyOwnerId,
-                Name = p.Name,
-                Address = p.Address,
-                City = p.City,
-                Description = p.Description,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                IsArchived = p.IsArchived,
-                VerificationStatus = p.VerificationStatus.ToString(),
-                RejectionReason = p.RejectionReason,
-                SubmittedAt = p.SubmittedAt,
-                VerifiedAt = p.VerifiedAt
-            })
             .ToListAsync();
+
+        return properties.Select(p => MapProperty(p)).ToList();
     }
     public async Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
     int userId)
@@ -146,6 +133,7 @@ public class PropertyService : IPropertyService
         }
 
         var property = await _context.Properties
+            .Include(p => p.VerificationDocuments)
             .FirstOrDefaultAsync(p =>
                 p.Id == propertyId &&
                 p.PropertyOwnerId == owner.Id &&
@@ -193,6 +181,145 @@ public class PropertyService : IPropertyService
         property.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        return MapProperty(property);
+    }
+
+    public async Task<PropertyResponseDto?> ResubmitRejectedPropertyAsync(
+        int userId,
+        int propertyId,
+        ResubmitPropertyDto request)
+    {
+        var owner = await _context.PropertyOwners
+            .FirstOrDefaultAsync(po => po.UserId == userId);
+
+        if (owner == null ||
+            owner.VerificationStatus != OwnerVerificationStatus.Verified)
+        {
+            return null;
+        }
+
+        // Load the property together with its current documents so we can
+        // validate removed IDs and compute the post-operation document count
+        // before committing anything.
+        var property = await _context.Properties
+            .Include(p => p.VerificationDocuments)
+            .FirstOrDefaultAsync(p =>
+                p.Id == propertyId &&
+                p.PropertyOwnerId == owner.Id &&
+                p.VerificationStatus == PropertyVerificationStatus.Rejected &&
+                !p.IsArchived);
+
+        if (property == null)
+        {
+            return null;
+        }
+
+        // Validate that every ID in RemovedDocumentIds belongs to THIS property.
+        // Returning null here is treated as a 404/bad-request by the controller.
+        if (request.RemovedDocumentIds.Count > 0)
+        {
+            var propertyDocIds = property.VerificationDocuments
+                .Select(d => d.Id)
+                .ToHashSet();
+
+            foreach (var idToRemove in request.RemovedDocumentIds)
+            {
+                if (!propertyDocIds.Contains(idToRemove))
+                {
+                    // ID does not belong to this property — reject the whole request.
+                    return null;
+                }
+            }
+        }
+
+        // Validate new documents: each entry must supply both fields.
+        foreach (var newDoc in request.NewDocuments)
+        {
+            if (string.IsNullOrWhiteSpace(newDoc.DocumentType) ||
+                string.IsNullOrWhiteSpace(newDoc.DocumentUrl))
+            {
+                return null;
+            }
+        }
+
+        // Compute how many documents will remain after removes + adds.
+        int survivingExisting = property.VerificationDocuments
+            .Count(d => !request.RemovedDocumentIds.Contains(d.Id));
+        int totalAfter = survivingExisting + request.NewDocuments.Count;
+
+        if (totalAfter < 1)
+        {
+            // The owner must retain at least one verification document.
+            return null;
+        }
+
+        // Execute the entire operation atomically.
+        var isRelational = _context.Database.IsRelational();
+        var transaction = isRelational ? await _context.Database.BeginTransactionAsync() : null;
+        try
+        {
+            // Remove documents the owner explicitly marked for removal.
+            if (request.RemovedDocumentIds.Count > 0)
+            {
+                var docsToRemove = property.VerificationDocuments
+                    .Where(d => request.RemovedDocumentIds.Contains(d.Id))
+                    .ToList();
+
+                _context.PropertyVerificationDocuments.RemoveRange(docsToRemove);
+            }
+
+            // Add new documents.
+            foreach (var newDoc in request.NewDocuments)
+            {
+                _context.PropertyVerificationDocuments.Add(new PropertyVerificationDocument
+                {
+                    PropertyId = property.Id,
+                    DocumentType = newDoc.DocumentType.Trim(),
+                    DocumentUrl = newDoc.DocumentUrl.Trim()
+                });
+            }
+
+            // Update property fields and reset verification status.
+            property.Name = request.Name.Trim();
+            property.Address = request.Address.Trim();
+            property.City = request.City?.Trim();
+            property.Description = request.Description?.Trim();
+            property.Latitude = request.Latitude;
+            property.Longitude = request.Longitude;
+            property.VerificationStatus = PropertyVerificationStatus.UnderReview;
+            property.RejectionReason = null;
+            property.SubmittedAt = DateTime.UtcNow;
+            property.VerifiedAt = null;
+            property.VerifiedByAdminId = null;
+            property.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+        }
+        catch
+        {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+
+        // Reload the updated property with its final documents for the response.
+        await _context.Entry(property)
+            .Collection(p => p.VerificationDocuments)
+            .LoadAsync();
 
         return MapProperty(property);
     }
@@ -355,20 +482,28 @@ public class PropertyService : IPropertyService
             return new List<UnitResponseDto>();
         }
 
-        return await _context.Units
+        var units = await _context.Units
             .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted)
             .OrderBy(u => u.UnitLabel)
-            .Select(u => new UnitResponseDto
-            {
-                Id = u.Id,
-                PropertyId = u.PropertyId,
-                UnitLabel = u.UnitLabel,
-                Description = u.Description,
-                IsArchived = u.IsArchived,
-                CreatedAt = u.CreatedAt,
-                UpdatedAt = u.UpdatedAt
-            })
             .ToListAsync();
+
+        if (!units.Any())
+        {
+            return new List<UnitResponseDto>();
+        }
+
+        var unitIds = units.Select(u => u.Id).ToList();
+
+        var activeTenancies = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .Where(t => unitIds.Contains(t.UnitId) && t.Status == TenancyStatus.Active)
+            .ToDictionaryAsync(t => t.UnitId, t => t);
+
+        return units.Select(u =>
+        {
+            activeTenancies.TryGetValue(u.Id, out var activeTenancy);
+            return MapUnit(u, activeTenancy);
+        }).ToList();
     }
 
     public async Task<UnitResponseDto?> GetUnitByIdAsync(
@@ -395,7 +530,16 @@ public class PropertyService : IPropertyService
                 !u.IsDeleted &&
                 !u.Property.IsArchived);
 
-        return unit == null ? null : MapUnit(unit);
+        if (unit == null)
+        {
+            return null;
+        }
+
+        var activeTenancy = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .FirstOrDefaultAsync(t => t.UnitId == unit.Id && t.Status == TenancyStatus.Active);
+
+        return MapUnit(unit, activeTenancy);
     }
     public async Task<UnitResponseDto?> UpdateUnitAsync(
     int userId,
@@ -482,6 +626,14 @@ public async Task<bool> ArchiveUnitAsync(
         return false;
     }
 
+    var hasActiveTenancy = await _context.Tenancies
+        .AnyAsync(t => t.UnitId == unitId && t.Status == TenancyStatus.Active);
+
+    if (hasActiveTenancy)
+    {
+        return false;
+    }
+
     unit.IsArchived = true;
     unit.UpdatedAt = DateTime.UtcNow;
 
@@ -514,23 +666,31 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
         return new List<UnitResponseDto>();
     }
 
-    return await _context.Units
+    var units = await _context.Units
         .Where(u =>
             u.PropertyId == propertyId &&
             u.IsArchived &&
             !u.IsDeleted)
         .OrderBy(u => u.UnitLabel)
-        .Select(u => new UnitResponseDto
-        {
-            Id = u.Id,
-            PropertyId = u.PropertyId,
-            UnitLabel = u.UnitLabel,
-            Description = u.Description,
-            IsArchived = u.IsArchived,
-            CreatedAt = u.CreatedAt,
-            UpdatedAt = u.UpdatedAt
-        })
         .ToListAsync();
+
+    if (!units.Any())
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    var unitIds = units.Select(u => u.Id).ToList();
+
+    var activeTenancies = await _context.Tenancies
+        .Include(t => t.Tenant)
+        .Where(t => unitIds.Contains(t.UnitId) && t.Status == TenancyStatus.Active)
+        .ToDictionaryAsync(t => t.UnitId, t => t);
+
+    return units.Select(u =>
+    {
+        activeTenancies.TryGetValue(u.Id, out var activeTenancy);
+        return MapUnit(u, activeTenancy);
+    }).ToList();
 }
 
 public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
@@ -631,6 +791,14 @@ public async Task<bool> SoftDeleteUnitAsync(
         return false;
     }
 
+    var hasActiveTenancy = await _context.Tenancies
+        .AnyAsync(t => t.UnitId == unitId && t.Status == TenancyStatus.Active);
+
+    if (hasActiveTenancy)
+    {
+        return false;
+    }
+
     unit.IsDeleted = true;
     unit.DeletedAt = DateTime.UtcNow;
     unit.UpdatedAt = DateTime.UtcNow;
@@ -722,7 +890,7 @@ public async Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
     return new BulkUnitOperationResult
     {
         Units = units
-            .Select(MapUnit)
+            .Select(u => MapUnit(u))
             .ToList()
     };
 }
@@ -832,11 +1000,19 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             VerificationStatus = property.VerificationStatus.ToString(),
             RejectionReason = property.RejectionReason,
             SubmittedAt = property.SubmittedAt,
-            VerifiedAt = property.VerifiedAt
+            VerifiedAt = property.VerifiedAt,
+            Documents = (property.VerificationDocuments ?? new List<PropertyVerificationDocument>())
+                .Select(d => new PropertyVerificationDocumentDto
+                {
+                    Id = d.Id,
+                    DocumentType = d.DocumentType,
+                    DocumentUrl = d.DocumentUrl
+                })
+                .ToList()
         };
     }
 
-    private static UnitResponseDto MapUnit(Unit unit)
+    private static UnitResponseDto MapUnit(Unit unit, Tenancy? activeTenancy = null)
     {
         return new UnitResponseDto
         {
@@ -846,8 +1022,74 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             Description = unit.Description,
             IsArchived = unit.IsArchived,
             CreatedAt = unit.CreatedAt,
-            UpdatedAt = unit.UpdatedAt
+            UpdatedAt = unit.UpdatedAt,
+            OccupancyStatus = activeTenancy != null ? "Occupied" : "Vacant",
+            CurrentTenantId = activeTenancy?.TenantId,
+            CurrentTenantName = activeTenancy?.Tenant?.FullName,
+            ActiveTenancyId = activeTenancy?.Id
         };
     }
-    
+
+    public async Task<(byte[] FileBytes, string UnitLabel)?> ExportUnitTenancyHistoryAsync(
+        int userId,
+        int propertyId,
+        int unitId)
+    {
+        var owner = await _context.PropertyOwners
+            .FirstOrDefaultAsync(po => po.UserId == userId);
+
+        if (owner == null || owner.VerificationStatus != OwnerVerificationStatus.Verified)
+        {
+            return null;
+        }
+
+        var unit = await _context.Units
+            .Include(u => u.Property)
+            .FirstOrDefaultAsync(u =>
+                u.Id == unitId &&
+                u.PropertyId == propertyId &&
+                u.Property!.PropertyOwnerId == owner.Id);
+
+        if (unit == null)
+        {
+            return null;
+        }
+
+        var tenancies = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .Where(t => t.UnitId == unitId)
+            .OrderByDescending(t => t.StartDate)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Tenancy History");
+
+        worksheet.Cell(1, 1).Value = "Tenant Name";
+        worksheet.Cell(1, 2).Value = "Start Date";
+        worksheet.Cell(1, 3).Value = "End Date";
+        worksheet.Cell(1, 4).Value = "Status";
+
+        var headerRange = worksheet.Range(1, 1, 1, 4);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#1F8A8A");
+        headerRange.Style.Font.FontColor = XLColor.White;
+
+        int row = 2;
+        foreach (var tenancy in tenancies)
+        {
+            worksheet.Cell(row, 1).Value = tenancy.Tenant?.FullName ?? "N/A";
+            worksheet.Cell(row, 2).Value = tenancy.StartDate.ToString("dd/MM/yyyy");
+            worksheet.Cell(row, 3).Value = tenancy.EndDate.HasValue
+                ? tenancy.EndDate.Value.ToString("dd/MM/yyyy")
+                : "";
+            worksheet.Cell(row, 4).Value = tenancy.Status.ToString();
+            row++;
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return (stream.ToArray(), unit.UnitLabel);
+    }
 }

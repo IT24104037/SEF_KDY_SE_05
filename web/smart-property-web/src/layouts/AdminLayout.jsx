@@ -15,7 +15,6 @@ function AdminLayout() {
         <h2 style={styles.logo}>Smart Property</h2>
 
         <p style={styles.role}>Administrator</p>
-
         <nav style={styles.nav}>
           <NavLink to="/admin" end style={linkStyle}>
             Dashboard
@@ -27,6 +26,10 @@ function AdminLayout() {
 
           <NavLink to="/admin/owner-verification" style={linkStyle}>
             Owner Verification
+          </NavLink>
+
+          <NavLink to="/admin/owner-profile-requests" style={linkStyle}>
+            Profile Change Requests
           </NavLink>
 
           <NavLink to="/admin/property-verification" style={linkStyle}>
@@ -48,6 +51,10 @@ function AdminLayout() {
           <NavLink to="/admin/categories" style={linkStyle}>
             Maintenance Categories
           </NavLink>
+
+        <NavLink to="/admin/maintenance-history" style={linkStyle}>
+          Maintenance History
+        </NavLink>
 
           <NavLink to="/admin/ai-monitoring" style={linkStyle}>
             AI Workflow Monitoring

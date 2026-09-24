@@ -11,6 +11,8 @@ using SmartProperty.Api.Repositories;
 using SmartProperty.Api.Repositories.Implementations;
 using SmartProperty.Api.Repositories.Interfaces;
 using SmartProperty.Api.Services;
+using SmartProperty.Api.AgenticAI.Agents;
+using SmartProperty.Api.AgenticAI.Tools;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +55,10 @@ builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IWorkerRecommendationService, WorkerRecommendationService>();
 builder.Services.AddScoped<IWorkOrderService, WorkOrderService>();
 builder.Services.AddScoped<IExternalMaintenanceService, ExternalMaintenanceService>();
+builder.Services.AddScoped<MaintenanceContextTool>();
+builder.Services.AddScoped<PropertyContextTool>();
+builder.Services.AddScoped<PlannerCoordinatorAgent>();
+builder.Services.AddScoped<IAgentWorkflowService, AgentWorkflowService>();
 
 // --------------------
 // JWT Authentication

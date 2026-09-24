@@ -84,6 +84,22 @@ export async function updateProperty(id, property) {
   return handleResponse(response);
 }
 
+export async function resubmitProperty(id, property) {
+  const response = await fetch(
+    `${API_URL}/api/properties/${id}/resubmit`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify(property),
+    }
+  );
+
+  return handleResponse(response);
+}
+
 export async function archiveProperty(id) {
   const response = await fetch(
     `${API_URL}/api/properties/${id}`,

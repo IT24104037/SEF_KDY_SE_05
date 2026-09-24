@@ -90,6 +90,68 @@ public class PropertyVerificationAdminTests
         Assert.Equal("Ownership document is not clear.", owner.RejectionReason);
     }
 
+    [Fact]
+    public async Task GetPendingProperties_ReturnsOwnerEmail()
+    {
+        await using var context = CreateContext(PropertyVerificationStatus.UnderReview);
+        var controller = CreateController(context);
+
+        var result = await controller.GetPendingProperties();
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var properties = Assert.IsAssignableFrom<System.Collections.IEnumerable>(okResult.Value);
+        var firstProperty = properties.Cast<object>().First();
+        var emailProp = firstProperty.GetType().GetProperty("ownerEmail");
+        Assert.NotNull(emailProp);
+        var emailValue = emailProp.GetValue(firstProperty)?.ToString();
+        Assert.Equal("mohamed@example.com", emailValue);
+    }
+
+    [Fact]
+    public async Task GetAllOwners_ReturnsAllOwnersIncludingApprovedAndRejected()
+    {
+        await using var context = CreateOwnerContext();
+        var user2 = new SmartProperty.Api.Entities.Identity.User { Id = 11, FullName = "Verified Owner", Email = "vowner@example.com", RoleId = 2 };
+        context.Users.Add(user2);
+        context.PropertyOwners.Add(new PropertyOwner
+        {
+            Id = 3,
+            UserId = 11,
+            VerificationStatus = OwnerVerificationStatus.Verified
+        });
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context);
+        var result = await controller.GetAllOwners();
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var owners = Assert.IsAssignableFrom<System.Collections.IEnumerable>(okResult.Value);
+        Assert.Equal(2, owners.Cast<object>().Count());
+    }
+
+    [Fact]
+    public async Task GetAllProperties_ReturnsAllPropertiesIncludingApprovedAndRejected()
+    {
+        await using var context = CreateContext(PropertyVerificationStatus.UnderReview);
+        context.Properties.Add(new Property
+        {
+            Id = 2,
+            PropertyOwnerId = 1,
+            Name = "Approved Property",
+            Address = "no.7",
+            VerificationStatus = PropertyVerificationStatus.Approved,
+            SubmittedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context);
+        var result = await controller.GetAllProperties();
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var properties = Assert.IsAssignableFrom<System.Collections.IEnumerable>(okResult.Value);
+        Assert.Equal(2, properties.Cast<object>().Count());
+    }
+
     private static AdminController CreateController(AppDbContext context)
     {
         var controller = new AdminController(context)
@@ -114,12 +176,31 @@ public class PropertyVerificationAdminTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var context = new AppDbContext(options);
+
+        var user = new SmartProperty.Api.Entities.Identity.User
+        {
+            Id = 10,
+            FullName = "mohamed",
+            Email = "mohamed@example.com",
+            RoleId = 2
+        };
+        var owner = new PropertyOwner
+        {
+            Id = 1,
+            UserId = 10,
+            User = user,
+            VerificationStatus = OwnerVerificationStatus.Verified
+        };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+
         context.Properties.Add(new Property
         {
             Id = 1,
             PropertyOwnerId = 1,
+            PropertyOwner = owner,
             Name = "Review Property",
-            Address = "1 Main Street",
+            Address = "no.6",
             VerificationStatus = status,
             SubmittedAt = DateTime.UtcNow
         });
