@@ -49,11 +49,12 @@ public class TechnicianMatchingAgent
         // =================================
         if (input.IsEmergency)
         {
-            var currentTime = DateTime.UtcNow;
+            var utcNow = DateTime.UtcNow;
+            var localTime = DateTime.Now;
 
             var emergencyWorkers = areaMatchedWorkers
                 .Where(w =>
-                    _workerTool.IsAvailableAt(w, currentTime) &&
+                    _workerTool.IsAvailableAt(w, localTime) &&
                     _workerTool.IsFreeNow(w))
                 .Select(w => new
                 {
@@ -112,7 +113,7 @@ public class TechnicianMatchingAgent
                         selected.Worker.Id,
 
                     SuggestedDateTime =
-                        currentTime,
+                        utcNow,
 
                     ActiveJobCount =
                         _workerTool.GetActiveJobCount(
