@@ -209,6 +209,31 @@ public class AgentWorkflowService : IAgentWorkflowService
         return MapToWorkflowResponseDto(workflow);
     }
 
+    public async Task<List<AgentExecutionLogDto>?> GetWorkflowLogsAsync(int workflowId, CancellationToken cancellationToken = default)
+    {
+        var workflow = await _dbContext.AgentWorkflows
+            .AsNoTracking()
+            .Include(w => w.ExecutionLogs)
+            .FirstOrDefaultAsync(w => w.Id == workflowId, cancellationToken);
+
+        if (workflow == null)
+            return null;
+
+        return workflow.ExecutionLogs
+            .OrderBy(l => l.CreatedAt)
+            .Select(l => new AgentExecutionLogDto
+            {
+                Id = l.Id,
+                AgentName = l.AgentName,
+                Status = l.Status.ToString(),
+                Summary = l.Summary,
+                ErrorSummary = l.ErrorSummary,
+                DurationMs = l.DurationMs,
+                StartedAt = l.StartedAt,
+                CompletedAt = l.CompletedAt
+            }).ToList();
+    }
+
     private static WorkflowResponseDto MapToWorkflowResponseDto(AgentWorkflow workflow)
     {
         PlannerOutput? plannerOutput = null;
