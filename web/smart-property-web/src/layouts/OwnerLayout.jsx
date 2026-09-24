@@ -39,6 +39,10 @@ function OwnerLayout() {
               Emergency Requests
           </NavLink>
 
+          <NavLink to="/owner/maintenance-history" style={linkStyle}>
+            Maintenance History
+          </NavLink>
+
           <NavLink to="/owner/profile" style={linkStyle}>
             Profile
           </NavLink>

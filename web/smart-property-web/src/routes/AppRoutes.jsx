@@ -21,6 +21,7 @@ import SystemActivityPage from "../features/admin/pages/SystemActivityPage";
 import AdminMaintenanceRequestsPage from "../features/admin/pages/MaintenanceRequestsPage";
 import MaintenanceCategoriesPage from "../features/admin/pages/MaintenanceCategoriesPage";
 import EmergencyRequestsPage from "../features/admin/pages/EmergencyRequestsPage";
+import MaintenanceHistoryPage from "../features/maintenance/pages/MaintenanceHistoryPage";
 
 import WorkerRegistrationPage from "../features/workers/pages/WorkerRegistrationPage";
 import WorkerVerificationPage from "../features/workers/pages/WorkerVerificationPage";
@@ -94,7 +95,8 @@ export default function AppRoutes() {
                 <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
                 <Route path="/owner/emergency" element={<OwnerEmergencyRequestsPage />} />
                 <Route path="/owner/emergency/:id" element={<MaintenanceRequestDetailsPage />} />
-              </Route>
+                <Route  path="/owner/maintenance-history" element={<MaintenanceHistoryPage />} />
+              </Route> 
             </Route>
           </Route>
         </Route>
@@ -122,7 +124,6 @@ export default function AppRoutes() {
               <Route index element={<AdminHome />} />
               <Route path="workers" element={<WorkersPage />} />
               <Route path="maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
-
               <Route path="users" element={<UserManagementPage />} />
               <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
               <Route path="owner-profile-requests" element={<OwnerProfileRequestsPage />} />
@@ -133,7 +134,8 @@ export default function AppRoutes() {
               <Route path="ai-monitoring" element={<AiWorkflowPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="activity" element={<SystemActivityPage />} />
-            </Route>
+              <Route  path="/admin/maintenance-history" element={<MaintenanceHistoryPage />} />
+            </Route> 
           </Route>
         </Route>
 

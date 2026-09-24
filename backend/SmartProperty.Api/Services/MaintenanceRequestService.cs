@@ -532,7 +532,12 @@ public class MaintenanceRequestService : IMaintenanceRequestService
 
         }
 
-
+        // Hide archived requests from active Owner/Admin request pages
+         if (currentUserRole == "Admin" ||
+            currentUserRole == "PropertyOwner")
+        {
+            query = query.Where(x => !x.IsArchived);
+        }   
 
         // SEARCH
 
@@ -731,6 +736,7 @@ public class MaintenanceRequestService : IMaintenanceRequestService
                 totalCount / (double)pageSize)
 
         };
+
 
     }
 
@@ -1100,8 +1106,175 @@ public class MaintenanceRequestService : IMaintenanceRequestService
 
     }
 
+    
+
+    public async Task<bool> ArchiveCompletedRequestAsync(
+    int id,
+    int currentUserId,
+    string currentUserRole)
+{
+    if (currentUserRole != "Admin")
+    {
+        throw new UnauthorizedAccessException(
+            "Only an Admin can remove a completed maintenance request.");
+    }
+
+    var request = await _context.MaintenanceRequests
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (request == null)
+    {
+        return false;
+    }
+
+    if (!string.Equals(
+            request.Status,
+            "Completed",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException(
+            "Only completed maintenance requests can be removed.");
+    }
+
+    if (request.IsArchived)
+    {
+        return true;
+    }
+
+    request.IsArchived = true;
+    request.ArchivedAt = DateTime.UtcNow;
+    request.ArchivedByUserId = currentUserId;
+    request.UpdatedAt = DateTime.UtcNow;
+
+    var history = new MaintenanceStatusHistory
+    {
+        MaintenanceRequestId = request.Id,
+
+        // Status itself does not change.
+        OldStatus = request.Status,
+        NewStatus = request.Status,
+
+        ChangedByUserId = currentUserId,
+
+        Note =
+            "Completed request removed from the active maintenance request list by Admin.",
+
+        ChangedAt = DateTime.UtcNow
+    };
+
+    _context.MaintenanceStatusHistories.Add(history);
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
 
 
+
+
+
+
+
+public async Task<PagedMaintenanceRequestsDto>
+    GetHistoryRequestsAsync(
+        int currentUserId,
+        string currentUserRole,
+        string? search,
+        string? status,
+        string? requestType,
+        int page,
+        int pageSize)
+{
+    if (page < 1)
+        page = 1;
+
+    if (pageSize < 1 || pageSize > 100)
+        pageSize = 20;
+
+    var query = _context.MaintenanceRequests
+        .Include(x => x.Category)
+        .Include(x => x.Property)
+        .Include(x => x.Unit)
+        .AsNoTracking()
+        .AsQueryable();
+
+    if (currentUserRole == "PropertyOwner")
+    {
+        var owner = await _context.PropertyOwners
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.UserId == currentUserId);
+
+        if (owner == null)
+        {
+            return EmptyResult(page, pageSize);
+        }
+
+        query = query.Where(
+            x => x.Property.PropertyOwnerId == owner.Id);
+    }
+    else if (currentUserRole != "Admin")
+    {
+        throw new UnauthorizedAccessException(
+            "You do not have permission to view maintenance history.");
+    }
+
+    // IMPORTANT:
+    // Do NOT filter IsArchived here.
+    // History must contain both current and archived requests.
+
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+        var value = $"%{search.Trim()}%";
+
+        query = query.Where(x =>
+            EF.Functions.ILike(x.Description, value) ||
+            (x.Property != null &&
+             EF.Functions.ILike(x.Property.Name, value)));
+    }
+
+    if (!string.IsNullOrWhiteSpace(status))
+    {
+        query = query.Where(
+            x => x.Status == status);
+    }
+
+    if (!string.IsNullOrWhiteSpace(requestType))
+    {
+        var type =
+            requestType.Trim().ToUpperInvariant();
+
+        query = query.Where(
+            x => x.RequestType == type);
+    }
+
+    var totalCount = await query.CountAsync();
+
+    var requests = await query
+        .OrderByDescending(x => x.UpdatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+
+    var result = new List<MaintenanceRequestDto>();
+
+    foreach (var request in requests)
+    {
+        result.Add(
+            await BuildDtoAsync(request));
+    }
+
+    return new PagedMaintenanceRequestsDto
+    {
+        Requests = result,
+        Page = page,
+        PageSize = pageSize,
+        TotalCount = totalCount,
+        TotalPages =
+            (int)Math.Ceiling(
+                totalCount / (double)pageSize)
+    };
+}
     // ---------------------------------------------------------
 
     // HISTORY
@@ -1502,6 +1675,8 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             Status = request.Status,
 
             Priority = request.Priority,
+
+            IsArchived = request.IsArchived,
 
             ImageUrls = imageUrls,
 

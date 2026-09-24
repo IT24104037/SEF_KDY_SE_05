@@ -141,4 +141,38 @@ export async function createMaintenanceRequest(data) {
   }
 
   return result;
+  
+}
+
+export async function archiveMaintenanceRequest(id) {
+  try {
+    const response = await apiClient.put(
+      `/api/maintenance-requests/${id}/archive`
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to remove maintenance request."
+    );
+  }
+}
+
+export async function getMaintenanceHistoryRequests(params = {}) {
+  try {
+    const response = await apiClient.get(
+      "/api/maintenance-requests/history-list",
+      {
+        params,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to load maintenance history."
+    );
+  }
 }
