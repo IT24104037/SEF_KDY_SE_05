@@ -12,6 +12,7 @@ using SmartProperty.Api.AgenticAI.Tools;
 using SmartProperty.Api.Controllers;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.AgenticAI;
+using SmartProperty.Api.Entities.AgenticAI;
 using SmartProperty.Api.Entities.Identity;
 using SmartProperty.Api.Entities.Maintenance;
 using SmartProperty.Api.Entities.Property;
@@ -126,6 +127,85 @@ public class Agent1Tests
         Assert.Equal("PlannerCoordinatorAgent", response.ExecutionLogs[0].AgentName);
         Assert.NotNull(response.PlannerOutput);
         Assert.Equal("Plumbing", response.PlannerOutput.RequiredTrade);
+
+        // ToolExecutions assertions
+        var toolExecutions = db.ToolExecutions.Where(t => t.AgentWorkflowId == response.Id).OrderBy(t => t.Id).ToList();
+        Assert.Equal(2, toolExecutions.Count);
+
+        var tool1 = toolExecutions[0];
+        Assert.Equal("MaintenanceContextTool", tool1.ToolName);
+        Assert.Equal(ToolExecutionStatus.Completed, tool1.Status);
+        Assert.Equal(0, tool1.RetryCount);
+        Assert.NotNull(tool1.DurationMs);
+        Assert.False(string.IsNullOrWhiteSpace(tool1.InputSummary));
+        Assert.False(string.IsNullOrWhiteSpace(tool1.OutputSummary));
+        Assert.Equal(response.Id, tool1.AgentWorkflowId);
+        Assert.Equal(response.Steps[0].Id, tool1.WorkflowStepId);
+
+        var tool2 = toolExecutions[1];
+        Assert.Equal("PropertyContextTool", tool2.ToolName);
+        Assert.Equal(ToolExecutionStatus.Completed, tool2.Status);
+        Assert.Equal(0, tool2.RetryCount);
+        Assert.NotNull(tool2.DurationMs);
+        Assert.False(string.IsNullOrWhiteSpace(tool2.InputSummary));
+        Assert.False(string.IsNullOrWhiteSpace(tool2.OutputSummary));
+        Assert.Equal(response.Id, tool2.AgentWorkflowId);
+        Assert.Equal(response.Steps[0].Id, tool2.WorkflowStepId);
+    }
+
+    [Fact]
+    public async Task StartPlannerWorkflowAsync_ToolFailure_PersistsFailedToolExecution()
+    {
+        // Arrange: Seed request with missing property link to trigger PropertyContextTool failure
+        using var db = CreateInMemoryDbContext("Agent1_Start_ToolFailure");
+        var ownerUser = new User { Id = 10, FullName = "Owner User", Email = "owner@test.com", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 100, UserId = ownerUser.Id, User = ownerUser };
+        var property = new Property { Id = 200, Name = "Ocean Breeze Apartments", Address = "123 Beach Rd", PropertyOwnerId = owner.Id };
+        var category = new MaintenanceCategory { Id = 600, Name = "Plumbing" };
+        var tenantUser = new User { Id = 20, FullName = "Tenant User", RoleId = 3 };
+        var tenant = new Tenant { Id = 400, UserId = tenantUser.Id, PropertyId = property.Id };
+
+        db.Users.AddRange(ownerUser, tenantUser);
+        db.PropertyOwners.Add(owner);
+        db.Properties.Add(property);
+        db.Tenants.Add(tenant);
+        db.MaintenanceCategories.Add(category);
+
+        // Request has invalid UnitId / TenancyId so PropertyContextTool returns Exists = false
+        var maintRequest = new MaintenanceRequest
+        {
+            Id = 301,
+            TenantId = tenant.Id,
+            PropertyId = property.Id,
+            UnitId = 9999, // Invalid unit
+            CategoryId = category.Id,
+            Description = "Water leak",
+            RequestType = "NORMAL",
+            Status = "Submitted",
+            CreatedAt = DateTime.UtcNow
+        };
+        db.MaintenanceRequests.Add(maintRequest);
+        db.SaveChanges();
+
+        var maintTool = new MaintenanceContextTool(db);
+        var propTool = new PropertyContextTool(db);
+        var agent = new PlannerCoordinatorAgent(maintTool, propTool);
+        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+
+        // Act
+        var response = await service.StartPlannerWorkflowAsync(301, 10, "PropertyOwner");
+
+        // Assert
+        Assert.NotNull(response);
+        var toolExecutions = db.ToolExecutions.Where(t => t.AgentWorkflowId == response.Id).OrderBy(t => t.Id).ToList();
+        Assert.Equal(2, toolExecutions.Count);
+
+        Assert.Equal("MaintenanceContextTool", toolExecutions[0].ToolName);
+        Assert.Equal(ToolExecutionStatus.Completed, toolExecutions[0].Status);
+
+        Assert.Equal("PropertyContextTool", toolExecutions[1].ToolName);
+        Assert.Equal(ToolExecutionStatus.Failed, toolExecutions[1].Status);
+        Assert.False(string.IsNullOrWhiteSpace(toolExecutions[1].ErrorSummary));
     }
 
     [Fact]

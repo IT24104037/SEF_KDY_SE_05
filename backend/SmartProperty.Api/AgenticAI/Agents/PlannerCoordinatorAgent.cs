@@ -1,5 +1,8 @@
+using System.Diagnostics;
+using System.Text.Json;
 using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.AgenticAI.Tools;
+using SmartProperty.Api.Entities.AgenticAI;
 
 namespace SmartProperty.Api.AgenticAI.Agents;
 
@@ -16,22 +19,165 @@ public class PlannerCoordinatorAgent
         _propertyContextTool = propertyContextTool;
     }
 
-    public async Task<PlannerOutput> CreatePlanAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
+    public async Task<PlannerExecutionResult> CreatePlanAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
     {
+        var toolExecutions = new List<ToolExecutionMetadata>();
+
         // 1. Gather Maintenance Context
-        var maintContext = await _maintenanceContextTool.GetMaintenanceContextAsync(maintenanceRequestId, cancellationToken);
+        var maintToolMeta = new ToolExecutionMetadata
+        {
+            ToolName = "MaintenanceContextTool",
+            InputSummary = JsonSerializer.Serialize(new { maintenanceRequestId }),
+            StartedAt = DateTime.UtcNow,
+            Status = ToolExecutionStatus.Running,
+            RetryCount = 0
+        };
+        toolExecutions.Add(maintToolMeta);
+
+        var maintSw = Stopwatch.StartNew();
+        MaintenanceContextResult maintContext;
+        try
+        {
+            maintContext = await _maintenanceContextTool.GetMaintenanceContextAsync(maintenanceRequestId, cancellationToken);
+            maintSw.Stop();
+            maintToolMeta.CompletedAt = DateTime.UtcNow;
+            maintToolMeta.DurationMs = maintSw.ElapsedMilliseconds;
+
+            if (maintContext.Exists)
+            {
+                maintToolMeta.Status = ToolExecutionStatus.Completed;
+                maintToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = true,
+                    category = maintContext.CategoryName,
+                    requestType = maintContext.RequestType,
+                    priority = maintContext.Priority,
+                    imagesCount = maintContext.ImageUrls?.Count ?? 0
+                });
+            }
+            else
+            {
+                maintToolMeta.Status = ToolExecutionStatus.Failed;
+                maintToolMeta.ErrorSummary = maintContext.ErrorMessage ?? $"Maintenance request {maintenanceRequestId} not found.";
+                maintToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = false,
+                    errorMessage = maintContext.ErrorMessage
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            maintSw.Stop();
+            maintToolMeta.CompletedAt = DateTime.UtcNow;
+            maintToolMeta.DurationMs = maintSw.ElapsedMilliseconds;
+            maintToolMeta.Status = ToolExecutionStatus.Failed;
+            maintToolMeta.ErrorSummary = "Operation canceled.";
+            throw;
+        }
+        catch (Exception ex)
+        {
+            maintSw.Stop();
+            maintToolMeta.CompletedAt = DateTime.UtcNow;
+            maintToolMeta.DurationMs = maintSw.ElapsedMilliseconds;
+            maintToolMeta.Status = ToolExecutionStatus.Failed;
+            maintToolMeta.ErrorSummary = ex.Message;
+            return new PlannerExecutionResult
+            {
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message
+                },
+                ToolExecutions = toolExecutions
+            };
+        }
+
         if (!maintContext.Exists)
         {
-            return new PlannerOutput
+            return new PlannerExecutionResult
             {
-                MaintenanceRequestId = maintenanceRequestId,
-                IsSuccess = false,
-                ErrorMessage = maintContext.ErrorMessage ?? $"Maintenance request {maintenanceRequestId} not found."
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = maintContext.ErrorMessage ?? $"Maintenance request {maintenanceRequestId} not found."
+                },
+                ToolExecutions = toolExecutions
             };
         }
 
         // 2. Gather Property Context
-        var propContext = await _propertyContextTool.GetPropertyContextForRequestAsync(maintenanceRequestId, cancellationToken);
+        var propToolMeta = new ToolExecutionMetadata
+        {
+            ToolName = "PropertyContextTool",
+            InputSummary = JsonSerializer.Serialize(new { maintenanceRequestId }),
+            StartedAt = DateTime.UtcNow,
+            Status = ToolExecutionStatus.Running,
+            RetryCount = 0
+        };
+        toolExecutions.Add(propToolMeta);
+
+        var propSw = Stopwatch.StartNew();
+        PropertyContextResult propContext;
+        try
+        {
+            propContext = await _propertyContextTool.GetPropertyContextForRequestAsync(maintenanceRequestId, cancellationToken);
+            propSw.Stop();
+            propToolMeta.CompletedAt = DateTime.UtcNow;
+            propToolMeta.DurationMs = propSw.ElapsedMilliseconds;
+
+            if (propContext.Exists)
+            {
+                propToolMeta.Status = ToolExecutionStatus.Completed;
+                propToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = true,
+                    propertyId = propContext.PropertyId,
+                    propertyName = propContext.PropertyName,
+                    unitId = propContext.UnitId,
+                    unitLabel = propContext.UnitLabel
+                });
+            }
+            else
+            {
+                propToolMeta.Status = ToolExecutionStatus.Failed;
+                propToolMeta.ErrorSummary = propContext.ErrorMessage ?? $"Property context for maintenance request {maintenanceRequestId} could not be retrieved.";
+                propToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = false,
+                    errorMessage = propContext.ErrorMessage
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            propSw.Stop();
+            propToolMeta.CompletedAt = DateTime.UtcNow;
+            propToolMeta.DurationMs = propSw.ElapsedMilliseconds;
+            propToolMeta.Status = ToolExecutionStatus.Failed;
+            propToolMeta.ErrorSummary = "Operation canceled.";
+            throw;
+        }
+        catch (Exception ex)
+        {
+            propSw.Stop();
+            propToolMeta.CompletedAt = DateTime.UtcNow;
+            propToolMeta.DurationMs = propSw.ElapsedMilliseconds;
+            propToolMeta.Status = ToolExecutionStatus.Failed;
+            propToolMeta.ErrorSummary = ex.Message;
+            return new PlannerExecutionResult
+            {
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message
+                },
+                ToolExecutions = toolExecutions
+            };
+        }
 
         // 3. Determine Urgency
         string urgency = DetermineUrgency(maintContext.RequestType, maintContext.Priority, maintContext.EmergencyType);
@@ -49,7 +195,7 @@ public class PlannerCoordinatorAgent
         var steps = GenerateResolutionSteps(urgency, requiredTrade, maintContext.Description);
 
         // 8. Construct Output
-        return new PlannerOutput
+        var plannerOutput = new PlannerOutput
         {
             MaintenanceRequestId = maintenanceRequestId,
             Urgency = urgency,
@@ -59,7 +205,18 @@ public class PlannerCoordinatorAgent
             RelevantContextSummary = contextSummary,
             ResolutionSteps = steps,
             PlannedAt = DateTime.UtcNow,
-            IsSuccess = true
+            IsSuccess = propContext.Exists
+        };
+
+        if (!propContext.Exists)
+        {
+            plannerOutput.ErrorMessage = propContext.ErrorMessage ?? "Property context retrieval failed.";
+        }
+
+        return new PlannerExecutionResult
+        {
+            Output = plannerOutput,
+            ToolExecutions = toolExecutions
         };
     }
 

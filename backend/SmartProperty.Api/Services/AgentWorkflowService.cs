@@ -133,10 +133,10 @@ public class AgentWorkflowService : IAgentWorkflowService
 
         // F. Execute PlannerCoordinatorAgent
         var stopwatch = Stopwatch.StartNew();
-        PlannerOutput plannerOutput;
+        PlannerExecutionResult plannerResult;
         try
         {
-            plannerOutput = await _plannerAgent.CreatePlanAsync(maintenanceRequestId, cancellationToken);
+            plannerResult = await _plannerAgent.CreatePlanAsync(maintenanceRequestId, cancellationToken);
             stopwatch.Stop();
         }
         catch (OperationCanceledException)
@@ -148,17 +148,45 @@ public class AgentWorkflowService : IAgentWorkflowService
         {
             stopwatch.Stop();
             _logger.LogError(ex, "Error executing PlannerCoordinatorAgent for request ID {RequestId}", maintenanceRequestId);
-            plannerOutput = new PlannerOutput
+            plannerResult = new PlannerExecutionResult
             {
-                MaintenanceRequestId = maintenanceRequestId,
-                IsSuccess = false,
-                ErrorMessage = "An unexpected error occurred during planning execution."
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = "An unexpected error occurred during planning execution."
+                }
             };
         }
 
+        var plannerOutput = plannerResult.Output;
         var executionDurationMs = stopwatch.ElapsedMilliseconds;
 
-        // G. Persist AgentExecutionLog
+        // G. Persist ToolExecutions
+        if (plannerResult.ToolExecutions != null)
+        {
+            foreach (var toolMeta in plannerResult.ToolExecutions)
+            {
+                var toolExecution = new ToolExecution
+                {
+                    AgentWorkflowId = workflow.Id,
+                    WorkflowStepId = step.Id,
+                    ToolName = toolMeta.ToolName,
+                    Status = toolMeta.Status,
+                    InputSummary = toolMeta.InputSummary,
+                    OutputSummary = toolMeta.OutputSummary,
+                    ErrorSummary = toolMeta.ErrorSummary,
+                    RetryCount = toolMeta.RetryCount,
+                    DurationMs = toolMeta.DurationMs,
+                    CreatedAt = toolMeta.StartedAt,
+                    StartedAt = toolMeta.StartedAt,
+                    CompletedAt = toolMeta.CompletedAt
+                };
+                _dbContext.ToolExecutions.Add(toolExecution);
+            }
+        }
+
+        // H. Persist AgentExecutionLog
         var executionLog = new AgentExecutionLog
         {
             AgentWorkflowId = workflow.Id,
