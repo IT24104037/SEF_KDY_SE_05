@@ -39,6 +39,8 @@ import UnitsPage from "../features/properties/pages/UnitsPage";
 import OwnerProfilePage from "../features/properties/pages/OwnerProfilePage";
 
 import ApprovalPage from "../features/ai-workflow/pages/ApprovalPage";
+import WorkflowDetailsPage from "../features/ai-workflow/pages/WorkflowDetailsPage";
+import WorkflowHistoryPage from "../features/ai-workflow/pages/WorkflowHistoryPage";
 import ReportMaintenancePage from "../features/maintenance/pages/ReportMaintenancePage";
 import ReportEmergencyPage from "../features/maintenance/pages/ReportEmergencyPage";
 import MyMaintenanceRequestsPage from "../features/maintenance/pages/MyMaintenanceRequestsPage";
@@ -86,6 +88,8 @@ export default function AppRoutes() {
                 <Route path="/owner/tenants/:tenantId/tenancy-history" element={<TenancyHistoryPage />} />
                 <Route path="/owner/profile" element={<OwnerProfilePage />} />
                 <Route path="/owner/approval" element={<ApprovalPage />} />
+                <Route path="/owner/ai-workflow" element={<WorkflowHistoryPage />} />
+                <Route path="/owner/ai-workflow/:workflowId" element={<WorkflowDetailsPage />} />
                 <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
                 <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
                 <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
