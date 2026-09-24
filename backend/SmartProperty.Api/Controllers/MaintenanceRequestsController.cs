@@ -278,4 +278,92 @@ public class MaintenanceRequestsController : ControllerBase
                    ClaimTypes.Role)
                ?? string.Empty;
     }
+
+
+
+    [HttpPut("{id:int}/archive")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ArchiveCompletedRequest(int id)
+    {
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var role =
+            User.FindFirstValue(ClaimTypes.Role);
+
+        if (!int.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result =
+                     await _service
+                        .ArchiveCompletedRequestAsync(
+                            id,
+                            currentUserId,
+                            role ?? string.Empty);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    message = "Maintenance request was not found."
+                });
+            }
+
+            return Ok(new
+            {
+                message =
+                    "Completed request removed from active maintenance requests. History has been preserved."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+
+[HttpGet("history-list")]
+[Authorize(Roles = "Admin,PropertyOwner")]
+public async Task<ActionResult<PagedMaintenanceRequestsDto>>
+    GetHistoryList(
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? requestType = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+{
+    var userIdValue =
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    var role =
+        User.FindFirstValue(ClaimTypes.Role);
+
+    if (!int.TryParse(userIdValue, out var currentUserId))
+    {
+        return Unauthorized();
+    }
+
+    var result =
+        await _service
+            .GetHistoryRequestsAsync(
+                currentUserId,
+                role ?? string.Empty,
+                search,
+                status,
+                requestType,
+                page,
+                pageSize);
+
+    return Ok(result);
+}
+
+
+
 }

@@ -35,4 +35,6 @@ public class MaintenanceRequestDto
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    public bool IsArchived { get; set; }
 }

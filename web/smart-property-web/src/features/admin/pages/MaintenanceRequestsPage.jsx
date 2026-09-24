@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { archiveMaintenanceRequest } from "../../maintenance/services/maintenanceApi";
 
 function MaintenanceRequestsPage() {
   const navigate = useNavigate();
@@ -69,6 +70,22 @@ function MaintenanceRequestsPage() {
       setLoading(false);
     }
   };
+
+  async function handleArchive(id) {
+  const confirmed = window.confirm(
+    "Remove this completed request from the active request list? " +
+    "It will remain permanently in Maintenance History."
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await archiveMaintenanceRequest(id);
+    await loadRequests();
+  } catch (err) {
+    setError(err.message);
+  }
+}
 
   return (
     <div>
@@ -233,15 +250,30 @@ function MaintenanceRequestsPage() {
 
                     <td style={styles.td}>
                       <button
-                        onClick={() =>
-                          navigate(
-                            `/admin/maintenance/${request.id}`
-                          )
-                        }
-                        style={styles.viewButton}
-                      >
-                        View Details
-                      </button>
+                      type="button"
+                      onClick={() =>
+                        navigate(`/admin/maintenance/${request.id}`)
+                      }
+                    >
+                      View Details
+                    </button>
+                       {request.status === "Completed" && (
+                          <button
+                            type="button"
+                            onClick={() => handleArchive(request.id)}
+                            style={{
+                              marginLeft: "8px",
+                              background: "#D64545",
+                              color: "#fff",
+                              border: "none",
+                              padding: "7px 12px",
+                              borderRadius: "5px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
                     </td>
                   </tr>
                 ))}

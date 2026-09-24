@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   getMaintenanceRequestById,
@@ -9,6 +9,7 @@ import {
 
 function MaintenanceRequestDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [request, setRequest] = useState(null);
   const [history, setHistory] = useState([]);
