@@ -55,6 +55,10 @@ builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IWorkerRecommendationService, WorkerRecommendationService>();
 builder.Services.AddScoped<IWorkOrderService, WorkOrderService>();
 builder.Services.AddScoped<IExternalMaintenanceService, ExternalMaintenanceService>();
+builder.Services.AddScoped<MaintenanceContextTool>();
+builder.Services.AddScoped<PropertyContextTool>();
+builder.Services.AddScoped<PlannerCoordinatorAgent>();
+builder.Services.AddScoped<IAgentWorkflowService, AgentWorkflowService>();
 
 
 builder.Services.AddScoped<WorkerMatchingTool>();

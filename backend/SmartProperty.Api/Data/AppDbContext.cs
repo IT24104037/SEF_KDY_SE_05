@@ -44,6 +44,10 @@ public class AppDbContext : DbContext
     public DbSet<ExternalMaintenanceArrangement> ExternalMaintenanceArrangements => Set<ExternalMaintenanceArrangement>();
     public DbSet<ValidationResult> ValidationResults => Set<ValidationResult>();
     public DbSet<ApprovalDecision> ApprovalDecisions => Set<ApprovalDecision>();
+    public DbSet<AgentWorkflow> AgentWorkflows => Set<AgentWorkflow>();
+    public DbSet<WorkflowStep> WorkflowSteps => Set<WorkflowStep>();
+    public DbSet<ToolExecution> ToolExecutions => Set<ToolExecution>();
+    public DbSet<AgentExecutionLog> AgentExecutionLogs => Set<AgentExecutionLog>();
 
 
 
@@ -427,5 +431,126 @@ public class AppDbContext : DbContext
 
 
 
+
+        modelBuilder.Entity<AgentWorkflow>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.CurrentStep)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.ApprovalStatus)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.FinalOutcome)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.MaintenanceRequest)
+                .WithMany()
+                .HasForeignKey(x => x.MaintenanceRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkflowStep>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.StepName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.AgentName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.InputSummary)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.OutputSummary)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.ErrorSummary)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.AgentWorkflow)
+                .WithMany(w => w.WorkflowSteps)
+                .HasForeignKey(x => x.AgentWorkflowId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ToolExecution>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.ToolName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.InputSummary)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.OutputSummary)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.ErrorSummary)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.AgentWorkflow)
+                .WithMany(w => w.ToolExecutions)
+                .HasForeignKey(x => x.AgentWorkflowId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.WorkflowStep)
+                .WithMany(s => s.ToolExecutions)
+                .HasForeignKey(x => x.WorkflowStepId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AgentExecutionLog>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.AgentName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.Summary)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.ErrorSummary)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.AgentWorkflow)
+                .WithMany(w => w.ExecutionLogs)
+                .HasForeignKey(x => x.AgentWorkflowId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.WorkflowStep)
+                .WithMany(s => s.ExecutionLogs)
+                .HasForeignKey(x => x.WorkflowStepId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
+
