@@ -2,7 +2,7 @@ using SmartProperty.Api.AgenticAI.Contracts;
 
 namespace SmartProperty.Api.AgenticAI.Agents;
 
-public class MaintenanceAnalysisAgent
+public class VisualAnalysisResponsibilityAgent.cs
 {
     public async Task<AnalysisOutput> AnalyzeAsync(
         AnalysisInput input,
