@@ -6,6 +6,7 @@ using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.AgenticAI;
 using SmartProperty.Api.Entities.AgenticAI;
+using SmartProperty.Api.Entities.Maintenance;
 using SmartProperty.Api.Interfaces;
 
 namespace SmartProperty.Api.Services;
@@ -26,7 +27,42 @@ public class AgentWorkflowService : IAgentWorkflowService
         _logger = logger;
     }
 
-    public async Task<WorkflowResponseDto> StartPlannerWorkflowAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
+    private async Task<bool> CanAccessMaintenanceRequestAsync(
+        MaintenanceRequest request,
+        int currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
+    {
+        if (currentUserRole == "Admin")
+            return true;
+
+        if (currentUserRole == "Tenant")
+        {
+            return await _dbContext.Tenants
+                .AnyAsync(x => x.Id == request.TenantId && x.UserId == currentUserId, cancellationToken);
+        }
+
+        if (currentUserRole == "PropertyOwner")
+        {
+            var owner = await _dbContext.PropertyOwners
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == currentUserId, cancellationToken);
+
+            if (owner == null)
+                return false;
+
+            return await _dbContext.Properties
+                .AnyAsync(x => x.Id == request.PropertyId && x.PropertyOwnerId == owner.Id, cancellationToken);
+        }
+
+        return false;
+    }
+
+    public async Task<WorkflowResponseDto> StartPlannerWorkflowAsync(
+        int maintenanceRequestId,
+        int currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Initiating Agent 1 Planner workflow for maintenance request ID: {RequestId}", maintenanceRequestId);
 
@@ -41,7 +77,14 @@ public class AgentWorkflowService : IAgentWorkflowService
             throw new KeyNotFoundException($"Maintenance request with ID {maintenanceRequestId} was not found.");
         }
 
-        // B. Check whether an active AgentWorkflow already exists for this maintenance request
+        // B. Check user authorization
+        if (!await CanAccessMaintenanceRequestAsync(request, currentUserId, currentUserRole, cancellationToken))
+        {
+            _logger.LogWarning("User ID {UserId} with role '{Role}' is not authorized for MaintenanceRequestId: {RequestId}", currentUserId, currentUserRole, maintenanceRequestId);
+            throw new UnauthorizedAccessException("You are not authorized to access this maintenance request.");
+        }
+
+        // C. Check whether an active AgentWorkflow already exists for this maintenance request
         var existingWorkflow = await _dbContext.AgentWorkflows
             .Include(w => w.WorkflowSteps)
             .Include(w => w.ExecutionLogs)
@@ -55,7 +98,7 @@ public class AgentWorkflowService : IAgentWorkflowService
             return MapToWorkflowResponseDto(existingWorkflow);
         }
 
-        // C. Create new AgentWorkflow record (durable state)
+        // D. Create new AgentWorkflow record (durable state)
         var now = DateTime.UtcNow;
         var workflow = new AgentWorkflow
         {
@@ -72,7 +115,7 @@ public class AgentWorkflowService : IAgentWorkflowService
         _dbContext.AgentWorkflows.Add(workflow);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // D. Create initial WorkflowStep record (Step 1: Planner & Coordinator)
+        // E. Create initial WorkflowStep record (Step 1: Planner & Coordinator)
         var step = new WorkflowStep
         {
             AgentWorkflowId = workflow.Id,
@@ -88,12 +131,12 @@ public class AgentWorkflowService : IAgentWorkflowService
         _dbContext.WorkflowSteps.Add(step);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // E. Execute PlannerCoordinatorAgent
+        // F. Execute PlannerCoordinatorAgent
         var stopwatch = Stopwatch.StartNew();
-        PlannerOutput plannerOutput;
+        PlannerExecutionResult plannerResult;
         try
         {
-            plannerOutput = await _plannerAgent.CreatePlanAsync(maintenanceRequestId, cancellationToken);
+            plannerResult = await _plannerAgent.CreatePlanAsync(maintenanceRequestId, cancellationToken);
             stopwatch.Stop();
         }
         catch (OperationCanceledException)
@@ -105,17 +148,45 @@ public class AgentWorkflowService : IAgentWorkflowService
         {
             stopwatch.Stop();
             _logger.LogError(ex, "Error executing PlannerCoordinatorAgent for request ID {RequestId}", maintenanceRequestId);
-            plannerOutput = new PlannerOutput
+            plannerResult = new PlannerExecutionResult
             {
-                MaintenanceRequestId = maintenanceRequestId,
-                IsSuccess = false,
-                ErrorMessage = "An unexpected error occurred during planning execution."
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = "An unexpected error occurred during planning execution."
+                }
             };
         }
 
+        var plannerOutput = plannerResult.Output;
         var executionDurationMs = stopwatch.ElapsedMilliseconds;
 
-        // F. Persist AgentExecutionLog
+        // G. Persist ToolExecutions
+        if (plannerResult.ToolExecutions != null)
+        {
+            foreach (var toolMeta in plannerResult.ToolExecutions)
+            {
+                var toolExecution = new ToolExecution
+                {
+                    AgentWorkflowId = workflow.Id,
+                    WorkflowStepId = step.Id,
+                    ToolName = toolMeta.ToolName,
+                    Status = toolMeta.Status,
+                    InputSummary = toolMeta.InputSummary,
+                    OutputSummary = toolMeta.OutputSummary,
+                    ErrorSummary = toolMeta.ErrorSummary,
+                    RetryCount = toolMeta.RetryCount,
+                    DurationMs = toolMeta.DurationMs,
+                    CreatedAt = toolMeta.StartedAt,
+                    StartedAt = toolMeta.StartedAt,
+                    CompletedAt = toolMeta.CompletedAt
+                };
+                _dbContext.ToolExecutions.Add(toolExecution);
+            }
+        }
+
+        // H. Persist AgentExecutionLog
         var executionLog = new AgentExecutionLog
         {
             AgentWorkflowId = workflow.Id,
@@ -132,7 +203,7 @@ public class AgentWorkflowService : IAgentWorkflowService
 
         _dbContext.AgentExecutionLogs.Add(executionLog);
 
-        // G. Update WorkflowStep
+        // H. Update WorkflowStep
         if (plannerOutput.IsSuccess)
         {
             step.Status = WorkflowStepStatus.Completed;
@@ -146,7 +217,7 @@ public class AgentWorkflowService : IAgentWorkflowService
             step.CompletedAt = DateTime.UtcNow;
         }
 
-        // H. Update AgentWorkflow
+        // I. Update AgentWorkflow
         if (plannerOutput.IsSuccess)
         {
             // Workflow remains Running for downstream Agent 2/3/4 hand-off
@@ -164,7 +235,7 @@ public class AgentWorkflowService : IAgentWorkflowService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // I. Fetch updated graph for DTO response
+        // J. Fetch updated graph for DTO response
         var resultWorkflow = await _dbContext.AgentWorkflows
             .AsNoTracking()
             .Include(w => w.WorkflowSteps)
@@ -180,7 +251,11 @@ public class AgentWorkflowService : IAgentWorkflowService
         return responseDto;
     }
 
-    public async Task<WorkflowResponseDto?> GetWorkflowByIdAsync(int workflowId, CancellationToken cancellationToken = default)
+    public async Task<WorkflowResponseDto?> GetWorkflowByIdAsync(
+        int workflowId,
+        int currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
     {
         var workflow = await _dbContext.AgentWorkflows
             .AsNoTracking()
@@ -191,11 +266,36 @@ public class AgentWorkflowService : IAgentWorkflowService
         if (workflow == null)
             return null;
 
+        var request = await _dbContext.MaintenanceRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == workflow.MaintenanceRequestId, cancellationToken);
+
+        if (request == null || !await CanAccessMaintenanceRequestAsync(request, currentUserId, currentUserRole, cancellationToken))
+        {
+            throw new UnauthorizedAccessException("You are not authorized to access this workflow.");
+        }
+
         return MapToWorkflowResponseDto(workflow);
     }
 
-    public async Task<WorkflowResponseDto?> GetWorkflowByRequestIdAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
+    public async Task<WorkflowResponseDto?> GetWorkflowByRequestIdAsync(
+        int maintenanceRequestId,
+        int currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
     {
+        var request = await _dbContext.MaintenanceRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == maintenanceRequestId, cancellationToken);
+
+        if (request == null)
+            return null;
+
+        if (!await CanAccessMaintenanceRequestAsync(request, currentUserId, currentUserRole, cancellationToken))
+        {
+            throw new UnauthorizedAccessException("You are not authorized to access this maintenance request.");
+        }
+
         var workflow = await _dbContext.AgentWorkflows
             .AsNoTracking()
             .Include(w => w.WorkflowSteps)
@@ -209,7 +309,11 @@ public class AgentWorkflowService : IAgentWorkflowService
         return MapToWorkflowResponseDto(workflow);
     }
 
-    public async Task<List<AgentExecutionLogDto>?> GetWorkflowLogsAsync(int workflowId, CancellationToken cancellationToken = default)
+    public async Task<List<AgentExecutionLogDto>?> GetWorkflowLogsAsync(
+        int workflowId,
+        int currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
     {
         var workflow = await _dbContext.AgentWorkflows
             .AsNoTracking()
@@ -218,6 +322,15 @@ public class AgentWorkflowService : IAgentWorkflowService
 
         if (workflow == null)
             return null;
+
+        var request = await _dbContext.MaintenanceRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == workflow.MaintenanceRequestId, cancellationToken);
+
+        if (request == null || !await CanAccessMaintenanceRequestAsync(request, currentUserId, currentUserRole, cancellationToken))
+        {
+            throw new UnauthorizedAccessException("You are not authorized to access logs for this workflow.");
+        }
 
         return workflow.ExecutionLogs
             .OrderBy(l => l.CreatedAt)

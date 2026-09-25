@@ -6,10 +6,15 @@ namespace SmartProperty.Api.Common;
 // WorkerQueryParameters) instead of redefining Page/PageSize each time.
 public class PaginationParameters
 {
-    private const int MaxPageSize = 50;
+    private const int MaxPageSize = 100;
+    private int _page = 1;
     private int _pageSize = 10;
 
-    public int Page { get; set; } = 1;
+    public int Page
+    {
+        get => _page;
+        set => _page = value < 1 ? 1 : value;
+    }
 
     public int PageSize
     {

@@ -19,7 +19,8 @@ public class UnitOccupancyTests
         await context.SaveChangesAsync();
 
         var service = new PropertyService(context);
-        var units = await service.GetUnitsAsync(101, property.Id);
+        var pagedResult = await service.GetUnitsAsync(101, property.Id);
+        var units = pagedResult.Items;
 
         var resultUnit = Assert.Single(units);
         Assert.Equal("Vacant", resultUnit.OccupancyStatus);
@@ -60,7 +61,8 @@ public class UnitOccupancyTests
         await context.SaveChangesAsync();
 
         var service = new PropertyService(context);
-        var units = await service.GetUnitsAsync(101, property.Id);
+        var pagedResult = await service.GetUnitsAsync(101, property.Id);
+        var units = pagedResult.Items;
 
         var resultUnit = Assert.Single(units);
         Assert.Equal("Occupied", resultUnit.OccupancyStatus);
@@ -100,7 +102,8 @@ public class UnitOccupancyTests
         await context.SaveChangesAsync();
 
         var service = new PropertyService(context);
-        var units = await service.GetUnitsAsync(101, property.Id);
+        var pagedResult = await service.GetUnitsAsync(101, property.Id);
+        var units = pagedResult.Items;
 
         Assert.Equal(2, units.Count);
         var res1 = units.First(u => u.Id == unit1.Id);
@@ -217,7 +220,7 @@ public class UnitOccupancyTests
         var service = new PropertyService(context);
 
         // Verify initially occupied
-        var unitsBefore = await service.GetUnitsAsync(101, property.Id);
+        var unitsBefore = (await service.GetUnitsAsync(101, property.Id)).Items;
         Assert.Equal("Occupied", Assert.Single(unitsBefore).OccupancyStatus);
 
         // End the tenancy directly in DB (as TenancyService.EndTenancyAsync does)
@@ -226,7 +229,7 @@ public class UnitOccupancyTests
         await context.SaveChangesAsync();
 
         // Verify now vacant
-        var unitsAfter = await service.GetUnitsAsync(101, property.Id);
+        var unitsAfter = (await service.GetUnitsAsync(101, property.Id)).Items;
         var vacantUnit = Assert.Single(unitsAfter);
         Assert.Equal("Vacant", vacantUnit.OccupancyStatus);
         Assert.Null(vacantUnit.CurrentTenantId);
@@ -263,7 +266,7 @@ public class UnitOccupancyTests
         var service = new PropertyService(context);
         
         // Owner 202 querying Owner 101's property should get empty list
-        var result = await service.GetUnitsAsync(202, prop1.Id);
+        var result = (await service.GetUnitsAsync(202, prop1.Id)).Items;
         Assert.Empty(result);
     }
 
@@ -304,7 +307,7 @@ public class UnitOccupancyTests
         Assert.Equal(TenancyStatus.Active, tenancyResponse.Status);
 
         var propertyService = new PropertyService(context);
-        var units = await propertyService.GetUnitsAsync(101, property.Id);
+        var units = (await propertyService.GetUnitsAsync(101, property.Id)).Items;
 
         var occupiedUnit = Assert.Single(units);
         Assert.Equal("Occupied", occupiedUnit.OccupancyStatus);

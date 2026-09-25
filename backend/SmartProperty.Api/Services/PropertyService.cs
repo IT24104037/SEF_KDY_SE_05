@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using SmartProperty.Api.Common;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Properties;
 using SmartProperty.Api.Entities.Property;
@@ -61,25 +62,92 @@ public class PropertyService : IPropertyService
         return MapProperty(property);
     }
 
-    public async Task<List<PropertyResponseDto>> GetMyPropertiesAsync(
-        int userId)
+    public async Task<PagedResult<PropertyResponseDto>> GetMyPropertiesAsync(
+        int userId,
+        PropertyQueryParameters query)
     {
+        query ??= new PropertyQueryParameters();
+
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
         if (owner == null ||
             owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
-            return new List<PropertyResponseDto>();
+            return new PagedResult<PropertyResponseDto>
+            {
+                Items = new List<PropertyResponseDto>(),
+                TotalCount = 0,
+                Page = query.Page,
+                PageSize = query.PageSize
+            };
         }
 
-        var properties = await _context.Properties
+        var queryable = _context.Properties
+            .AsNoTracking()
             .Include(p => p.VerificationDocuments)
-            .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived)
-            .OrderBy(p => p.Name)
+            .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived);
+
+        // Search against Name, Address, and City
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim().ToLower();
+            queryable = queryable.Where(p =>
+                p.Name.ToLower().Contains(search) ||
+                p.Address.ToLower().Contains(search) ||
+                (p.City != null && p.City.ToLower().Contains(search)));
+        }
+
+        // Filter by City
+        if (!string.IsNullOrWhiteSpace(query.City))
+        {
+            var city = query.City.Trim().ToLower();
+            queryable = queryable.Where(p => p.City != null && p.City.ToLower() == city);
+        }
+
+        // Filter by Verification Status
+        if (!string.IsNullOrWhiteSpace(query.Status))
+        {
+            if (Enum.TryParse<PropertyVerificationStatus>(query.Status.Trim(), true, out var statusEnum))
+            {
+                queryable = queryable.Where(p => p.VerificationStatus == statusEnum);
+            }
+        }
+
+        // Calculate total count BEFORE Skip/Take
+        var totalCount = await queryable.CountAsync();
+
+        // Safe whitelist sorting
+        bool isDesc = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+        var sortBy = query.SortBy?.Trim().ToLower() ?? "name";
+
+        queryable = sortBy switch
+        {
+            "city" => isDesc ? queryable.OrderByDescending(p => p.City).ThenBy(p => p.Name)
+                             : queryable.OrderBy(p => p.City).ThenBy(p => p.Name),
+            "status" => isDesc ? queryable.OrderByDescending(p => p.VerificationStatus).ThenBy(p => p.Name)
+                               : queryable.OrderBy(p => p.VerificationStatus).ThenBy(p => p.Name),
+            "createdat" => isDesc ? queryable.OrderByDescending(p => p.CreatedAt)
+                                  : queryable.OrderBy(p => p.CreatedAt),
+            _ => isDesc ? queryable.OrderByDescending(p => p.Name)
+                        : queryable.OrderBy(p => p.Name)
+        };
+
+        var page = query.Page;
+        var pageSize = query.PageSize;
+
+        var items = await queryable
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return properties.Select(p => MapProperty(p)).ToList();
+        return new PagedResult<PropertyResponseDto>
+        {
+            Items = items.Select(p => MapProperty(p)).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
     public async Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
     int userId)
@@ -457,17 +525,26 @@ public class PropertyService : IPropertyService
 }
     
 
-    public async Task<List<UnitResponseDto>> GetUnitsAsync(
+    public async Task<PagedResult<UnitResponseDto>> GetUnitsAsync(
         int userId,
-        int propertyId)
+        int propertyId,
+        UnitQueryParameters query = null!)
     {
+        query ??= new UnitQueryParameters();
+
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
         if (owner == null ||
             owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
-            return new List<UnitResponseDto>();
+            return new PagedResult<UnitResponseDto>
+            {
+                Items = new List<UnitResponseDto>(),
+                TotalCount = 0,
+                Page = query.Page,
+                PageSize = query.PageSize
+            };
         }
 
         var propertyExists = await _context.Properties
@@ -479,17 +556,76 @@ public class PropertyService : IPropertyService
 
         if (!propertyExists)
         {
-            return new List<UnitResponseDto>();
+            return new PagedResult<UnitResponseDto>
+            {
+                Items = new List<UnitResponseDto>(),
+                TotalCount = 0,
+                Page = query.Page,
+                PageSize = query.PageSize
+            };
         }
 
-        var units = await _context.Units
-            .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted)
-            .OrderBy(u => u.UnitLabel)
+        var queryable = _context.Units
+            .AsNoTracking()
+            .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted);
+
+        // Search against UnitLabel and Description
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim().ToLower();
+            queryable = queryable.Where(u =>
+                u.UnitLabel.ToLower().Contains(search) ||
+                (u.Description != null && u.Description.ToLower().Contains(search)));
+        }
+
+        // Filter by Occupancy Status ("Occupied" vs "Vacant")
+        if (!string.IsNullOrWhiteSpace(query.Status))
+        {
+            var status = query.Status.Trim().ToLower();
+            if (status == "occupied")
+            {
+                queryable = queryable.Where(u => _context.Tenancies.Any(t => t.UnitId == u.Id && t.Status == TenancyStatus.Active));
+            }
+            else if (status == "vacant")
+            {
+                queryable = queryable.Where(u => !_context.Tenancies.Any(t => t.UnitId == u.Id && t.Status == TenancyStatus.Active));
+            }
+        }
+
+        // Calculate total count BEFORE Skip/Take
+        var totalCount = await queryable.CountAsync();
+
+        // Safe whitelist sorting
+        bool isDesc = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+        var sortBy = query.SortBy?.Trim().ToLower() ?? "label";
+
+        queryable = sortBy switch
+        {
+            "createdat" => isDesc ? queryable.OrderByDescending(u => u.CreatedAt)
+                                  : queryable.OrderBy(u => u.CreatedAt),
+            "status" or "occupancystatus" => isDesc ? queryable.OrderByDescending(u => _context.Tenancies.Any(t => t.UnitId == u.Id && t.Status == TenancyStatus.Active)).ThenBy(u => u.UnitLabel)
+                                                   : queryable.OrderBy(u => _context.Tenancies.Any(t => t.UnitId == u.Id && t.Status == TenancyStatus.Active)).ThenBy(u => u.UnitLabel),
+            _ => isDesc ? queryable.OrderByDescending(u => u.UnitLabel)
+                        : queryable.OrderBy(u => u.UnitLabel)
+        };
+
+        var page = query.Page;
+        var pageSize = query.PageSize;
+
+        var units = await queryable
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         if (!units.Any())
         {
-            return new List<UnitResponseDto>();
+            return new PagedResult<UnitResponseDto>
+            {
+                Items = new List<UnitResponseDto>(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         var unitIds = units.Select(u => u.Id).ToList();
@@ -499,11 +635,19 @@ public class PropertyService : IPropertyService
             .Where(t => unitIds.Contains(t.UnitId) && t.Status == TenancyStatus.Active)
             .ToDictionaryAsync(t => t.UnitId, t => t);
 
-        return units.Select(u =>
+        var items = units.Select(u =>
         {
             activeTenancies.TryGetValue(u.Id, out var activeTenancy);
             return MapUnit(u, activeTenancy);
         }).ToList();
+
+        return new PagedResult<UnitResponseDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<UnitResponseDto?> GetUnitByIdAsync(

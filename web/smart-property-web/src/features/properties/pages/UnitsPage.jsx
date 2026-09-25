@@ -35,6 +35,16 @@ function UnitsPage() {
   const [bulkCount, setBulkCount] = useState("");
   const [bulkPrefix, setBulkPrefix] = useState("");
 
+  // Search, Filter, Sort, Pagination state
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState("label");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -49,13 +59,21 @@ function UnitsPage() {
       const [propertyData, unitsData, archivedUnitsData] =
         await Promise.all([
           getProperty(propertyId),
-          getUnits(propertyId),
+          getUnits(propertyId, {
+            search: searchQuery,
+            status: statusFilter,
+            sortBy,
+            sortDirection,
+            page,
+            pageSize,
+          }),
           getArchivedUnits(propertyId),
         ]);
 
       setProperty(propertyData);
-      setUnits(unitsData);
-      setArchivedUnits(archivedUnitsData);
+      setUnits(unitsData.items || []);
+      setTotalCount(unitsData.totalCount || 0);
+      setArchivedUnits(archivedUnitsData || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,7 +83,22 @@ function UnitsPage() {
 
   useEffect(() => {
     loadUnits();
-  }, [propertyId]);
+  }, [propertyId, searchQuery, statusFilter, sortBy, sortDirection, page, pageSize]);
+
+  function handleFilterSubmit(event) {
+    event.preventDefault();
+    setPage(1);
+    setSearchQuery(searchInput);
+  }
+
+  function handleResetFilters() {
+    setSearchInput("");
+    setSearchQuery("");
+    setStatusFilter("");
+    setSortBy("label");
+    setSortDirection("asc");
+    setPage(1);
+  }
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -511,6 +544,148 @@ function UnitsPage() {
           </div>
         </div>
 
+        {/* Search, Filter, and Sort Controls */}
+        <div
+          style={{
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            padding: "16px 20px",
+            marginBottom: "24px",
+            backgroundColor: "#ffffff",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          <form onSubmit={handleFilterSubmit} style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "flex-end" }}>
+            <div style={{ flex: "1 1 180px", minWidth: "150px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "4px" }}>
+                Search
+              </label>
+              <input
+                type="text"
+                placeholder="Label, description..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "38px",
+                  padding: "0 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #d1d5db",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                }}
+              />
+            </div>
+
+            <div style={{ flex: "1 1 140px", minWidth: "130px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "4px" }}>
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                style={{
+                  width: "100%",
+                  height: "38px",
+                  padding: "0 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #d1d5db",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                <option value="">All Statuses</option>
+                <option value="Occupied">Occupied</option>
+                <option value="Vacant">Vacant</option>
+              </select>
+            </div>
+
+            <div style={{ flex: "1 1 130px", minWidth: "120px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "4px" }}>
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "38px",
+                  padding: "0 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #d1d5db",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                <option value="label">Unit Label</option>
+                <option value="status">Status</option>
+                <option value="createdAt">Created Date</option>
+              </select>
+            </div>
+
+            <div style={{ flex: "1 1 110px", minWidth: "100px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "4px" }}>
+                Order
+              </label>
+              <select
+                value={sortDirection}
+                onChange={(e) => setSortDirection(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "38px",
+                  padding: "0 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #d1d5db",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                type="submit"
+                style={{
+                  height: "38px",
+                  padding: "0 16px",
+                  backgroundColor: "#17324D",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  boxSizing: "border-box",
+                }}
+              >
+                Search
+              </button>
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                style={{
+                  height: "38px",
+                  padding: "0 16px",
+                  backgroundColor: "#f3f4f6",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "6px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  boxSizing: "border-box",
+                }}
+              >
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+
         {loading ? (
           <p>Loading units...</p>
         ) : units.length === 0 ? (
@@ -626,6 +801,59 @@ function UnitsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && totalCount > 0 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "20px",
+              padding: "12px 16px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            <span style={{ fontSize: "14px", color: "#4b5563" }}>
+              Showing page <strong>{page}</strong> of <strong>{Math.ceil(totalCount / pageSize) || 1}</strong> ({totalCount} total units)
+            </span>
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page <= 1}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #d1d5db",
+                  backgroundColor: page <= 1 ? "#f3f4f6" : "#ffffff",
+                  color: page <= 1 ? "#9ca3af" : "#374151",
+                  cursor: page <= 1 ? "not-allowed" : "pointer",
+                }}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= Math.ceil(totalCount / pageSize)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #d1d5db",
+                  backgroundColor: page >= Math.ceil(totalCount / pageSize) ? "#f3f4f6" : "#ffffff",
+                  color: page >= Math.ceil(totalCount / pageSize) ? "#9ca3af" : "#374151",
+                  cursor: page >= Math.ceil(totalCount / pageSize) ? "not-allowed" : "pointer",
+                }}
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </section>

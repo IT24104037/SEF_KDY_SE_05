@@ -642,6 +642,46 @@ public class PropertyVerificationTests
         return context;
     }
 
+    [Fact]
+    public async Task GetMyPropertiesAsync_SearchFilterSortAndPaginate_ReturnsExpectedPagedResult()
+    {
+        await using var context = CreateVerifiedOwnerContext();
+        context.Properties.AddRange(
+            new Property { PropertyOwnerId = 1, Name = "Alpha Villa", Address = "10 Beach Rd", City = "Colombo", VerificationStatus = PropertyVerificationStatus.Approved },
+            new Property { PropertyOwnerId = 1, Name = "Beta Towers", Address = "20 Hill St", City = "Kandy", VerificationStatus = PropertyVerificationStatus.Approved },
+            new Property { PropertyOwnerId = 1, Name = "Gamma Heights", Address = "30 Beach Rd", City = "Colombo", VerificationStatus = PropertyVerificationStatus.UnderReview },
+            new Property { PropertyOwnerId = 1, Name = "Delta Lodge", Address = "40 River Rd", City = "Galle", VerificationStatus = PropertyVerificationStatus.Rejected, IsArchived = true }
+        );
+        await context.SaveChangesAsync();
+
+        var service = new PropertyService(context);
+
+        // Test 1: Search by 'Beach'
+        var searchResult = await service.GetMyPropertiesAsync(101, new PropertyQueryParameters { Search = "Beach" });
+        Assert.Equal(2, searchResult.TotalCount);
+        Assert.Contains(searchResult.Items, p => p.Name == "Alpha Villa");
+        Assert.Contains(searchResult.Items, p => p.Name == "Gamma Heights");
+
+        // Test 2: Filter by City 'Colombo'
+        var cityResult = await service.GetMyPropertiesAsync(101, new PropertyQueryParameters { City = "Colombo" });
+        Assert.Equal(2, cityResult.TotalCount);
+
+        // Test 3: Filter by Status 'Approved'
+        var statusResult = await service.GetMyPropertiesAsync(101, new PropertyQueryParameters { Status = "Approved" });
+        Assert.Equal(2, statusResult.TotalCount);
+        Assert.All(statusResult.Items, p => Assert.Equal("Approved", p.VerificationStatus));
+
+        // Test 4: Pagination (Page 1, PageSize 1)
+        var pagedResult = await service.GetMyPropertiesAsync(101, new PropertyQueryParameters { Page = 1, PageSize = 1, SortBy = "name", SortDirection = "asc" });
+        Assert.Single(pagedResult.Items);
+        Assert.Equal(3, pagedResult.TotalCount);
+        Assert.Equal("Alpha Villa", pagedResult.Items[0].Name);
+
+        var pagedResult2 = await service.GetMyPropertiesAsync(101, new PropertyQueryParameters { Page = 2, PageSize = 1, SortBy = "name", SortDirection = "asc" });
+        Assert.Single(pagedResult2.Items);
+        Assert.Equal("Beta Towers", pagedResult2.Items[0].Name);
+    }
+
     private static CreatePropertyDto CreateRequest() => new()
     {
         Name = "New Property",
