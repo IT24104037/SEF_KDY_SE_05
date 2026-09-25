@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using SmartProperty.Api.Common;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Properties;
 using SmartProperty.Api.Entities.Property;
@@ -61,25 +62,92 @@ public class PropertyService : IPropertyService
         return MapProperty(property);
     }
 
-    public async Task<List<PropertyResponseDto>> GetMyPropertiesAsync(
-        int userId)
+    public async Task<PagedResult<PropertyResponseDto>> GetMyPropertiesAsync(
+        int userId,
+        PropertyQueryParameters query)
     {
+        query ??= new PropertyQueryParameters();
+
         var owner = await _context.PropertyOwners
             .FirstOrDefaultAsync(po => po.UserId == userId);
 
         if (owner == null ||
             owner.VerificationStatus != OwnerVerificationStatus.Verified)
         {
-            return new List<PropertyResponseDto>();
+            return new PagedResult<PropertyResponseDto>
+            {
+                Items = new List<PropertyResponseDto>(),
+                TotalCount = 0,
+                Page = query.Page,
+                PageSize = query.PageSize
+            };
         }
 
-        var properties = await _context.Properties
+        var queryable = _context.Properties
+            .AsNoTracking()
             .Include(p => p.VerificationDocuments)
-            .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived)
-            .OrderBy(p => p.Name)
+            .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived);
+
+        // Search against Name, Address, and City
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim().ToLower();
+            queryable = queryable.Where(p =>
+                p.Name.ToLower().Contains(search) ||
+                p.Address.ToLower().Contains(search) ||
+                (p.City != null && p.City.ToLower().Contains(search)));
+        }
+
+        // Filter by City
+        if (!string.IsNullOrWhiteSpace(query.City))
+        {
+            var city = query.City.Trim().ToLower();
+            queryable = queryable.Where(p => p.City != null && p.City.ToLower() == city);
+        }
+
+        // Filter by Verification Status
+        if (!string.IsNullOrWhiteSpace(query.Status))
+        {
+            if (Enum.TryParse<PropertyVerificationStatus>(query.Status.Trim(), true, out var statusEnum))
+            {
+                queryable = queryable.Where(p => p.VerificationStatus == statusEnum);
+            }
+        }
+
+        // Calculate total count BEFORE Skip/Take
+        var totalCount = await queryable.CountAsync();
+
+        // Safe whitelist sorting
+        bool isDesc = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+        var sortBy = query.SortBy?.Trim().ToLower() ?? "name";
+
+        queryable = sortBy switch
+        {
+            "city" => isDesc ? queryable.OrderByDescending(p => p.City).ThenBy(p => p.Name)
+                             : queryable.OrderBy(p => p.City).ThenBy(p => p.Name),
+            "status" => isDesc ? queryable.OrderByDescending(p => p.VerificationStatus).ThenBy(p => p.Name)
+                               : queryable.OrderBy(p => p.VerificationStatus).ThenBy(p => p.Name),
+            "createdat" => isDesc ? queryable.OrderByDescending(p => p.CreatedAt)
+                                  : queryable.OrderBy(p => p.CreatedAt),
+            _ => isDesc ? queryable.OrderByDescending(p => p.Name)
+                        : queryable.OrderBy(p => p.Name)
+        };
+
+        var page = query.Page;
+        var pageSize = query.PageSize;
+
+        var items = await queryable
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return properties.Select(p => MapProperty(p)).ToList();
+        return new PagedResult<PropertyResponseDto>
+        {
+            Items = items.Select(p => MapProperty(p)).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
     public async Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
     int userId)

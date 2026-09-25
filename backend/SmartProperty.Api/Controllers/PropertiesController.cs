@@ -47,10 +47,11 @@ public class PropertiesController : ControllerBase
 
     // GET /api/properties
     [HttpGet]
-    public async Task<IActionResult> GetMyProperties()
+    public async Task<IActionResult> GetMyProperties([FromQuery] PropertyQueryParameters query)
     {
         var result = await _propertyService.GetMyPropertiesAsync(
-            GetUserId());
+            GetUserId(),
+            query);
 
         return Ok(result);
     }

@@ -1,3 +1,4 @@
+using SmartProperty.Api.Common;
 using SmartProperty.Api.DTOs.Properties;
 
 namespace SmartProperty.Api.Interfaces;
@@ -8,8 +9,9 @@ public interface IPropertyService
         int userId,
         CreatePropertyDto request);
 
-    Task<List<PropertyResponseDto>> GetMyPropertiesAsync(
-        int userId);
+    Task<PagedResult<PropertyResponseDto>> GetMyPropertiesAsync(
+        int userId,
+        PropertyQueryParameters query);
 
     Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
         int userId);
