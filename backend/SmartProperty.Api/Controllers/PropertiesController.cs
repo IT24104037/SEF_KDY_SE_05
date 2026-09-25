@@ -191,11 +191,14 @@ public class PropertiesController : ControllerBase
 
     // GET /api/properties/{id}/units
     [HttpGet("{id:int}/units")]
-    public async Task<IActionResult> GetUnits(int id)
+    public async Task<IActionResult> GetUnits(
+        int id,
+        [FromQuery] UnitQueryParameters query)
     {
         var result = await _propertyService.GetUnitsAsync(
             GetUserId(),
-            id);
+            id,
+            query);
 
         return Ok(result);
     }

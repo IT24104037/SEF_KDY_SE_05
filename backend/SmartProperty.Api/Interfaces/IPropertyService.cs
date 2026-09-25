@@ -43,9 +43,10 @@ public interface IPropertyService
         int propertyId,
         CreateUnitDto request);
 
-    Task<List<UnitResponseDto>> GetUnitsAsync(
+    Task<PagedResult<UnitResponseDto>> GetUnitsAsync(
         int userId,
-        int propertyId);
+        int propertyId,
+        UnitQueryParameters query);
 
     Task<UnitResponseDto?> GetUnitByIdAsync(
         int userId,

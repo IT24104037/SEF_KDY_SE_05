@@ -46,7 +46,7 @@ public class UnitSoftDeleteTests
         var persistedUnit = await context.Units.SingleAsync(u => u.Id == archivedUnit.Id);
         Assert.True(persistedUnit.IsDeleted);
         Assert.NotNull(persistedUnit.DeletedAt);
-        Assert.Empty(await service.GetUnitsAsync(101, property.Id));
+        Assert.Empty((await service.GetUnitsAsync(101, property.Id)).Items);
         Assert.Empty(await service.GetArchivedUnitsAsync(101, property.Id));
 
         var restoreResult = await service.RestoreUnitAsync(101, property.Id, archivedUnit.Id);
