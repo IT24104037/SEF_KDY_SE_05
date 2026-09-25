@@ -15,6 +15,8 @@ using SmartProperty.Api.AgenticAI.Agents;
 using SmartProperty.Api.AgenticAI.Validators;
 using SmartProperty.Api.Services;
 
+using SmartProperty.Api.AgenticAI.Tools;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile(
@@ -34,7 +36,8 @@ builder.Services.AddScoped<Agent2MaintenanceAnalysisService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // --------------------
 // Services
@@ -59,6 +62,10 @@ builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IWorkerRecommendationService, WorkerRecommendationService>();
 builder.Services.AddScoped<IWorkOrderService, WorkOrderService>();
 builder.Services.AddScoped<IExternalMaintenanceService, ExternalMaintenanceService>();
+builder.Services.AddScoped<MaintenanceContextTool>();
+builder.Services.AddScoped<PropertyContextTool>();
+builder.Services.AddScoped<PlannerCoordinatorAgent>();
+builder.Services.AddScoped<IAgentWorkflowService, AgentWorkflowService>();
 
 // --------------------
 // JWT Authentication

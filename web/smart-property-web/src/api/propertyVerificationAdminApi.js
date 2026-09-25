@@ -20,6 +20,10 @@ async function request(path, options = {}) {
   return data;
 }
 
+export function getAllProperties() {
+  return request("/api/admin/properties");
+}
+
 export function getPendingProperties() {
   return request("/api/admin/properties/pending");
 }

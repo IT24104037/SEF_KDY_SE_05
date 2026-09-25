@@ -9,7 +9,7 @@ function OwnerMaintenanceRequestsPage() {
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [requestType, setRequestType] = useState("");
+
   const [priority, setPriority] = useState("");
 
   const [page, setPage] = useState(1);
@@ -27,7 +27,7 @@ function OwnerMaintenanceRequestsPage() {
       const result = await getMaintenanceRequests({
         search,
         status,
-        requestType,
+        requestType: "NORMAL",
         priority,
         page,
         pageSize: 10,
@@ -47,7 +47,7 @@ function OwnerMaintenanceRequestsPage() {
 
   useEffect(() => {
     loadRequests();
-  }, [page, status, requestType, priority]);
+  }, [page, status, priority]);
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -62,7 +62,6 @@ function OwnerMaintenanceRequestsPage() {
   function clearFilters() {
     setSearch("");
     setStatus("");
-    setRequestType("");
     setPriority("");
     setPage(1);
   }
@@ -108,7 +107,6 @@ function OwnerMaintenanceRequestsPage() {
           >
             <option value="">All Status</option>
             <option value="Submitted">Submitted</option>
-            <option value="Emergency">Emergency</option>
             <option value="Analysing">Analysing</option>
             <option value="NeedsMoreInfo">Needs More Info</option>
             <option value="Assigned">Assigned</option>
@@ -117,19 +115,7 @@ function OwnerMaintenanceRequestsPage() {
             <option value="Cancelled">Cancelled</option>
           </select>
 
-          <select
-            style={styles.input}
-            value={requestType}
-            onChange={(e) => {
-              setRequestType(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">All Types</option>
-            <option value="NORMAL">Normal</option>
-            <option value="EMERGENCY">Emergency</option>
-          </select>
-
+        
           <select
             style={styles.input}
             value={priority}
@@ -177,6 +163,8 @@ function OwnerMaintenanceRequestsPage() {
                 <thead>
                   <tr>
                     <th style={styles.th}>ID</th>
+                    <th style={styles.th}>Property</th>
+                    <th style={styles.th}>Unit</th>
                     <th style={styles.th}>Description</th>
                     <th style={styles.th}>Type</th>
                     <th style={styles.th}>Category</th>
@@ -193,6 +181,14 @@ function OwnerMaintenanceRequestsPage() {
                       <td style={styles.td}>
                         #{request.id}
                       </td>
+                    
+                      <td>
+                          {request.propertyName || `#${request.propertyId}`}
+                        </td>
+
+                        <td>
+                          {request.unitName || `#${request.unitId}`}
+                        </td>
 
                       <td style={styles.td}>
                         {request.description}

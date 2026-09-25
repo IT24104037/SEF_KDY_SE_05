@@ -1,7 +1,9 @@
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Properties;
 using SmartProperty.Api.Entities.Property;
+using SmartProperty.Api.Entities.Tenancy;
 using SmartProperty.Api.Interfaces;
 
 namespace SmartProperty.Api.Services;
@@ -480,20 +482,28 @@ public class PropertyService : IPropertyService
             return new List<UnitResponseDto>();
         }
 
-        return await _context.Units
+        var units = await _context.Units
             .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted)
             .OrderBy(u => u.UnitLabel)
-            .Select(u => new UnitResponseDto
-            {
-                Id = u.Id,
-                PropertyId = u.PropertyId,
-                UnitLabel = u.UnitLabel,
-                Description = u.Description,
-                IsArchived = u.IsArchived,
-                CreatedAt = u.CreatedAt,
-                UpdatedAt = u.UpdatedAt
-            })
             .ToListAsync();
+
+        if (!units.Any())
+        {
+            return new List<UnitResponseDto>();
+        }
+
+        var unitIds = units.Select(u => u.Id).ToList();
+
+        var activeTenancies = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .Where(t => unitIds.Contains(t.UnitId) && t.Status == TenancyStatus.Active)
+            .ToDictionaryAsync(t => t.UnitId, t => t);
+
+        return units.Select(u =>
+        {
+            activeTenancies.TryGetValue(u.Id, out var activeTenancy);
+            return MapUnit(u, activeTenancy);
+        }).ToList();
     }
 
     public async Task<UnitResponseDto?> GetUnitByIdAsync(
@@ -520,7 +530,16 @@ public class PropertyService : IPropertyService
                 !u.IsDeleted &&
                 !u.Property.IsArchived);
 
-        return unit == null ? null : MapUnit(unit);
+        if (unit == null)
+        {
+            return null;
+        }
+
+        var activeTenancy = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .FirstOrDefaultAsync(t => t.UnitId == unit.Id && t.Status == TenancyStatus.Active);
+
+        return MapUnit(unit, activeTenancy);
     }
     public async Task<UnitResponseDto?> UpdateUnitAsync(
     int userId,
@@ -607,6 +626,14 @@ public async Task<bool> ArchiveUnitAsync(
         return false;
     }
 
+    var hasActiveTenancy = await _context.Tenancies
+        .AnyAsync(t => t.UnitId == unitId && t.Status == TenancyStatus.Active);
+
+    if (hasActiveTenancy)
+    {
+        return false;
+    }
+
     unit.IsArchived = true;
     unit.UpdatedAt = DateTime.UtcNow;
 
@@ -639,23 +666,31 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
         return new List<UnitResponseDto>();
     }
 
-    return await _context.Units
+    var units = await _context.Units
         .Where(u =>
             u.PropertyId == propertyId &&
             u.IsArchived &&
             !u.IsDeleted)
         .OrderBy(u => u.UnitLabel)
-        .Select(u => new UnitResponseDto
-        {
-            Id = u.Id,
-            PropertyId = u.PropertyId,
-            UnitLabel = u.UnitLabel,
-            Description = u.Description,
-            IsArchived = u.IsArchived,
-            CreatedAt = u.CreatedAt,
-            UpdatedAt = u.UpdatedAt
-        })
         .ToListAsync();
+
+    if (!units.Any())
+    {
+        return new List<UnitResponseDto>();
+    }
+
+    var unitIds = units.Select(u => u.Id).ToList();
+
+    var activeTenancies = await _context.Tenancies
+        .Include(t => t.Tenant)
+        .Where(t => unitIds.Contains(t.UnitId) && t.Status == TenancyStatus.Active)
+        .ToDictionaryAsync(t => t.UnitId, t => t);
+
+    return units.Select(u =>
+    {
+        activeTenancies.TryGetValue(u.Id, out var activeTenancy);
+        return MapUnit(u, activeTenancy);
+    }).ToList();
 }
 
 public async Task<RestoreUnitOperationResult> RestoreUnitAsync(
@@ -756,6 +791,14 @@ public async Task<bool> SoftDeleteUnitAsync(
         return false;
     }
 
+    var hasActiveTenancy = await _context.Tenancies
+        .AnyAsync(t => t.UnitId == unitId && t.Status == TenancyStatus.Active);
+
+    if (hasActiveTenancy)
+    {
+        return false;
+    }
+
     unit.IsDeleted = true;
     unit.DeletedAt = DateTime.UtcNow;
     unit.UpdatedAt = DateTime.UtcNow;
@@ -847,7 +890,7 @@ public async Task<BulkUnitOperationResult> CreateBulkUnitsAsync(
     return new BulkUnitOperationResult
     {
         Units = units
-            .Select(MapUnit)
+            .Select(u => MapUnit(u))
             .ToList()
     };
 }
@@ -969,7 +1012,7 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         };
     }
 
-    private static UnitResponseDto MapUnit(Unit unit)
+    private static UnitResponseDto MapUnit(Unit unit, Tenancy? activeTenancy = null)
     {
         return new UnitResponseDto
         {
@@ -979,8 +1022,74 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
             Description = unit.Description,
             IsArchived = unit.IsArchived,
             CreatedAt = unit.CreatedAt,
-            UpdatedAt = unit.UpdatedAt
+            UpdatedAt = unit.UpdatedAt,
+            OccupancyStatus = activeTenancy != null ? "Occupied" : "Vacant",
+            CurrentTenantId = activeTenancy?.TenantId,
+            CurrentTenantName = activeTenancy?.Tenant?.FullName,
+            ActiveTenancyId = activeTenancy?.Id
         };
     }
-    
+
+    public async Task<(byte[] FileBytes, string UnitLabel)?> ExportUnitTenancyHistoryAsync(
+        int userId,
+        int propertyId,
+        int unitId)
+    {
+        var owner = await _context.PropertyOwners
+            .FirstOrDefaultAsync(po => po.UserId == userId);
+
+        if (owner == null || owner.VerificationStatus != OwnerVerificationStatus.Verified)
+        {
+            return null;
+        }
+
+        var unit = await _context.Units
+            .Include(u => u.Property)
+            .FirstOrDefaultAsync(u =>
+                u.Id == unitId &&
+                u.PropertyId == propertyId &&
+                u.Property!.PropertyOwnerId == owner.Id);
+
+        if (unit == null)
+        {
+            return null;
+        }
+
+        var tenancies = await _context.Tenancies
+            .Include(t => t.Tenant)
+            .Where(t => t.UnitId == unitId)
+            .OrderByDescending(t => t.StartDate)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Tenancy History");
+
+        worksheet.Cell(1, 1).Value = "Tenant Name";
+        worksheet.Cell(1, 2).Value = "Start Date";
+        worksheet.Cell(1, 3).Value = "End Date";
+        worksheet.Cell(1, 4).Value = "Status";
+
+        var headerRange = worksheet.Range(1, 1, 1, 4);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#1F8A8A");
+        headerRange.Style.Font.FontColor = XLColor.White;
+
+        int row = 2;
+        foreach (var tenancy in tenancies)
+        {
+            worksheet.Cell(row, 1).Value = tenancy.Tenant?.FullName ?? "N/A";
+            worksheet.Cell(row, 2).Value = tenancy.StartDate.ToString("dd/MM/yyyy");
+            worksheet.Cell(row, 3).Value = tenancy.EndDate.HasValue
+                ? tenancy.EndDate.Value.ToString("dd/MM/yyyy")
+                : "";
+            worksheet.Cell(row, 4).Value = tenancy.Status.ToString();
+            row++;
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return (stream.ToArray(), unit.UnitLabel);
+    }
 }

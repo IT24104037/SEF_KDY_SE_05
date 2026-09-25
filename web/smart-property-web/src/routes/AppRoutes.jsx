@@ -13,6 +13,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import AdminHome from "../features/admin/pages/AdminHome";
 import UserManagementPage from "../features/admin/pages/UserManagementPage";
 import AdminOwnerVerificationPage from "../features/admin/pages/OwnerVerificationPage";
+import OwnerProfileRequestsPage from "../features/admin/pages/OwnerProfileRequestsPage";
 import PropertyVerificationPage from "../features/admin/pages/PropertyVerificationPage";
 import AiWorkflowPage from "../features/admin/pages/AiWorkflowPage";
 import ReportsPage from "../features/admin/pages/ReportsPage";
@@ -20,6 +21,7 @@ import SystemActivityPage from "../features/admin/pages/SystemActivityPage";
 import AdminMaintenanceRequestsPage from "../features/admin/pages/MaintenanceRequestsPage";
 import MaintenanceCategoriesPage from "../features/admin/pages/MaintenanceCategoriesPage";
 import EmergencyRequestsPage from "../features/admin/pages/EmergencyRequestsPage";
+import MaintenanceHistoryPage from "../features/maintenance/pages/MaintenanceHistoryPage";
 
 import WorkerRegistrationPage from "../features/workers/pages/WorkerRegistrationPage";
 import WorkerVerificationPage from "../features/workers/pages/WorkerVerificationPage";
@@ -37,11 +39,14 @@ import UnitsPage from "../features/properties/pages/UnitsPage";
 import OwnerProfilePage from "../features/properties/pages/OwnerProfilePage";
 
 import ApprovalPage from "../features/ai-workflow/pages/ApprovalPage";
+import WorkflowDetailsPage from "../features/ai-workflow/pages/WorkflowDetailsPage";
+import WorkflowHistoryPage from "../features/ai-workflow/pages/WorkflowHistoryPage";
 import ReportMaintenancePage from "../features/maintenance/pages/ReportMaintenancePage";
 import ReportEmergencyPage from "../features/maintenance/pages/ReportEmergencyPage";
 import MyMaintenanceRequestsPage from "../features/maintenance/pages/MyMaintenanceRequestsPage";
 import TenantMaintenanceDetailsPage from "../features/maintenance/pages/TenantMaintenanceDetailsPage";
 import OwnerMaintenanceRequestsPage from "../features/maintenance/pages/OwnerMaintenanceRequestsPage";
+import OwnerEmergencyRequestsPage from "../features/maintenance/pages/OwnerEmergencyRequestsPage";
 import MaintenanceRequestDetailsPage from "../features/maintenance/pages/MaintenanceRequestDetailsPage";
 
 import TenantListPage from "../features/tenancies/pages/TenantListPage";
@@ -83,10 +88,15 @@ export default function AppRoutes() {
                 <Route path="/owner/tenants/:tenantId/tenancy-history" element={<TenancyHistoryPage />} />
                 <Route path="/owner/profile" element={<OwnerProfilePage />} />
                 <Route path="/owner/approval" element={<ApprovalPage />} />
+                <Route path="/owner/ai-workflow" element={<WorkflowHistoryPage />} />
+                <Route path="/owner/ai-workflow/:workflowId" element={<WorkflowDetailsPage />} />
                 <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
                 <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
                 <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
-              </Route>
+                <Route path="/owner/emergency" element={<OwnerEmergencyRequestsPage />} />
+                <Route path="/owner/emergency/:id" element={<MaintenanceRequestDetailsPage />} />
+                <Route  path="/owner/maintenance-history" element={<MaintenanceHistoryPage />} />
+              </Route> 
             </Route>
           </Route>
         </Route>
@@ -114,9 +124,9 @@ export default function AppRoutes() {
               <Route index element={<AdminHome />} />
               <Route path="workers" element={<WorkersPage />} />
               <Route path="maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
-
               <Route path="users" element={<UserManagementPage />} />
               <Route path="owner-verification" element={<AdminOwnerVerificationPage />} />
+              <Route path="owner-profile-requests" element={<OwnerProfileRequestsPage />} />
               <Route path="property-verification" element={<PropertyVerificationPage />} />
               <Route path="maintenance" element={<AdminMaintenanceRequestsPage />} />
               <Route path="emergencies" element={<EmergencyRequestsPage />} />
@@ -124,7 +134,8 @@ export default function AppRoutes() {
               <Route path="ai-monitoring" element={<AiWorkflowPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="activity" element={<SystemActivityPage />} />
-            </Route>
+              <Route  path="/admin/maintenance-history" element={<MaintenanceHistoryPage />} />
+            </Route> 
           </Route>
         </Route>
 

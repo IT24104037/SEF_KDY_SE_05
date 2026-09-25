@@ -95,6 +95,14 @@ function LoginPage() {
 
         <button
           type="button"
+          style={styles.workerRegisterButton}
+          onClick={() => navigate("/register-worker")}
+        >
+          Register as Maintenance Worker
+        </button>
+
+        <button
+          type="button"
           style={styles.activateButton}
           onClick={() => navigate("/activate-tenant")}
         >
@@ -157,6 +165,16 @@ const styles = {
     backgroundColor: "#FFFFFF",
     color: "#1F8A8A",
     cursor: "pointer",
+  },
+
+  workerRegisterButton: {
+    padding: "10px",
+    border: "1px solid #0284c7",
+    borderRadius: "6px",
+    backgroundColor: "#f0f9ff",
+    color: "#0369a1",
+    cursor: "pointer",
+    fontWeight: "600",
   },
 
   activateButton: {
