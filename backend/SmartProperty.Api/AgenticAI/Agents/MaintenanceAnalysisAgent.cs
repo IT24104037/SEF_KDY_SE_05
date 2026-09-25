@@ -1,13 +1,30 @@
 using SmartProperty.Api.AgenticAI.Contracts;
+using SmartProperty.Api.AgenticAI.Tools;
+
+using SmartProperty.Api.AgenticAI.Agents;
 
 namespace SmartProperty.Api.AgenticAI.Agents;
 
-public class VisualAnalysisResponsibilityAgent.cs
+public class MaintenanceAnalysisAgent
 {
+     private readonly MaintenanceResponsibilityTool _responsibilityTool;
+ 
+    public MaintenanceAnalysisAgent(
+        MaintenanceResponsibilityTool responsibilityTool)
+    {
+        _responsibilityTool = responsibilityTool;
+    }
+
     public async Task<AnalysisOutput> AnalyzeAsync(
         AnalysisInput input,
         CancellationToken cancellationToken = default)
     {
+        var responsibilityResult =
+    _responsibilityTool.Analyze(
+        input.Description,
+        string.Empty,
+        input.ImageUrls.Count > 0);
+        
         cancellationToken.ThrowIfCancellationRequested();
 
         if (input == null)

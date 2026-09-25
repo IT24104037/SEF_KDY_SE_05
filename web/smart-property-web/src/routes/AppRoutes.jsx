@@ -55,6 +55,7 @@ import TenantDetailsPage from "../features/tenancies/pages/TenantDetailsPage";
 import TenantActivationPage from "../features/tenancies/pages/TenantActivationPage";
 import CurrentTenanciesPage from "../features/tenancies/pages/CurrentTenanciesPage";
 import TenancyHistoryPage from "../features/tenancies/pages/TenancyHistoryPage";
+//import Agent2TextAnalysisPage from "../features/ai-workflow/pages/Agent2TextAnalysisPage";
 
 import MyTenancyPage from "../features/tenant-dashboard/pages/MyTenancyPage";
 import TenantTenancyHistoryPage from "../features/tenant-dashboard/pages/TenantTenancyHistoryPage";
@@ -96,6 +97,8 @@ export default function AppRoutes() {
                 <Route path="/owner/emergency" element={<OwnerEmergencyRequestsPage />} />
                 <Route path="/owner/emergency/:id" element={<MaintenanceRequestDetailsPage />} />
                 <Route  path="/owner/maintenance-history" element={<MaintenanceHistoryPage />} />
+                
+
               </Route> 
             </Route>
           </Route>
