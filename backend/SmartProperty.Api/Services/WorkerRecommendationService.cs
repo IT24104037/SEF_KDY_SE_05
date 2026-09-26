@@ -416,6 +416,18 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     ChangedAt = DateTime.UtcNow
                 });
 
+                // Update related AgentWorkflow if exists
+                var relatedWorkflow = await _context.AgentWorkflows
+                    .FirstOrDefaultAsync(w => w.MaintenanceRequestId == request.Id);
+                if (relatedWorkflow != null)
+                {
+                    relatedWorkflow.ApprovalStatus = "Approved";
+                    relatedWorkflow.Status = AgentWorkflowStatus.Completed;
+                    relatedWorkflow.FinalOutcome = $"Work Order #{workOrder.Id} created and assigned to Worker #{targetWorkerId}.";
+                    relatedWorkflow.CompletedAt ??= DateTime.UtcNow;
+                    relatedWorkflow.UpdatedAt = DateTime.UtcNow;
+                }
+
                 await _context.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();
 
@@ -451,6 +463,14 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     ChangedAt = DateTime.UtcNow
                 });
 
+                var relatedWorkflow = await _context.AgentWorkflows
+                    .FirstOrDefaultAsync(w => w.MaintenanceRequestId == request.Id);
+                if (relatedWorkflow != null)
+                {
+                    relatedWorkflow.ApprovalStatus = "Rejected";
+                    relatedWorkflow.UpdatedAt = DateTime.UtcNow;
+                }
+
                 await _context.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();
 
@@ -485,6 +505,14 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     Note = $"Revision requested by Property Owner: {dto.Notes?.Trim()}",
                     ChangedAt = DateTime.UtcNow
                 });
+
+                var relatedWorkflow = await _context.AgentWorkflows
+                    .FirstOrDefaultAsync(w => w.MaintenanceRequestId == request.Id);
+                if (relatedWorkflow != null)
+                {
+                    relatedWorkflow.ApprovalStatus = "RevisionRequested";
+                    relatedWorkflow.UpdatedAt = DateTime.UtcNow;
+                }
 
                 await _context.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();

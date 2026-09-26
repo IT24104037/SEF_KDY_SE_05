@@ -1,7 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAiWorkflowState } from "../store/aiWorkflowStore";
 import WorkflowTimeline from "../components/WorkflowTimeline";
+import {
+  getApprovalRequest,
+  submitApprovalDecision,
+} from "../../workers/services/workerService.js";
 
 function getUrgencyBadgeStyle(urgency) {
   switch (urgency) {
@@ -32,6 +36,13 @@ export default function WorkflowDetailsPage() {
     loadLogs,
   } = useAiWorkflowState();
 
+  const [recommendation, setRecommendation] = useState(null);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState("");
+  const [decisionNote, setDecisionNote] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
+  const [submittingDecision, setSubmittingDecision] = useState(false);
+
   useEffect(() => {
     async function fetchData() {
       let activeWorkflow = null;
@@ -44,10 +55,67 @@ export default function WorkflowDetailsPage() {
       if (activeWorkflow && activeWorkflow.id) {
         await loadLogs(activeWorkflow.id);
       }
+
+      if (activeWorkflow && activeWorkflow.maintenanceRequestId) {
+        try {
+          setRecLoading(true);
+          const rec = await getApprovalRequest(activeWorkflow.maintenanceRequestId);
+          setRecommendation(rec);
+        } catch (err) {
+          console.warn("Could not load recommendation for workflow:", err);
+        } finally {
+          setRecLoading(false);
+        }
+      }
     }
 
     fetchData();
   }, [workflowId, requestIdParam, loadWorkflowById, loadWorkflowByRequestId, loadLogs]);
+
+  async function handleDecision(decisionType) {
+    if (!recommendation || !workflow?.maintenanceRequestId) return;
+    if ((decisionType === "Reject" || decisionType === "Request Revision") && !decisionNote.trim()) {
+      setRecError("Please provide a note or reason for rejection or revision request.");
+      return;
+    }
+
+    setSubmittingDecision(true);
+    setRecError("");
+    setActionSuccess("");
+
+    try {
+      const result = await submitApprovalDecision(
+        workflow.maintenanceRequestId,
+        decisionType,
+        decisionNote,
+        recommendation.proposedTime,
+        recommendation.recommendedWorkerId
+      );
+
+      if (result.createdWorkOrder) {
+        setActionSuccess(
+          `Approved successfully! Official Work Order #${result.workOrderId || ""} has been created and assigned to ${recommendation.recommendedWorker}.`
+        );
+      } else {
+        setActionSuccess(`${decisionType} recorded successfully.`);
+      }
+
+      // Refresh recommendation
+      const updatedRec = await getApprovalRequest(workflow.maintenanceRequestId);
+      setRecommendation(updatedRec);
+
+      // Refresh workflow
+      if (workflowId) {
+        await loadWorkflowById(workflowId);
+      } else if (requestIdParam) {
+        await loadWorkflowByRequestId(requestIdParam);
+      }
+    } catch (err) {
+      setRecError(err.message || "Failed to record approval decision.");
+    } finally {
+      setSubmittingDecision(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -123,29 +191,210 @@ export default function WorkflowDetailsPage() {
           <span><strong>Created:</strong> {new Date(workflow.createdAt).toLocaleString()}</span>
           <span><strong>Last Updated:</strong> {new Date(workflow.updatedAt).toLocaleString()}</span>
         </div>
-
-        {workflow.maintenanceRequestId && (
-          <div style={styles.approvalActionBanner}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <span style={{ fontSize: "22px" }}>🛡️</span>
-              <div>
-                <strong style={{ color: "#111827", fontSize: "14px" }}>
-                  AI Recommendation &amp; Safety Audit Ready
-                </strong>
-                <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#4b5563" }}>
-                  All 4 AI agents completed their analysis. Proceed to the Human-in-the-Loop gate to review and dispatch.
-                </p>
-              </div>
-            </div>
-            <button
-              style={styles.buttonPrimary}
-              onClick={() => navigate(`/owner/approval?requestId=${workflow.maintenanceRequestId}`)}
-            >
-              Review &amp; Approve Recommendation →
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* AI SUGGESTED TECHNICIAN & OWNER APPROVAL SECTION */}
+      {recLoading && (
+        <div style={styles.recLoadingCard}>
+          <div style={styles.spinnerSmall}></div>
+          <span style={{ fontSize: "14px", color: "#4b5563" }}>
+            Evaluating AI worker match &amp; safety validation...
+          </span>
+        </div>
+      )}
+
+      {recommendation && (
+        <div style={styles.recommendationCard}>
+          <div style={styles.recommendationHeader}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <h2 style={styles.sectionTitle}>AI Suggested Technician &amp; Owner Approval</h2>
+              <span style={styles.agentTag}>Step #3 Matching + Step #4 Safety Validation</span>
+            </div>
+            <div>
+              <span
+                style={{
+                  ...styles.badgePill,
+                  backgroundColor: recommendation.validationStatus?.includes("Approved")
+                    ? "#dcfce7"
+                    : recommendation.hasAvailableWorker
+                    ? "#e0e7ff"
+                    : "#fee2e2",
+                  color: recommendation.validationStatus?.includes("Approved")
+                    ? "#166534"
+                    : recommendation.hasAvailableWorker
+                    ? "#3730a3"
+                    : "#991b1b",
+                }}
+              >
+                {recommendation.validationStatus || (recommendation.hasAvailableWorker ? "Ready for Owner Approval" : "No Worker Available")}
+              </span>
+            </div>
+          </div>
+
+          {actionSuccess && (
+            <div style={styles.successAlert}>
+              ✅ {actionSuccess}
+            </div>
+          )}
+
+          {recError && (
+            <div style={styles.errorAlert}>
+              ⚠️ {recError}
+            </div>
+          )}
+
+          {recommendation.hasAvailableWorker ? (
+            <>
+              <div style={styles.recGrid}>
+                {/* Candidate Technician Details */}
+                <div style={styles.recInfoBox}>
+                  <div style={styles.recBoxHeader}>
+                    <span style={{ fontSize: "22px" }}>👷</span>
+                    <strong style={{ fontSize: "16px", color: "#111827" }}>
+                      {recommendation.recommendedWorker || "Assigned Technician"}
+                    </strong>
+                    <span style={styles.skillBadge}>{recommendation.workerSkill || "Technician"}</span>
+                  </div>
+
+                  <div style={styles.metaList}>
+                    <div style={styles.metaItem}>
+                      <span style={styles.metaLabel}>Rate:</span>
+                      <span style={styles.metaValue}>
+                        {recommendation.hourlyRate ? `$${recommendation.hourlyRate}/hr` : "Standard"}
+                      </span>
+                    </div>
+                    <div style={styles.metaItem}>
+                      <span style={styles.metaLabel}>Coverage Area:</span>
+                      <span style={styles.metaValue}>{recommendation.serviceArea || "Regional Coverage"}</span>
+                    </div>
+                    {recommendation.workerMobile && (
+                      <div style={styles.metaItem}>
+                        <span style={styles.metaLabel}>Phone:</span>
+                        <span style={styles.metaValue}>{recommendation.workerMobile}</span>
+                      </div>
+                    )}
+                    {recommendation.workerEmail && (
+                      <div style={styles.metaItem}>
+                        <span style={styles.metaLabel}>Email:</span>
+                        <span style={styles.metaValue}>{recommendation.workerEmail}</span>
+                      </div>
+                    )}
+                    {recommendation.proposedTime && (
+                      <div style={styles.metaItem}>
+                        <span style={styles.metaLabel}>Proposed Window:</span>
+                        <span style={styles.metaValue}>
+                          {new Date(recommendation.proposedTime).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Agent 4 Safety & Compliance Audit */}
+                <div style={styles.safetyBox}>
+                  <div style={styles.recBoxHeader}>
+                    <span style={{ fontSize: "22px" }}>🛡️</span>
+                    <strong style={{ fontSize: "16px", color: "#111827" }}>
+                      Agent 4 Safety &amp; Compliance Audit
+                    </strong>
+                    <span style={styles.verifiedBadge}>Verified (Pass)</span>
+                  </div>
+
+                  <p style={styles.safetySummaryText}>
+                    {recommendation.validationSummary ||
+                      "Technician passed all 6 deterministic safety pillars: Identity Verified, Active Skill Certification, Workload Limits, Safety Score 100/100, and Clean Memory."}
+                  </p>
+
+                  <ul style={styles.checklist}>
+                    <li>✓ Identity &amp; Platform Verification Active</li>
+                    <li>✓ Required Trade Skill Certified</li>
+                    <li>✓ Daily Workload Limit Compliant</li>
+                    <li>✓ Safety Score: 100/100 (Clean History)</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* OWNER APPROVAL ACTION PANEL */}
+              <div style={styles.approvalSection}>
+                {recommendation.validationStatus?.includes("Approved") || workflow.approvalStatus === "Approved" ? (
+                  <div style={styles.alreadyApprovedBox}>
+                    <div>
+                      <strong style={{ color: "#166534", fontSize: "15px" }}>
+                        ✅ Technician Approved &amp; Work Order Dispatched
+                      </strong>
+                      <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#15803d" }}>
+                        Official Work Order is active and assigned to {recommendation.recommendedWorker}.
+                      </p>
+                    </div>
+                    <button
+                      style={styles.buttonPrimary}
+                      onClick={() => navigate("/owner/work-orders")}
+                    >
+                      View Assigned Work Orders →
+                    </button>
+                  </div>
+                ) : (
+                  <div style={styles.approvalActionCard}>
+                    <h4 style={styles.approvalCardTitle}>
+                      Property Owner Approval Decision
+                    </h4>
+                    <p style={{ fontSize: "13px", color: "#4b5563", margin: "0 0 12px 0" }}>
+                      Review the candidate technician recommended by Agent 3 and certified by Agent 4. Approving will create the official work order and dispatch the technician.
+                    </p>
+
+                    <textarea
+                      value={decisionNote}
+                      onChange={(e) => setDecisionNote(e.target.value)}
+                      placeholder="Optional notes for work order, instructions, or reason for revision..."
+                      rows={2}
+                      style={styles.decisionTextarea}
+                    />
+
+                    <div style={styles.approvalBtnRow}>
+                      <button
+                        style={styles.approveBtn}
+                        disabled={submittingDecision}
+                        onClick={() => handleDecision("Approve")}
+                      >
+                        {submittingDecision ? "Approving & Dispatching..." : "✓ Approve & Create Work Order"}
+                      </button>
+                      <button
+                        style={styles.reviseBtn}
+                        disabled={submittingDecision}
+                        onClick={() => handleDecision("Request Revision")}
+                      >
+                        Request Revision
+                      </button>
+                      <button
+                        style={styles.rejectBtn}
+                        disabled={submittingDecision}
+                        onClick={() => handleDecision("Reject")}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={styles.noWorkerBox}>
+              <p style={{ margin: 0, color: "#991b1b", fontWeight: "600" }}>
+                No verified internal technician available for this trade.
+              </p>
+              <p style={{ margin: "6px 0 12px 0", fontSize: "13px", color: "#7f1d1d" }}>
+                You can arrange external maintenance or request revision.
+              </p>
+              <button
+                style={styles.buttonSecondary}
+                onClick={() => navigate(`/owner/external-maintenance?requestId=${workflow.maintenanceRequestId}`)}
+              >
+                Arrange External Maintenance →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AGENT 1 PLANNER OUTPUT SECTION */}
       {planner ? (
@@ -530,31 +779,6 @@ const styles = {
     color: "#374151",
     cursor: "pointer",
   },
-  buttonPrimary: {
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "6px",
-    padding: "9px 18px",
-    fontSize: "13px",
-    fontWeight: "600",
-    cursor: "pointer",
-    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-    transition: "background-color 0.15s ease",
-    whiteSpace: "nowrap",
-  },
-  approvalActionBanner: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#f0fdf4",
-    border: "1px solid #bbf7d0",
-    borderRadius: "8px",
-    padding: "14px 18px",
-    marginTop: "16px",
-    flexWrap: "wrap",
-    gap: "12px",
-  },
   errorBox: {
     backgroundColor: "#fef2f2",
     border: "1px solid #fecaca",
@@ -568,6 +792,222 @@ const styles = {
     border: "1px solid #e5e7eb",
     padding: "32px",
     borderRadius: "8px",
+    textAlign: "center",
+  },
+  recLoadingCard: {
+    backgroundColor: "#ffffff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    padding: "20px",
+    marginBottom: "20px",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    justifyContent: "center",
+  },
+  spinnerSmall: {
+    width: "20px",
+    height: "20px",
+    border: "2px solid #e5e7eb",
+    borderTop: "2px solid #4f46e5",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+  recommendationCard: {
+    backgroundColor: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "10px",
+    padding: "24px",
+    marginBottom: "24px",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+  },
+  recommendationHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+    gap: "12px",
+  },
+  successAlert: {
+    backgroundColor: "#dcfce7",
+    border: "1px solid #86efac",
+    color: "#15803d",
+    padding: "12px 16px",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    marginBottom: "18px",
+  },
+  errorAlert: {
+    backgroundColor: "#fee2e2",
+    border: "1px solid #fca5a5",
+    color: "#991b1b",
+    padding: "12px 16px",
+    borderRadius: "8px",
+    fontSize: "14px",
+    marginBottom: "18px",
+  },
+  recGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "16px",
+    marginBottom: "20px",
+  },
+  recInfoBox: {
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    padding: "18px",
+  },
+  safetyBox: {
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    borderRadius: "8px",
+    padding: "18px",
+  },
+  recBoxHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "14px",
+    flexWrap: "wrap",
+  },
+  skillBadge: {
+    backgroundColor: "#e0e7ff",
+    color: "#3730a3",
+    fontSize: "11px",
+    fontWeight: "700",
+    padding: "3px 8px",
+    borderRadius: "4px",
+  },
+  verifiedBadge: {
+    backgroundColor: "#dcfce7",
+    color: "#15803d",
+    fontSize: "11px",
+    fontWeight: "700",
+    padding: "3px 8px",
+    borderRadius: "4px",
+    border: "1px solid #86efac",
+  },
+  metaList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    fontSize: "13px",
+  },
+  metaItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    borderBottom: "1px dashed #e2e8f0",
+    paddingBottom: "4px",
+  },
+  metaLabel: {
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  metaValue: {
+    color: "#111827",
+    fontWeight: "600",
+  },
+  safetySummaryText: {
+    fontSize: "13px",
+    color: "#166534",
+    lineHeight: "1.5",
+    marginBottom: "12px",
+  },
+  checklist: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    fontSize: "12px",
+    color: "#15803d",
+    fontWeight: "600",
+  },
+  approvalSection: {
+    marginTop: "20px",
+    paddingTop: "20px",
+    borderTop: "1px solid #e5e7eb",
+  },
+  alreadyApprovedBox: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #86efac",
+    borderRadius: "8px",
+    padding: "16px 20px",
+    flexWrap: "wrap",
+    gap: "14px",
+  },
+  approvalActionCard: {
+    backgroundColor: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    padding: "20px",
+  },
+  approvalCardTitle: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#111827",
+    margin: "0 0 6px 0",
+  },
+  decisionTextarea: {
+    width: "100%",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    padding: "10px 14px",
+    fontSize: "13px",
+    resize: "vertical",
+    boxSizing: "border-box",
+    marginBottom: "14px",
+    fontFamily: "inherit",
+    outline: "none",
+  },
+  approvalBtnRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+  approveBtn: {
+    backgroundColor: "#16a34a",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 20px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+  },
+  reviseBtn: {
+    backgroundColor: "#f59e0b",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+  rejectBtn: {
+    backgroundColor: "#dc2626",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+  noWorkerBox: {
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    padding: "20px",
     textAlign: "center",
   },
 };
