@@ -15,7 +15,7 @@ public class AgentWorkflowService : IAgentWorkflowService
 {
     private readonly AppDbContext _dbContext;
     private readonly PlannerCoordinatorAgent _plannerAgent;
-    private readonly Agent2WorkflowService _agent2WorkflowService;
+    private readonly Agent2WorkflowService? _agent2WorkflowService;
     private readonly ILogger<AgentWorkflowService> _logger;
     
     public AgentWorkflowService(
@@ -29,6 +29,16 @@ public class AgentWorkflowService : IAgentWorkflowService
         _agent2WorkflowService = agent2WorkflowService;
         _logger = logger;
     }
+    public AgentWorkflowService(
+    AppDbContext dbContext,
+    PlannerCoordinatorAgent plannerAgent,
+    ILogger<AgentWorkflowService> logger)
+{
+    _dbContext = dbContext;
+    _plannerAgent = plannerAgent;
+    _agent2WorkflowService = null;
+    _logger = logger;
+}
 
     private async Task<bool> CanAccessMaintenanceRequestAsync(
         MaintenanceRequest request,
@@ -239,7 +249,7 @@ public class AgentWorkflowService : IAgentWorkflowService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
     // Automatically continue from Agent 1 to Agent 2
-if (plannerOutput.IsSuccess)
+if (plannerOutput.IsSuccess  && _agent2WorkflowService is not null)
 {
     try
     {

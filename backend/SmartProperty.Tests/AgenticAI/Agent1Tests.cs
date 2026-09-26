@@ -126,8 +126,9 @@ public class Agent1Tests
         Assert.Single(response.ExecutionLogs);
         Assert.Equal("PlannerCoordinatorAgent", response.ExecutionLogs[0].AgentName);
         Assert.NotNull(response.PlannerOutput);
-        Assert.Equal("Plumbing", response.PlannerOutput.RequiredTrade);
-
+       Assert.Equal(
+            "Pending Agent 2 Analysis",
+            response.PlannerOutput.RequiredTrade);
         // ToolExecutions assertions
         var toolExecutions = db.ToolExecutions.Where(t => t.AgentWorkflowId == response.Id).OrderBy(t => t.Id).ToList();
         Assert.Equal(2, toolExecutions.Count);
