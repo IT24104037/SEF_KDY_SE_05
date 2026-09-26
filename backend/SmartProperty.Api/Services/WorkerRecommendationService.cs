@@ -188,8 +188,25 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         var matchedSkillName = selectedWorker.Skills.FirstOrDefault()?.SkillName ?? skillRequired ?? "General Maintenance";
         var serviceAreaName = selectedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
 
-        await RecordValidationResultAsync(request.Id, selectedWorker.Id, ValidationStatus.Pass,
-            $"Deterministic validation passed: Technician {selectedWorker.User?.FullName} matched for {matchedSkillName} covering {serviceAreaName}.");
+        var existingVal = await _context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+
+        string validationStatusDisplay;
+        string validationSummaryDisplay;
+
+        if (existingVal != null)
+        {
+            validationStatusDisplay = $"Agent 4 Verified ({existingVal.Status})";
+            validationSummaryDisplay = existingVal.Summary;
+        }
+        else
+        {
+            validationStatusDisplay = "Passed (Deterministic Rule Validation)";
+            validationSummaryDisplay = $"Technician verified, matches skill '{matchedSkillName}', and covers service area.";
+
+            await RecordValidationResultAsync(request.Id, selectedWorker.Id, ValidationStatus.Pass,
+                $"Deterministic validation passed: Technician {selectedWorker.User?.FullName} matched for {matchedSkillName} covering {serviceAreaName}.");
+        }
 
         return new RecommendationResponseDto
         {
@@ -213,8 +230,8 @@ public class WorkerRecommendationService : IWorkerRecommendationService
             HourlyRate = selectedWorker.HourlyRate,
             ServiceArea = string.IsNullOrEmpty(serviceAreaName) ? "Regional Coverage" : serviceAreaName,
             ProposedTime = proposedTime,
-            ValidationStatus = "Passed (Deterministic Rule Validation)",
-            ValidationSummary = $"Technician verified, matches skill '{matchedSkillName}', and covers service area.",
+            ValidationStatus = validationStatusDisplay,
+            ValidationSummary = validationSummaryDisplay,
             Message = "Technician recommendation ready for property owner review and approval."
         };
     }
