@@ -31,7 +31,10 @@ public class AppDbContext : DbContext
     public DbSet<MaintenanceCategory> MaintenanceCategories { get; set; }
     public DbSet<MaintenanceRequest> MaintenanceRequests { get; set; }
     public DbSet<MaintenanceImage> MaintenanceImages { get; set; }
+
     public DbSet<MaintenanceStatusHistory> MaintenanceStatusHistories { get; set; }
+
+    public DbSet<WorkerMatchRecommendation> WorkerMatchRecommendations { get; set; }
 
     public DbSet<Worker> Workers => Set<Worker>();
     public DbSet<WorkerSkill> WorkerSkills => Set<WorkerSkill>();
@@ -390,6 +393,49 @@ public DbSet<MaintenanceAnalysisResult> MaintenanceAnalysisResults
                 .HasForeignKey(x => x.PropertyOwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<WorkerMatchRecommendation>(entity =>
+{
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.Result)
+        .IsRequired()
+        .HasMaxLength(100);
+
+    entity.Property(x => x.RequiredSkill)
+        .HasMaxLength(100);
+
+    entity.Property(x => x.Priority)
+        .HasMaxLength(50);
+
+    entity.Property(x => x.Safety)
+        .HasMaxLength(100);
+
+    entity.Property(x => x.Reason)
+        .HasMaxLength(500);
+
+    entity.HasOne(x => x.MaintenanceRequest)
+        .WithMany()
+        .HasForeignKey(x => x.MaintenanceRequestId)
+        .OnDelete(DeleteBehavior.Cascade);
+
+    entity.HasOne(x => x.Worker)
+        .WithMany()
+        .HasForeignKey(x => x.WorkerId)
+        .OnDelete(DeleteBehavior.SetNull);
+
+    entity.HasOne(x => x.Category)
+        .WithMany()
+        .HasForeignKey(x => x.CategoryId)
+        .OnDelete(DeleteBehavior.SetNull);
+
+    entity.HasIndex(x => x.MaintenanceRequestId);
+    entity.HasIndex(x => x.WorkerId);
+});
+
+
+
+
 
         modelBuilder.Entity<AgentWorkflow>(entity =>
         {

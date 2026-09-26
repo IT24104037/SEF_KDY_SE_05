@@ -30,6 +30,8 @@ public class AgentOutputValidator
         "PLUMBING",
         "ELECTRICAL",
         "STRUCTURAL",
+        "DOORS_WINDOWS_LOCKS",
+        "DRAINAGE_WATER_DAMAGE",
         "APPLIANCE",
         "DAMAGE",
         "UNKNOWN"

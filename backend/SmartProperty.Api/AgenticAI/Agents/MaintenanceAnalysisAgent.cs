@@ -148,7 +148,33 @@ public class MaintenanceAnalysisAgent
                 EmergencyClass = "NORMAL_MAINTENANCE"
             };
         }
-
+       // Doors / Windows / Locks
+            if (ContainsAny(
+                description,
+                "door",
+                "window",
+                "lock",
+                "key",
+                "hinge",
+                "door handle",
+                "broken lock"))
+            {
+                return new AnalysisOutput
+                {
+                    DetectedProblem = "Door, window or lock problem",
+                    Category = "DOORS_WINDOWS_LOCKS",
+                    Priority = "MEDIUM",
+                    RequiredSkill = "PROPERTY_MAINTENANCE",
+                    Responsibility = GetResponsibility(
+                        input,
+                        "DOORS_WINDOWS_LOCKS"),
+                    SafetyConcern = null,
+                    Confidence = 0.86m,
+                    NeedsMoreInformation = false,
+                    EmergencyClass = "NORMAL_MAINTENANCE"
+                };
+            }
+    
         if (ContainsAny(description,
             "wall crack",
             "ceiling crack",
@@ -288,4 +314,5 @@ public class MaintenanceAnalysisAgent
         return unsafePatterns.Any(
             pattern => text.Contains(pattern, StringComparison.OrdinalIgnoreCase));
     }
+
 }

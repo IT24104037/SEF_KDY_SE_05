@@ -107,7 +107,57 @@ public class AgentWorkflowService : IAgentWorkflowService
 
         if (existingWorkflow != null)
         {
-            _logger.LogInformation("An active workflow (ID: {WorkflowId}) already exists for request ID {RequestId}. Returning existing workflow.", existingWorkflow.Id, maintenanceRequestId);
+            _logger.LogInformation(
+                "An active workflow (ID: {WorkflowId}) already exists for request ID {RequestId}.",
+                existingWorkflow.Id,
+                maintenanceRequestId);
+
+            var agent2Step = existingWorkflow.WorkflowSteps
+                .FirstOrDefault(x => x.StepOrder == 2);
+
+            var agent3Step = existingWorkflow.WorkflowSteps
+                .FirstOrDefault(x => x.StepOrder == 3);
+
+            // Resume an older workflow when Agent 2 completed,
+            // but Agent 3 has not run or previously failed.
+            var shouldResumeAgent3 =
+                _agent2WorkflowService is not null &&
+                agent2Step?.Status == WorkflowStepStatus.Completed &&
+                (agent3Step == null ||
+                agent3Step.Status == WorkflowStepStatus.Failed);
+
+            if (shouldResumeAgent3)
+            {
+                try
+                {
+                    // Agent 2 returns its cached output and hands it to Agent 3.
+                    await _agent2WorkflowService!.ExecuteAsync(
+                        existingWorkflow.Id,
+                        cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Failed to resume Agent 3 for existing workflow {WorkflowId}",
+                        existingWorkflow.Id);
+                }
+
+                var refreshedWorkflow = await _dbContext.AgentWorkflows
+                    .AsNoTracking()
+                    .Include(w => w.WorkflowSteps)
+                    .Include(w => w.ExecutionLogs)
+                    .FirstAsync(
+                        w => w.Id == existingWorkflow.Id,
+                        cancellationToken);
+
+                return MapToWorkflowResponseDto(refreshedWorkflow);
+            }
+
             return MapToWorkflowResponseDto(existingWorkflow);
         }
 

@@ -71,6 +71,11 @@ builder.Services.AddScoped<PropertyContextTool>();
 builder.Services.AddScoped<PlannerCoordinatorAgent>();
 builder.Services.AddScoped<IAgentWorkflowService, AgentWorkflowService>();
 
+
+builder.Services.AddScoped<WorkerMatchingTool>();
+builder.Services.AddScoped<TechnicianMatchingAgent>();
+builder.Services.AddScoped<Agent3WorkflowService>();
+
 // --------------------
 // JWT Authentication
 // --------------------
