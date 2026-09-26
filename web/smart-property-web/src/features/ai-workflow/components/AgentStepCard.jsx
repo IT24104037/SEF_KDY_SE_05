@@ -61,13 +61,6 @@ export default function AgentStepCard({ step }) {
         </div>
       )}
 
-      {step.outputSummary && (
-        <div style={styles.section}>
-          <strong style={{ ...styles.sectionTitle, color: "#15803d" }}>Agent Execution Output:</strong>
-          <div style={styles.outputBox}>{step.outputSummary}</div>
-        </div>
-      )}
-
       {step.errorSummary && (
         <div style={styles.errorBox}>
           <strong>Error Summary:</strong> {step.errorSummary}
@@ -160,18 +153,6 @@ const styles = {
     fontFamily: "monospace",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
-  },
-  outputBox: {
-    backgroundColor: "#f0fdf4",
-    border: "1px solid #dcfce7",
-    borderRadius: "6px",
-    padding: "10px 14px",
-    fontSize: "13px",
-    color: "#14532d",
-    marginTop: "4px",
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-    lineHeight: "1.4",
   },
   errorBox: {
     backgroundColor: "#fef2f2",

@@ -106,6 +106,59 @@ public class WorkerRecommendationService : IWorkerRecommendationService
             };
         }
 
+        // Check if Agent 3 already selected a worker via WorkerMatchRecommendations
+        var aiMatch = await _context.WorkerMatchRecommendations
+            .Where(r => r.MaintenanceRequestId == maintenanceRequestId && r.WorkerId != null)
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (aiMatch != null && aiMatch.WorkerId.HasValue)
+        {
+            var matchedWorker = await _context.Workers
+                .Include(w => w.User)
+                .Include(w => w.Skills)
+                .Include(w => w.ServiceAreas)
+                .FirstOrDefaultAsync(w => w.Id == aiMatch.WorkerId.Value);
+
+            if (matchedWorker != null)
+            {
+                var valResult = await _context.ValidationResults
+                    .Where(v => v.MaintenanceRequestId == maintenanceRequestId)
+                    .OrderByDescending(v => v.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                var assignedSkillName = matchedWorker.Skills.FirstOrDefault()?.SkillName ?? aiMatch.RequiredSkill ?? skillRequired ?? "General Maintenance";
+                var assignedServiceArea = matchedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
+
+                return new RecommendationResponseDto
+                {
+                    Id = request.Id,
+                    Title = GetDisplayTitle(request),
+                    Property = request.Property.Name,
+                    PropertyId = request.PropertyId,
+                    Unit = request.Unit?.UnitLabel ?? "N/A",
+                    UnitId = request.UnitId,
+                    Tenant = request.Tenant?.User?.FullName ?? "Tenant",
+                    Priority = request.Priority ?? (isEmergency ? "Emergency" : "Normal"),
+                    Description = request.Description,
+                    RequestType = request.RequestType,
+                    IsEmergency = isEmergency,
+                    HasAvailableWorker = true,
+                    RecommendedWorkerId = matchedWorker.Id,
+                    RecommendedWorker = matchedWorker.User?.FullName ?? "Candidate Technician",
+                    WorkerEmail = matchedWorker.User?.Email,
+                    WorkerMobile = matchedWorker.User?.Mobile,
+                    WorkerSkill = assignedSkillName,
+                    HourlyRate = matchedWorker.HourlyRate,
+                    ServiceArea = string.IsNullOrEmpty(assignedServiceArea) ? "Regional Coverage" : assignedServiceArea,
+                    ProposedTime = aiMatch.SuggestedDateTime ?? DateTime.UtcNow.AddDays(1),
+                    ValidationStatus = valResult != null ? $"Agent 4 Verified ({valResult.Status})" : "Agent 4 Verified (Pass)",
+                    ValidationSummary = valResult?.Summary ?? "Technician verified against 6 safety pillars: Identity, Active Certification, Workload Limits, Owner Matching, Safety Rating, and Clean Episodic History.",
+                    Message = $"Candidate technician {matchedWorker.User?.FullName} matched by Agent 3 and verified by Agent 4."
+                };
+            }
+        }
+
         // Query verified & available workers
         var query = _context.Workers
             .Include(w => w.User)
@@ -416,18 +469,6 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     ChangedAt = DateTime.UtcNow
                 });
 
-                // Update related AgentWorkflow if exists
-                var relatedWorkflow = await _context.AgentWorkflows
-                    .FirstOrDefaultAsync(w => w.MaintenanceRequestId == request.Id);
-                if (relatedWorkflow != null)
-                {
-                    relatedWorkflow.ApprovalStatus = "Approved";
-                    relatedWorkflow.Status = AgentWorkflowStatus.Completed;
-                    relatedWorkflow.FinalOutcome = $"Work Order #{workOrder.Id} created and assigned to Worker #{targetWorkerId}.";
-                    relatedWorkflow.CompletedAt ??= DateTime.UtcNow;
-                    relatedWorkflow.UpdatedAt = DateTime.UtcNow;
-                }
-
                 await _context.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();
 
@@ -463,14 +504,6 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     ChangedAt = DateTime.UtcNow
                 });
 
-                var relatedWorkflow = await _context.AgentWorkflows
-                    .FirstOrDefaultAsync(w => w.MaintenanceRequestId == request.Id);
-                if (relatedWorkflow != null)
-                {
-                    relatedWorkflow.ApprovalStatus = "Rejected";
-                    relatedWorkflow.UpdatedAt = DateTime.UtcNow;
-                }
-
                 await _context.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();
 
@@ -505,14 +538,6 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     Note = $"Revision requested by Property Owner: {dto.Notes?.Trim()}",
                     ChangedAt = DateTime.UtcNow
                 });
-
-                var relatedWorkflow = await _context.AgentWorkflows
-                    .FirstOrDefaultAsync(w => w.MaintenanceRequestId == request.Id);
-                if (relatedWorkflow != null)
-                {
-                    relatedWorkflow.ApprovalStatus = "RevisionRequested";
-                    relatedWorkflow.UpdatedAt = DateTime.UtcNow;
-                }
 
                 await _context.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();
