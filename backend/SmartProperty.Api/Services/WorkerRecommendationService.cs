@@ -61,6 +61,51 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         var skillRequired = request.Category?.Name?.Trim();
         var propertyCity = request.Property.City?.Trim() ?? string.Empty;
 
+        // If an active work order already exists for this request, return the assigned worker
+        var existingWorkOrder = await _context.WorkOrders
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.User)
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.Skills)
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.ServiceAreas)
+            .FirstOrDefaultAsync(wo => wo.MaintenanceRequestId == maintenanceRequestId &&
+                                       wo.Status != WorkOrderStatus.Cancelled);
+
+        if (existingWorkOrder != null)
+        {
+            var assignedWorker = existingWorkOrder.Worker;
+            var assignedSkillName = assignedWorker.Skills.FirstOrDefault()?.SkillName ?? skillRequired ?? "General Maintenance";
+            var assignedServiceArea = assignedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
+
+            return new RecommendationResponseDto
+            {
+                Id = request.Id,
+                Title = GetDisplayTitle(request),
+                Property = request.Property.Name,
+                PropertyId = request.PropertyId,
+                Unit = request.Unit?.UnitLabel ?? "N/A",
+                UnitId = request.UnitId,
+                Tenant = request.Tenant?.User?.FullName ?? "Tenant",
+                Priority = request.Priority ?? (isEmergency ? "Emergency" : "Normal"),
+                Description = request.Description,
+                RequestType = request.RequestType,
+                IsEmergency = isEmergency,
+                HasAvailableWorker = true,
+                RecommendedWorkerId = assignedWorker.Id,
+                RecommendedWorker = assignedWorker.User?.FullName ?? "Assigned Technician",
+                WorkerEmail = assignedWorker.User?.Email,
+                WorkerMobile = assignedWorker.User?.Mobile,
+                WorkerSkill = assignedSkillName,
+                HourlyRate = assignedWorker.HourlyRate,
+                ServiceArea = string.IsNullOrEmpty(assignedServiceArea) ? "Regional Coverage" : assignedServiceArea,
+                ProposedTime = existingWorkOrder.ScheduledDate,
+                ValidationStatus = "Approved & Assigned",
+                ValidationSummary = $"Technician {assignedWorker.User?.FullName} is approved and officially assigned to Work Order #{existingWorkOrder.Id}.",
+                Message = $"Work Order #{existingWorkOrder.Id} is currently {existingWorkOrder.Status}."
+            };
+        }
+
         // Query verified & available workers
         var query = _context.Workers
             .Include(w => w.User)
@@ -296,6 +341,14 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         {
             if (isApprove)
             {
+                // Prevent duplicate approval
+                var existingOrder = await _context.WorkOrders
+                    .FirstOrDefaultAsync(wo => wo.MaintenanceRequestId == maintenanceRequestId && wo.Status != WorkOrderStatus.Cancelled);
+                if (existingOrder != null)
+                {
+                    throw new InvalidOperationException($"This maintenance request has already been approved and assigned to Work Order #{existingOrder.Id}.");
+                }
+
                 // Must have a valid worker to assign
                 int targetWorkerId;
                 if (dto.WorkerId.HasValue && dto.WorkerId.Value > 0)
@@ -480,9 +533,19 @@ public class WorkerRecommendationService : IWorkerRecommendationService
             query = query.Where(r => r.Property.PropertyOwnerId == owner.Id);
         }
 
-        // Requests pending approval: not yet completed or cancelled or having an existing active work order
+        // Requests pending approval: must NOT have an active work order and must not be Assigned/InProgress/Completed/Cancelled
+        var assignedRequestIds = await _context.WorkOrders
+            .Where(wo => wo.Status != WorkOrderStatus.Cancelled)
+            .Select(wo => wo.MaintenanceRequestId)
+            .Distinct()
+            .ToListAsync();
+
         var pendingRequests = await query
-            .Where(r => r.Status != "Completed" && r.Status != "Cancelled")
+            .Where(r => r.Status != "Assigned" &&
+                        r.Status != "InProgress" &&
+                        r.Status != "Completed" &&
+                        r.Status != "Cancelled" &&
+                        !assignedRequestIds.Contains(r.Id))
             .OrderByDescending(r => r.CreatedAt)
             .Take(20)
             .ToListAsync();
