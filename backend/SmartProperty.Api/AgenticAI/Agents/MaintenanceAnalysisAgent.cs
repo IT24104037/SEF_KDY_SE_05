@@ -19,12 +19,7 @@ public class MaintenanceAnalysisAgent
         AnalysisInput input,
         CancellationToken cancellationToken = default)
     {
-        var responsibilityResult =
-    _responsibilityTool.Analyze(
-        input.Description,
-        string.Empty,
-        input.ImageUrls.Count > 0);
-        
+       
         cancellationToken.ThrowIfCancellationRequested();
 
         if (input == null)
@@ -46,7 +41,19 @@ public class MaintenanceAnalysisAgent
 
         string description = input.Description.ToLowerInvariant();
 
-        if (ContainsAny(description,
+        bool isEmergencyRequest =
+            string.Equals(
+                input.RequestType,
+                "EMERGENCY",
+                StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrWhiteSpace(input.EmergencyType);
+
+        string emergencyText =
+            $"{input.EmergencyType ?? string.Empty} {description}"
+                .ToLowerInvariant();
+
+
+        if (ContainsAny(emergencyText,
             "fire",
             "smoke",
             "gas leak",
@@ -61,7 +68,7 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Potential life-safety hazard",
                 Category = "SAFETY",
                 Priority = "CRITICAL",
-                RequiredSkill = "ELECTRICIAN",
+                RequiredSkill = "Electrical",
                 Responsibility = "PROPERTY_RESPONSIBILITY",
                 SafetyConcern =
                     "Move away from the affected area and avoid touching exposed electrical or hazardous components. Contact emergency services if there is immediate danger.",
@@ -84,8 +91,10 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Significant water leakage",
                 Category = "PLUMBING",
                 Priority = "HIGH",
-                RequiredSkill = "PLUMBER",
-                Responsibility = DetermineResponsibility(description),
+                RequiredSkill = "Plumbing",
+                Responsibility = GetResponsibility(
+                        input,
+                        "PLUMBING"),
                 SafetyConcern = "Keep electrical equipment away from the affected area.",
                 Confidence = 0.93m,
                 NeedsMoreInformation = false,
@@ -105,8 +114,10 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Electrical system problem",
                 Category = "ELECTRICAL",
                 Priority = "MEDIUM",
-                RequiredSkill = "ELECTRICIAN",
-                Responsibility = "PROPERTY_RESPONSIBILITY",
+                RequiredSkill = "Electrical",
+                Responsibility = GetResponsibility(
+                        input,
+                        "ELECTRICAL"),
                 SafetyConcern = "Do not attempt electrical repairs without appropriate expertise.",
                 Confidence = 0.88m,
                 NeedsMoreInformation = false,
@@ -128,8 +139,10 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Plumbing problem",
                 Category = "PLUMBING",
                 Priority = "MEDIUM",
-                RequiredSkill = "PLUMBER",
-                Responsibility = DetermineResponsibility(description),
+                RequiredSkill = "Plumbing",
+              Responsibility = GetResponsibility(
+                        input,
+                        "PLUMBING"),
                 Confidence = 0.86m,
                 NeedsMoreInformation = false,
                 EmergencyClass = "NORMAL_MAINTENANCE"
@@ -150,7 +163,9 @@ public class MaintenanceAnalysisAgent
                 Category = "STRUCTURAL",
                 Priority = "MEDIUM",
                 RequiredSkill = "PROPERTY_MAINTENANCE",
-                Responsibility = DetermineResponsibility(description),
+                Responsibility = GetResponsibility(
+                        input,
+                        "STRUCTURAL"),
                 Confidence = 0.82m,
                 NeedsMoreInformation = false,
                 EmergencyClass = "NORMAL_MAINTENANCE"
@@ -171,7 +186,9 @@ public class MaintenanceAnalysisAgent
                 Category = "APPLIANCE",
                 Priority = "LOW",
                 RequiredSkill = "APPLIANCE_TECHNICIAN",
-                Responsibility = "TENANT_OWNED_ITEM",
+                Responsibility = GetResponsibility(
+                        input,
+                        "APPLIANCE"),
                 Confidence = 0.89m,
                 NeedsMoreInformation = false,
                 EmergencyClass = "NORMAL_MAINTENANCE"
@@ -191,51 +208,48 @@ public class MaintenanceAnalysisAgent
                 Category = "DAMAGE",
                 Priority = "MEDIUM",
                 RequiredSkill = "PROPERTY_MAINTENANCE",
-                Responsibility = "POSSIBLE_TENANT_CAUSED_DAMAGE",
+                Responsibility = GetResponsibility(
+                        input,
+                        "DAMAGE"),
                 Confidence = 0.84m,
                 NeedsMoreInformation = false,
                 EmergencyClass = "NORMAL_MAINTENANCE"
             };
         }
 
-        return CreateNeedsInformationResult(
+
+
+    if (isEmergencyRequest)
+{
+    return new AnalysisOutput
+    {
+        DetectedProblem =
+            "Emergency request requires further safety review",
+        Category = "UNKNOWN",
+        Priority = "CRITICAL",
+        RequiredSkill = "UNKNOWN",
+        Responsibility = "REQUIRES_OWNER_REVIEW",
+        SafetyConcern =
+            "Treat the issue as urgent until the emergency type and site conditions are confirmed.",
+        Confidence = 0.40m,
+        NeedsMoreInformation = true,
+        EmergencyClass = "URGENT_MAINTENANCE"
+    };
+}
+       return CreateNeedsInformationResult(
             "The available information is insufficient to classify the maintenance issue safely.");
     }
 
-    private static string DetermineResponsibility(string description)
+        private string GetResponsibility(
+        AnalysisInput input,
+        string category)
     {
-        if (ContainsAny(description,
-            "my personal",
-            "my own",
-            "my microwave",
-            "my refrigerator",
-            "my washing machine"))
-        {
-            return "TENANT_OWNED_ITEM";
-        }
+        var result = _responsibilityTool.Analyze(
+            input.Description,
+            category,
+            input.ImageUrls?.Count > 0);
 
-        if (ContainsAny(description,
-            "i broke",
-            "i damaged",
-            "accidentally broke",
-            "accidentally damaged"))
-        {
-            return "POSSIBLE_TENANT_CAUSED_DAMAGE";
-        }
-
-        if (ContainsAny(description,
-            "pipe",
-            "ceiling",
-            "wall",
-            "roof",
-            "electrical",
-            "water leak",
-            "plumbing"))
-        {
-            return "PROPERTY_RESPONSIBILITY";
-        }
-
-        return "REQUIRES_OWNER_REVIEW";
+        return result.Responsibility;
     }
 
     private static AnalysisOutput CreateNeedsInformationResult(string reason)

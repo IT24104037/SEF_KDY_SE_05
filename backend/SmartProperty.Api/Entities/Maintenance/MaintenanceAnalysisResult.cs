@@ -5,6 +5,7 @@ public class MaintenanceAnalysisResult
     public int Id { get; set; }
 
     public int MaintenanceRequestId { get; set; }
+    public MaintenanceRequest MaintenanceRequest { get; set; } = null!;
 
     public string DetectedProblem { get; set; } = string.Empty;
 

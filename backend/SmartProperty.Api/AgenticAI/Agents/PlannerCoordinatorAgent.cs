@@ -33,20 +33,17 @@ public class PlannerCoordinatorAgent
         // 2. Gather Property Context
         var propContext = await _propertyContextTool.GetPropertyContextForRequestAsync(maintenanceRequestId, cancellationToken);
 
-        // 3. Determine Urgency
-        string urgency = DetermineUrgency(maintContext.RequestType, maintContext.Priority, maintContext.EmergencyType);
-
-        // 4. Determine Required Trade
-        string requiredTrade = DetermineRequiredTrade(maintContext.CategoryName, maintContext.Description);
-
-        // 5. Estimate Duration
-        string estimatedDuration = EstimateDuration(urgency, requiredTrade);
+       // Agent 1 coordinates only.
+    // Agent 2 is responsible for urgency, category and required skill.
+        string urgency = "Pending Agent 2 Analysis";
+        string requiredTrade = "Pending Agent 2 Analysis";
+        string estimatedDuration = "Pending Agent 2 Analysis";
 
         // 6. Build Context Summary
         string contextSummary = BuildContextSummary(maintContext, propContext);
 
         // 7. Generate Structured Resolution Steps
-        var steps = GenerateResolutionSteps(urgency, requiredTrade, maintContext.Description);
+        var steps = GenerateResolutionSteps();
 
         // 8. Construct Output
         return new PlannerOutput
@@ -55,7 +52,9 @@ public class PlannerCoordinatorAgent
             Urgency = urgency,
             RequiredTrade = requiredTrade,
             EstimatedDuration = estimatedDuration,
-            Summary = $"Planning coordination completed for request #{maintenanceRequestId}. Assigned trade: {requiredTrade} with urgency level: {urgency}.",
+            Summary =
+                    $"Planning coordination completed for request #{maintenanceRequestId}. " +
+                    "Maintenance analysis has been assigned to Agent 2.",
             RelevantContextSummary = contextSummary,
             ResolutionSteps = steps,
             PlannedAt = DateTime.UtcNow,
@@ -130,31 +129,49 @@ public class PlannerCoordinatorAgent
         return $"Property: {propertyText}. Request Category: {categoryText}. Images: {imagesText}. Request Status: {maint.Status}.";
     }
 
-    private static List<PlannerResolutionStep> GenerateResolutionSteps(string urgency, string requiredTrade, string description)
-    {
-        return new List<PlannerResolutionStep>
+    private static List<PlannerResolutionStep> GenerateResolutionSteps()
         {
-            new PlannerResolutionStep
+            return new List<PlannerResolutionStep>
             {
-                StepNumber = 1,
-                Title = "Initial Context & Safety Assessment",
-                Description = $"Verify site access, tenant notification requirements, and initial safety protocols for {requiredTrade} work.",
-                RecommendedAction = urgency == "Emergency" ? "Dispatch immediate emergency notification to property owner." : "Review tenant access preferences and confirm work window."
-            },
-            new PlannerResolutionStep
-            {
-                StepNumber = 2,
-                Title = "Technician Trade Matching & Work Scope Dispatch",
-                Description = $"Hand off trade requirement ({requiredTrade}) and job context to Technician Matching & Analysis pipeline.",
-                RecommendedAction = $"Filter available maintenance technicians certified in {requiredTrade}."
-            },
-            new PlannerResolutionStep
-            {
-                StepNumber = 3,
-                Title = "Resolution Verification & Owner Authorization Prep",
-                Description = "Package trade recommendation, validation checks, and cost estimate for owner approval decision.",
-                RecommendedAction = "Prepare structured recommendation payload for human approval workflow."
-            }
-        };
-    }
+                new PlannerResolutionStep
+                {
+                    StepNumber = 1,
+                    Title = "Gather Maintenance Context",
+                    Description =
+                        "Validate the maintenance request, property, unit and available evidence.",
+                    RecommendedAction =
+                        "Prepare the maintenance context for downstream agent processing."
+                },
+
+                new PlannerResolutionStep
+                {
+                    StepNumber = 2,
+                    Title = "Maintenance Analysis & Responsibility",
+                    Description =
+                        "Agent 2 analyses the maintenance description, request context, safety, responsibility and required skill.",
+                    RecommendedAction =
+                        "Pass the validated maintenance request to Agent 2."
+                },
+
+                new PlannerResolutionStep
+                {
+                    StepNumber = 3,
+                    Title = "Technician Matching & Scheduling",
+                    Description =
+                        "Agent 3 uses Agent 2's analysis to identify a suitable verified worker and time.",
+                    RecommendedAction =
+                        "Pass the structured Agent 2 result to Agent 3."
+                },
+
+                new PlannerResolutionStep
+                {
+                    StepNumber = 4,
+                    Title = "Validation & Approval Preparation",
+                    Description =
+                        "Agent 4 validates the recommendation, safety and business rules before human approval.",
+                    RecommendedAction =
+                        "Prepare the validated recommendation for Property Owner approval."
+                }
+            };
+        }
 }

@@ -510,6 +510,22 @@ public DbSet<MaintenanceAnalysisResult> MaintenanceAnalysisResults
                 .HasForeignKey(x => x.WorkflowStepId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+
+
+            modelBuilder.Entity<MaintenanceAnalysisResult>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+
+                entity.HasOne(x => x.MaintenanceRequest)
+                    .WithOne()
+                    .HasForeignKey<MaintenanceAnalysisResult>(
+                        x => x.MaintenanceRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => x.MaintenanceRequestId)
+                    .IsUnique();
+            });
     }
 }
 

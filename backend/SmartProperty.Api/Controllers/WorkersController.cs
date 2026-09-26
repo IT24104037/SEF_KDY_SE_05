@@ -21,7 +21,7 @@ public class WorkersController : ControllerBase
     [AllowAnonymous]
     [HttpPost("upload-proof")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadProof([FromForm] IFormFile file)
+    public async Task<IActionResult> UploadProof(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {

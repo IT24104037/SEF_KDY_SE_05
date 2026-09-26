@@ -31,8 +31,7 @@ builder.Services.AddScoped<AgentOutputValidator>();
 builder.Services.AddScoped<Agent2MaintenanceAnalysisService>();
 builder.Services.AddScoped<MaintenanceResponsibilityTool>();
 builder.Services.AddScoped<Agent2WorkflowService>();
-builder.Services.AddScoped<MaintenanceResponsibilityTool>();
-builder.Services.AddScoped<Agent2WorkflowService>();
+
 
 
 // --------------------

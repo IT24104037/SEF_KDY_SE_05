@@ -21,6 +21,43 @@ public class AgentOutputValidator
             "LIFE_SAFETY_EMERGENCY"
         };
 
+
+
+    private static readonly HashSet<string> AllowedCategories =
+    new(StringComparer.OrdinalIgnoreCase)
+    {
+        "SAFETY",
+        "PLUMBING",
+        "ELECTRICAL",
+        "STRUCTURAL",
+        "APPLIANCE",
+        "DAMAGE",
+        "UNKNOWN"
+    };
+
+private static readonly HashSet<string> AllowedPriorities =
+    new(StringComparer.OrdinalIgnoreCase)
+    {
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL",
+        "REVIEW"
+    };
+
+private static readonly HashSet<string> AllowedRequiredSkills =
+    new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Plumbing",
+        "Electrical",
+        "PROPERTY_MAINTENANCE",
+        "APPLIANCE_TECHNICIAN",
+        "UNKNOWN"
+    };
+
+
+
+
     public bool Validate(
         AnalysisOutput output,
         out List<string> errors)
@@ -36,11 +73,14 @@ public class AgentOutputValidator
         if (string.IsNullOrWhiteSpace(output.DetectedProblem))
             errors.Add("DetectedProblem is required.");
 
-        if (string.IsNullOrWhiteSpace(output.Category))
-            errors.Add("Category is required.");
+        if (!AllowedCategories.Contains(output.Category))
+            errors.Add("Invalid maintenance category.");
 
-        if (string.IsNullOrWhiteSpace(output.Priority))
-            errors.Add("Priority is required.");
+        if (!AllowedPriorities.Contains(output.Priority))
+            errors.Add("Invalid priority value.");
+
+        if (!AllowedRequiredSkills.Contains(output.RequiredSkill))
+            errors.Add("Invalid required skill value.");
 
         if (!AllowedResponsibilities.Contains(output.Responsibility))
             errors.Add("Invalid responsibility value.");

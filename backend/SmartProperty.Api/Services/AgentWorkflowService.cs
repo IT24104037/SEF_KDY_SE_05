@@ -14,15 +14,18 @@ public class AgentWorkflowService : IAgentWorkflowService
 {
     private readonly AppDbContext _dbContext;
     private readonly PlannerCoordinatorAgent _plannerAgent;
+    private readonly Agent2WorkflowService _agent2WorkflowService;
     private readonly ILogger<AgentWorkflowService> _logger;
-
+    
     public AgentWorkflowService(
         AppDbContext dbContext,
         PlannerCoordinatorAgent plannerAgent,
+        Agent2WorkflowService agent2WorkflowService,
         ILogger<AgentWorkflowService> logger)
     {
         _dbContext = dbContext;
         _plannerAgent = plannerAgent;
+        _agent2WorkflowService = agent2WorkflowService;
         _logger = logger;
     }
 
@@ -163,6 +166,28 @@ public class AgentWorkflowService : IAgentWorkflowService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+    // Automatically continue from Agent 1 to Agent 2
+if (plannerOutput.IsSuccess)
+{
+    try
+    {
+        await _agent2WorkflowService.ExecuteAsync(
+            workflow.Id,
+            cancellationToken);
+    }
+    catch (OperationCanceledException)
+    {
+        throw;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(
+            ex,
+            "Automatic Agent 1 to Agent 2 handoff failed for workflow {WorkflowId}",
+            workflow.Id);
+    }
+}
 
         // I. Fetch updated graph for DTO response
         var resultWorkflow = await _dbContext.AgentWorkflows
