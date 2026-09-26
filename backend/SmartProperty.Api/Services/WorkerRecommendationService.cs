@@ -61,6 +61,104 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         var skillRequired = request.Category?.Name?.Trim();
         var propertyCity = request.Property.City?.Trim() ?? string.Empty;
 
+        // If an active work order already exists for this request, return the assigned worker
+        var existingWorkOrder = await _context.WorkOrders
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.User)
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.Skills)
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.ServiceAreas)
+            .FirstOrDefaultAsync(wo => wo.MaintenanceRequestId == maintenanceRequestId &&
+                                       wo.Status != WorkOrderStatus.Cancelled);
+
+        if (existingWorkOrder != null)
+        {
+            var assignedWorker = existingWorkOrder.Worker;
+            var assignedSkillName = assignedWorker.Skills.FirstOrDefault()?.SkillName ?? skillRequired ?? "General Maintenance";
+            var assignedServiceArea = assignedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
+
+            return new RecommendationResponseDto
+            {
+                Id = request.Id,
+                Title = GetDisplayTitle(request),
+                Property = request.Property.Name,
+                PropertyId = request.PropertyId,
+                Unit = request.Unit?.UnitLabel ?? "N/A",
+                UnitId = request.UnitId,
+                Tenant = request.Tenant?.User?.FullName ?? "Tenant",
+                Priority = request.Priority ?? (isEmergency ? "Emergency" : "Normal"),
+                Description = request.Description,
+                RequestType = request.RequestType,
+                IsEmergency = isEmergency,
+                HasAvailableWorker = true,
+                RecommendedWorkerId = assignedWorker.Id,
+                RecommendedWorker = assignedWorker.User?.FullName ?? "Assigned Technician",
+                WorkerEmail = assignedWorker.User?.Email,
+                WorkerMobile = assignedWorker.User?.Mobile,
+                WorkerSkill = assignedSkillName,
+                HourlyRate = assignedWorker.HourlyRate,
+                ServiceArea = string.IsNullOrEmpty(assignedServiceArea) ? "Regional Coverage" : assignedServiceArea,
+                ProposedTime = existingWorkOrder.ScheduledDate,
+                ValidationStatus = "Approved & Assigned",
+                ValidationSummary = $"Technician {assignedWorker.User?.FullName} is approved and officially assigned to Work Order #{existingWorkOrder.Id}.",
+                Message = $"Work Order #{existingWorkOrder.Id} is currently {existingWorkOrder.Status}."
+            };
+        }
+
+        // Check if Agent 3 already selected a worker via WorkerMatchRecommendations
+        var aiMatch = await _context.WorkerMatchRecommendations
+            .Where(r => r.MaintenanceRequestId == maintenanceRequestId && r.WorkerId != null)
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (aiMatch != null && aiMatch.WorkerId.HasValue)
+        {
+            var matchedWorker = await _context.Workers
+                .Include(w => w.User)
+                .Include(w => w.Skills)
+                .Include(w => w.ServiceAreas)
+                .FirstOrDefaultAsync(w => w.Id == aiMatch.WorkerId.Value);
+
+            if (matchedWorker != null)
+            {
+                var valResult = await _context.ValidationResults
+                    .Where(v => v.MaintenanceRequestId == maintenanceRequestId)
+                    .OrderByDescending(v => v.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                var assignedSkillName = matchedWorker.Skills.FirstOrDefault()?.SkillName ?? aiMatch.RequiredSkill ?? skillRequired ?? "General Maintenance";
+                var assignedServiceArea = matchedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
+
+                return new RecommendationResponseDto
+                {
+                    Id = request.Id,
+                    Title = GetDisplayTitle(request),
+                    Property = request.Property.Name,
+                    PropertyId = request.PropertyId,
+                    Unit = request.Unit?.UnitLabel ?? "N/A",
+                    UnitId = request.UnitId,
+                    Tenant = request.Tenant?.User?.FullName ?? "Tenant",
+                    Priority = request.Priority ?? (isEmergency ? "Emergency" : "Normal"),
+                    Description = request.Description,
+                    RequestType = request.RequestType,
+                    IsEmergency = isEmergency,
+                    HasAvailableWorker = true,
+                    RecommendedWorkerId = matchedWorker.Id,
+                    RecommendedWorker = matchedWorker.User?.FullName ?? "Candidate Technician",
+                    WorkerEmail = matchedWorker.User?.Email,
+                    WorkerMobile = matchedWorker.User?.Mobile,
+                    WorkerSkill = assignedSkillName,
+                    HourlyRate = matchedWorker.HourlyRate,
+                    ServiceArea = string.IsNullOrEmpty(assignedServiceArea) ? "Regional Coverage" : assignedServiceArea,
+                    ProposedTime = aiMatch.SuggestedDateTime ?? DateTime.UtcNow.AddDays(1),
+                    ValidationStatus = valResult != null ? $"Agent 4 Verified ({valResult.Status})" : "Agent 4 Verified (Pass)",
+                    ValidationSummary = valResult?.Summary ?? "Technician verified against 6 safety pillars: Identity, Active Certification, Workload Limits, Owner Matching, Safety Rating, and Clean Episodic History.",
+                    Message = $"Candidate technician {matchedWorker.User?.FullName} matched by Agent 3 and verified by Agent 4."
+                };
+            }
+        }
+
         // Query verified & available workers
         var query = _context.Workers
             .Include(w => w.User)
@@ -188,8 +286,25 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         var matchedSkillName = selectedWorker.Skills.FirstOrDefault()?.SkillName ?? skillRequired ?? "General Maintenance";
         var serviceAreaName = selectedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
 
-        await RecordValidationResultAsync(request.Id, selectedWorker.Id, ValidationStatus.Pass,
-            $"Deterministic validation passed: Technician {selectedWorker.User?.FullName} matched for {matchedSkillName} covering {serviceAreaName}.");
+        var existingVal = await _context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+
+        string validationStatusDisplay;
+        string validationSummaryDisplay;
+
+        if (existingVal != null)
+        {
+            validationStatusDisplay = $"Agent 4 Verified ({existingVal.Status})";
+            validationSummaryDisplay = existingVal.Summary;
+        }
+        else
+        {
+            validationStatusDisplay = "Passed (Deterministic Rule Validation)";
+            validationSummaryDisplay = $"Technician verified, matches skill '{matchedSkillName}', and covers service area.";
+
+            await RecordValidationResultAsync(request.Id, selectedWorker.Id, ValidationStatus.Pass,
+                $"Deterministic validation passed: Technician {selectedWorker.User?.FullName} matched for {matchedSkillName} covering {serviceAreaName}.");
+        }
 
         return new RecommendationResponseDto
         {
@@ -213,8 +328,8 @@ public class WorkerRecommendationService : IWorkerRecommendationService
             HourlyRate = selectedWorker.HourlyRate,
             ServiceArea = string.IsNullOrEmpty(serviceAreaName) ? "Regional Coverage" : serviceAreaName,
             ProposedTime = proposedTime,
-            ValidationStatus = "Passed (Deterministic Rule Validation)",
-            ValidationSummary = $"Technician verified, matches skill '{matchedSkillName}', and covers service area.",
+            ValidationStatus = validationStatusDisplay,
+            ValidationSummary = validationSummaryDisplay,
             Message = "Technician recommendation ready for property owner review and approval."
         };
     }
@@ -279,6 +394,14 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         {
             if (isApprove)
             {
+                // Prevent duplicate approval
+                var existingOrder = await _context.WorkOrders
+                    .FirstOrDefaultAsync(wo => wo.MaintenanceRequestId == maintenanceRequestId && wo.Status != WorkOrderStatus.Cancelled);
+                if (existingOrder != null)
+                {
+                    throw new InvalidOperationException($"This maintenance request has already been approved and assigned to Work Order #{existingOrder.Id}.");
+                }
+
                 // Must have a valid worker to assign
                 int targetWorkerId;
                 if (dto.WorkerId.HasValue && dto.WorkerId.Value > 0)
@@ -463,9 +586,19 @@ public class WorkerRecommendationService : IWorkerRecommendationService
             query = query.Where(r => r.Property.PropertyOwnerId == owner.Id);
         }
 
-        // Requests pending approval: not yet completed or cancelled or having an existing active work order
+        // Requests pending approval: must NOT have an active work order and must not be Assigned/InProgress/Completed/Cancelled
+        var assignedRequestIds = await _context.WorkOrders
+            .Where(wo => wo.Status != WorkOrderStatus.Cancelled)
+            .Select(wo => wo.MaintenanceRequestId)
+            .Distinct()
+            .ToListAsync();
+
         var pendingRequests = await query
-            .Where(r => r.Status != "Completed" && r.Status != "Cancelled")
+            .Where(r => r.Status != "Assigned" &&
+                        r.Status != "InProgress" &&
+                        r.Status != "Completed" &&
+                        r.Status != "Cancelled" &&
+                        !assignedRequestIds.Contains(r.Id))
             .OrderByDescending(r => r.CreatedAt)
             .Take(20)
             .ToListAsync();

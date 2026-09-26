@@ -12,16 +12,19 @@ public class Agent3WorkflowService
 {
     private readonly AppDbContext _dbContext;
     private readonly TechnicianMatchingAgent _agent;
+    private readonly Agent4WorkflowService? _agent4WorkflowService;
     private readonly ILogger<Agent3WorkflowService> _logger;
 
     public Agent3WorkflowService(
         AppDbContext dbContext,
         TechnicianMatchingAgent agent,
-        ILogger<Agent3WorkflowService> logger)
+        ILogger<Agent3WorkflowService> logger,
+        Agent4WorkflowService? agent4WorkflowService = null)
     {
         _dbContext = dbContext;
         _agent = agent;
         _logger = logger;
+        _agent4WorkflowService = agent4WorkflowService;
     }
 
     public async Task<Agent3Result> ExecuteAsync(
@@ -185,6 +188,13 @@ public class Agent3WorkflowService
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            // Automatically continue from Agent 3 to Agent 4 (Validation & Safety Agent).
+            await TryRunAgent4Async(
+                workflow.Id,
+                analysisOutput,
+                result,
+                cancellationToken);
+
             return result;
         }
         catch (OperationCanceledException)
@@ -267,5 +277,37 @@ public class Agent3WorkflowService
             .Where(x => x.Name == categoryName)
             .Select(x => (int?)x.Id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task TryRunAgent4Async(
+        int workflowId,
+        AnalysisOutput analysisOutput,
+        Agent3Result matchResult,
+        CancellationToken cancellationToken)
+    {
+        if (_agent4WorkflowService == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _agent4WorkflowService.ExecuteAsync(
+                workflowId,
+                analysisOutput,
+                matchResult,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Automatic Agent 3 to Agent 4 handoff failed for workflow {WorkflowId}",
+                workflowId);
+        }
     }
 }

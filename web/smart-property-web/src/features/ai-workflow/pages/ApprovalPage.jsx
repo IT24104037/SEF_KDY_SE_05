@@ -80,8 +80,9 @@ function ApprovalPage() {
         setMessage(`${nextDecision} recorded successfully.`);
       }
 
-      // Refresh data
-      loadData(selectedId);
+      // Refresh data: clear URL search param and load remaining pending requests
+      setSearchParams({});
+      loadData();
     } catch (err) {
       setError(err.message || "Failed to record approval decision.");
     } finally {
@@ -283,42 +284,60 @@ function ApprovalPage() {
           {/* Owner Decision Action Panel */}
           <section style={styles.card}>
             <h3 style={styles.decisionHeading}>Owner Approval Decision</h3>
-            <label style={styles.field}>
-              Decision Note / Reason:
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Add notes for the work order or reason for rejection/revision..."
-                rows={3}
-                style={styles.textarea}
-              />
-            </label>
+            {request.validationStatus?.includes("Approved") ? (
+              <div style={{ ...styles.successBanner, marginTop: "12px", textAlign: "left" }}>
+                <p style={{ margin: 0, fontWeight: "600" }}>
+                  ✅ This maintenance request has already been approved.
+                </p>
+                <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
+                  {request.validationSummary || "Official work order is created and scheduled."}
+                </p>
+                <div style={{ marginTop: "14px" }}>
+                  <Link to="/owner/work-orders" style={{ ...styles.primary, textDecoration: "none", display: "inline-block" }}>
+                    View Assigned Work Orders
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <>
+                <label style={styles.field}>
+                  Decision Note / Reason:
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Add notes for the work order or reason for rejection/revision..."
+                    rows={3}
+                    style={styles.textarea}
+                  />
+                </label>
 
-            <div style={styles.actions}>
-              <button
-                style={styles.reject}
-                onClick={() => handleDecision("Reject")}
-                disabled={submitting}
-              >
-                Reject
-              </button>
-              <button
-                style={styles.revise}
-                onClick={() => handleDecision("Request Revision")}
-                disabled={submitting}
-              >
-                Request Revision
-              </button>
-              {request.hasAvailableWorker && (
-                <button
-                  style={styles.primary}
-                  onClick={() => handleDecision("Approve")}
-                  disabled={submitting}
-                >
-                  {submitting ? "Processing..." : "Approve & Create Work Order"}
-                </button>
-              )}
-            </div>
+                <div style={styles.actions}>
+                  <button
+                    style={styles.reject}
+                    onClick={() => handleDecision("Reject")}
+                    disabled={submitting}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    style={styles.revise}
+                    onClick={() => handleDecision("Request Revision")}
+                    disabled={submitting}
+                  >
+                    Request Revision
+                  </button>
+                  {request.hasAvailableWorker && (
+                    <button
+                      style={styles.primary}
+                      onClick={() => handleDecision("Approve")}
+                      disabled={submitting}
+                    >
+                      {submitting ? "Processing..." : "Approve & Create Work Order"}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
 
             {decision && (
               <p style={styles.decisionRecord}>
