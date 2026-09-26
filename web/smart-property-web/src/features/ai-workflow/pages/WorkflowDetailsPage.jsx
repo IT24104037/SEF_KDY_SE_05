@@ -123,6 +123,28 @@ export default function WorkflowDetailsPage() {
           <span><strong>Created:</strong> {new Date(workflow.createdAt).toLocaleString()}</span>
           <span><strong>Last Updated:</strong> {new Date(workflow.updatedAt).toLocaleString()}</span>
         </div>
+
+        {workflow.maintenanceRequestId && (
+          <div style={styles.approvalActionBanner}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span style={{ fontSize: "22px" }}>🛡️</span>
+              <div>
+                <strong style={{ color: "#111827", fontSize: "14px" }}>
+                  AI Recommendation &amp; Safety Audit Ready
+                </strong>
+                <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#4b5563" }}>
+                  All 4 AI agents completed their analysis. Proceed to the Human-in-the-Loop gate to review and dispatch.
+                </p>
+              </div>
+            </div>
+            <button
+              style={styles.buttonPrimary}
+              onClick={() => navigate(`/owner/approval?requestId=${workflow.maintenanceRequestId}`)}
+            >
+              Review &amp; Approve Recommendation →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* AGENT 1 PLANNER OUTPUT SECTION */}
@@ -507,6 +529,31 @@ const styles = {
     fontWeight: "500",
     color: "#374151",
     cursor: "pointer",
+  },
+  buttonPrimary: {
+    backgroundColor: "#2563eb",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "9px 18px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+    transition: "background-color 0.15s ease",
+    whiteSpace: "nowrap",
+  },
+  approvalActionBanner: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    borderRadius: "8px",
+    padding: "14px 18px",
+    marginTop: "16px",
+    flexWrap: "wrap",
+    gap: "12px",
   },
   errorBox: {
     backgroundColor: "#fef2f2",
