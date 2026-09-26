@@ -11,15 +11,19 @@ public class Agent2WorkflowService
 {
     private readonly AppDbContext _dbContext;
     private readonly Agent2MaintenanceAnalysisService _analysisService;
+
+    private readonly Agent3WorkflowService _agent3WorkflowService;
     private readonly ILogger<Agent2WorkflowService> _logger;
 
     public Agent2WorkflowService(
         AppDbContext dbContext,
         Agent2MaintenanceAnalysisService analysisService,
+        Agent3WorkflowService agent3WorkflowService,
         ILogger<Agent2WorkflowService> logger)
     {
         _dbContext = dbContext;
         _analysisService = analysisService;
+        _agent3WorkflowService = agent3WorkflowService;
         _logger = logger;
     }
 
@@ -76,7 +80,14 @@ public class Agent2WorkflowService
                         existingStep.OutputSummary);
 
                 if (existingOutput != null)
+                {
+                    await TryRunAgent3Async(
+                        workflow.Id,
+                        existingOutput,
+                        cancellationToken);
+
                     return existingOutput;
+                }
             }
         }
 
@@ -176,6 +187,12 @@ public class Agent2WorkflowService
             await _dbContext.SaveChangesAsync(
                 cancellationToken);
 
+            // Automatically continue from Agent 2 to Agent 3.
+            await TryRunAgent3Async(
+                workflow.Id,
+                output,
+                cancellationToken);
+
             return output;
         }
         catch (OperationCanceledException)
@@ -242,4 +259,44 @@ public class Agent2WorkflowService
             throw;
         }
     }
+
+    private async Task TryRunAgent3Async(
+    int workflowId,
+    AnalysisOutput output,
+    CancellationToken cancellationToken)
+{
+    // Do not assign a worker when Agent 2 needs more information
+    // or cannot identify an actionable category.
+    if (output.NeedsMoreInformation ||
+        string.Equals(
+            output.Category,
+            "UNKNOWN",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        _logger.LogInformation(
+            "Agent 3 was not started for workflow {WorkflowId} because Agent 2 requires further review.",
+            workflowId);
+
+        return;
+    }
+
+    try
+    {
+        await _agent3WorkflowService.ExecuteAsync(
+            workflowId,
+            output,
+            cancellationToken);
+    }
+    catch (OperationCanceledException)
+    {
+        throw;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(
+            ex,
+            "Automatic Agent 2 to Agent 3 handoff failed for workflow {WorkflowId}",
+            workflowId);
+    }
+}
 }

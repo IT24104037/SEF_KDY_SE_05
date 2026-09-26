@@ -22,6 +22,7 @@ public class WorkerMatchingTool
             .Where(w =>
                 w.VerificationStatus == WorkerVerificationStatus.Verified &&
                 w.IsAvailable)
+            .Include(w => w.User)    
             .Include(w => w.Skills)
             .Include(w => w.Availabilities)
             .Include(w => w.ServiceAreas)

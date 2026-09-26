@@ -112,6 +112,9 @@ public class TechnicianMatchingAgent
                     WorkerId =
                         selected.Worker.Id,
 
+                    WorkerName =
+                        selected.Worker.User?.FullName,
+                        
                     SuggestedDateTime =
                         utcNow,
 
@@ -204,6 +207,9 @@ public class TechnicianMatchingAgent
 
                 WorkerId =
                     normalSelected.Worker.Id,
+
+                WorkerName =
+                    normalSelected.Worker.User?.FullName,    
 
                 SuggestedDateTime =
                     normalSelected.SuggestedTime,

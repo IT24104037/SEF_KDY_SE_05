@@ -8,6 +8,9 @@ public class Agent3Result
 
     public int? WorkerId { get; set; }
 
+    public string? WorkerName { get; set; }
+
+
     public DateTime? SuggestedDateTime { get; set; }
 
     public int ActiveJobCount { get; set; }
