@@ -1,5 +1,8 @@
+using System.Diagnostics;
+using System.Text.Json;
 using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.AgenticAI.Tools;
+using SmartProperty.Api.Entities.AgenticAI;
 
 namespace SmartProperty.Api.AgenticAI.Agents;
 
@@ -16,50 +19,203 @@ public class PlannerCoordinatorAgent
         _propertyContextTool = propertyContextTool;
     }
 
-    public async Task<PlannerOutput> CreatePlanAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
+    public async Task<PlannerExecutionResult> CreatePlanAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
     {
+        var toolExecutions = new List<ToolExecutionMetadata>();
+
         // 1. Gather Maintenance Context
-        var maintContext = await _maintenanceContextTool.GetMaintenanceContextAsync(maintenanceRequestId, cancellationToken);
+        var maintToolMeta = new ToolExecutionMetadata
+        {
+            ToolName = "MaintenanceContextTool",
+            InputSummary = JsonSerializer.Serialize(new { maintenanceRequestId }),
+            StartedAt = DateTime.UtcNow,
+            Status = ToolExecutionStatus.Running,
+            RetryCount = 0
+        };
+        toolExecutions.Add(maintToolMeta);
+
+        var maintSw = Stopwatch.StartNew();
+        MaintenanceContextResult maintContext;
+        try
+        {
+            maintContext = await _maintenanceContextTool.GetMaintenanceContextAsync(maintenanceRequestId, cancellationToken);
+            maintSw.Stop();
+            maintToolMeta.CompletedAt = DateTime.UtcNow;
+            maintToolMeta.DurationMs = maintSw.ElapsedMilliseconds;
+
+            if (maintContext.Exists)
+            {
+                maintToolMeta.Status = ToolExecutionStatus.Completed;
+                maintToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = true,
+                    category = maintContext.CategoryName,
+                    requestType = maintContext.RequestType,
+                    priority = maintContext.Priority,
+                    imagesCount = maintContext.ImageUrls?.Count ?? 0
+                });
+            }
+            else
+            {
+                maintToolMeta.Status = ToolExecutionStatus.Failed;
+                maintToolMeta.ErrorSummary = maintContext.ErrorMessage ?? $"Maintenance request {maintenanceRequestId} not found.";
+                maintToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = false,
+                    errorMessage = maintContext.ErrorMessage
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            maintSw.Stop();
+            maintToolMeta.CompletedAt = DateTime.UtcNow;
+            maintToolMeta.DurationMs = maintSw.ElapsedMilliseconds;
+            maintToolMeta.Status = ToolExecutionStatus.Failed;
+            maintToolMeta.ErrorSummary = "Operation canceled.";
+            throw;
+        }
+        catch (Exception ex)
+        {
+            maintSw.Stop();
+            maintToolMeta.CompletedAt = DateTime.UtcNow;
+            maintToolMeta.DurationMs = maintSw.ElapsedMilliseconds;
+            maintToolMeta.Status = ToolExecutionStatus.Failed;
+            maintToolMeta.ErrorSummary = ex.Message;
+            return new PlannerExecutionResult
+            {
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message
+                },
+                ToolExecutions = toolExecutions
+            };
+        }
+
         if (!maintContext.Exists)
         {
-            return new PlannerOutput
+            return new PlannerExecutionResult
             {
-                MaintenanceRequestId = maintenanceRequestId,
-                IsSuccess = false,
-                ErrorMessage = maintContext.ErrorMessage ?? $"Maintenance request {maintenanceRequestId} not found."
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = maintContext.ErrorMessage ?? $"Maintenance request {maintenanceRequestId} not found."
+                },
+                ToolExecutions = toolExecutions
             };
         }
 
         // 2. Gather Property Context
-        var propContext = await _propertyContextTool.GetPropertyContextForRequestAsync(maintenanceRequestId, cancellationToken);
+        var propToolMeta = new ToolExecutionMetadata
+        {
+            ToolName = "PropertyContextTool",
+            InputSummary = JsonSerializer.Serialize(new { maintenanceRequestId }),
+            StartedAt = DateTime.UtcNow,
+            Status = ToolExecutionStatus.Running,
+            RetryCount = 0
+        };
+        toolExecutions.Add(propToolMeta);
 
-        // 3. Determine Urgency
-        string urgency = DetermineUrgency(maintContext.RequestType, maintContext.Priority, maintContext.EmergencyType);
+        var propSw = Stopwatch.StartNew();
+        PropertyContextResult propContext;
+        try
+        {
+            propContext = await _propertyContextTool.GetPropertyContextForRequestAsync(maintenanceRequestId, cancellationToken);
+            propSw.Stop();
+            propToolMeta.CompletedAt = DateTime.UtcNow;
+            propToolMeta.DurationMs = propSw.ElapsedMilliseconds;
 
-        // 4. Determine Required Trade
-        string requiredTrade = DetermineRequiredTrade(maintContext.CategoryName, maintContext.Description);
+            if (propContext.Exists)
+            {
+                propToolMeta.Status = ToolExecutionStatus.Completed;
+                propToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = true,
+                    propertyId = propContext.PropertyId,
+                    propertyName = propContext.PropertyName,
+                    unitId = propContext.UnitId,
+                    unitLabel = propContext.UnitLabel
+                });
+            }
+            else
+            {
+                propToolMeta.Status = ToolExecutionStatus.Failed;
+                propToolMeta.ErrorSummary = propContext.ErrorMessage ?? $"Property context for maintenance request {maintenanceRequestId} could not be retrieved.";
+                propToolMeta.OutputSummary = JsonSerializer.Serialize(new
+                {
+                    exists = false,
+                    errorMessage = propContext.ErrorMessage
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            propSw.Stop();
+            propToolMeta.CompletedAt = DateTime.UtcNow;
+            propToolMeta.DurationMs = propSw.ElapsedMilliseconds;
+            propToolMeta.Status = ToolExecutionStatus.Failed;
+            propToolMeta.ErrorSummary = "Operation canceled.";
+            throw;
+        }
+        catch (Exception ex)
+        {
+            propSw.Stop();
+            propToolMeta.CompletedAt = DateTime.UtcNow;
+            propToolMeta.DurationMs = propSw.ElapsedMilliseconds;
+            propToolMeta.Status = ToolExecutionStatus.Failed;
+            propToolMeta.ErrorSummary = ex.Message;
+            return new PlannerExecutionResult
+            {
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message
+                },
+                ToolExecutions = toolExecutions
+            };
+        }
 
-        // 5. Estimate Duration
-        string estimatedDuration = EstimateDuration(urgency, requiredTrade);
+       // Agent 1 coordinates only.
+    // Agent 2 is responsible for urgency, category and required skill.
+        string urgency = "Pending Agent 2 Analysis";
+        string requiredTrade = "Pending Agent 2 Analysis";
+        string estimatedDuration = "Pending Agent 2 Analysis";
 
         // 6. Build Context Summary
         string contextSummary = BuildContextSummary(maintContext, propContext);
 
         // 7. Generate Structured Resolution Steps
-        var steps = GenerateResolutionSteps(urgency, requiredTrade, maintContext.Description);
+        var steps = GenerateResolutionSteps();
 
         // 8. Construct Output
-        return new PlannerOutput
+        var plannerOutput = new PlannerOutput
         {
             MaintenanceRequestId = maintenanceRequestId,
             Urgency = urgency,
             RequiredTrade = requiredTrade,
             EstimatedDuration = estimatedDuration,
-            Summary = $"Planning coordination completed for request #{maintenanceRequestId}. Assigned trade: {requiredTrade} with urgency level: {urgency}.",
+            Summary =
+                    $"Planning coordination completed for request #{maintenanceRequestId}. " +
+                    "Maintenance analysis has been assigned to Agent 2.",
             RelevantContextSummary = contextSummary,
             ResolutionSteps = steps,
             PlannedAt = DateTime.UtcNow,
-            IsSuccess = true
+            IsSuccess = propContext.Exists
+        };
+
+        if (!propContext.Exists)
+        {
+            plannerOutput.ErrorMessage = propContext.ErrorMessage ?? "Property context retrieval failed.";
+        }
+
+        return new PlannerExecutionResult
+        {
+            Output = plannerOutput,
+            ToolExecutions = toolExecutions
         };
     }
 
@@ -130,31 +286,49 @@ public class PlannerCoordinatorAgent
         return $"Property: {propertyText}. Request Category: {categoryText}. Images: {imagesText}. Request Status: {maint.Status}.";
     }
 
-    private static List<PlannerResolutionStep> GenerateResolutionSteps(string urgency, string requiredTrade, string description)
-    {
-        return new List<PlannerResolutionStep>
+    private static List<PlannerResolutionStep> GenerateResolutionSteps()
         {
-            new PlannerResolutionStep
+            return new List<PlannerResolutionStep>
             {
-                StepNumber = 1,
-                Title = "Initial Context & Safety Assessment",
-                Description = $"Verify site access, tenant notification requirements, and initial safety protocols for {requiredTrade} work.",
-                RecommendedAction = urgency == "Emergency" ? "Dispatch immediate emergency notification to property owner." : "Review tenant access preferences and confirm work window."
-            },
-            new PlannerResolutionStep
-            {
-                StepNumber = 2,
-                Title = "Technician Trade Matching & Work Scope Dispatch",
-                Description = $"Hand off trade requirement ({requiredTrade}) and job context to Technician Matching & Analysis pipeline.",
-                RecommendedAction = $"Filter available maintenance technicians certified in {requiredTrade}."
-            },
-            new PlannerResolutionStep
-            {
-                StepNumber = 3,
-                Title = "Resolution Verification & Owner Authorization Prep",
-                Description = "Package trade recommendation, validation checks, and cost estimate for owner approval decision.",
-                RecommendedAction = "Prepare structured recommendation payload for human approval workflow."
-            }
-        };
-    }
+                new PlannerResolutionStep
+                {
+                    StepNumber = 1,
+                    Title = "Gather Maintenance Context",
+                    Description =
+                        "Validate the maintenance request, property, unit and available evidence.",
+                    RecommendedAction =
+                        "Prepare the maintenance context for downstream agent processing."
+                },
+
+                new PlannerResolutionStep
+                {
+                    StepNumber = 2,
+                    Title = "Maintenance Analysis & Responsibility",
+                    Description =
+                        "Agent 2 analyses the maintenance description, request context, safety, responsibility and required skill.",
+                    RecommendedAction =
+                        "Pass the validated maintenance request to Agent 2."
+                },
+
+                new PlannerResolutionStep
+                {
+                    StepNumber = 3,
+                    Title = "Technician Matching & Scheduling",
+                    Description =
+                        "Agent 3 uses Agent 2's analysis to identify a suitable verified worker and time.",
+                    RecommendedAction =
+                        "Pass the structured Agent 2 result to Agent 3."
+                },
+
+                new PlannerResolutionStep
+                {
+                    StepNumber = 4,
+                    Title = "Validation & Approval Preparation",
+                    Description =
+                        "Agent 4 validates the recommendation, safety and business rules before human approval.",
+                    RecommendedAction =
+                        "Prepare the validated recommendation for Property Owner approval."
+                }
+            };
+        }
 }

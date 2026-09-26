@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartProperty.Api.DTOs.AgenticAI;
@@ -21,6 +22,14 @@ public class AgentWorkflowController : ControllerBase
         _logger = logger;
     }
 
+    private bool TryGetCurrentUser(out int userId, out string role)
+    {
+        userId = 0;
+        role = User?.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+        var value = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out userId);
+    }
+
     /// <summary>
     /// POST /api/agent-workflows/start
     /// Starts Agent 1 Planner & Coordinator workflow for a maintenance request.
@@ -33,10 +42,19 @@ public class AgentWorkflowController : ControllerBase
             return BadRequest(new { message = "A valid positive MaintenanceRequestId is required." });
         }
 
+        if (!TryGetCurrentUser(out var currentUserId, out var currentUserRole))
+        {
+            return Unauthorized();
+        }
+
         try
         {
-            var result = await _workflowService.StartPlannerWorkflowAsync(dto.MaintenanceRequestId, cancellationToken);
+            var result = await _workflowService.StartPlannerWorkflowAsync(dto.MaintenanceRequestId, currentUserId, currentUserRole, cancellationToken);
             return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
         }
         catch (KeyNotFoundException ex)
         {
@@ -61,13 +79,25 @@ public class AgentWorkflowController : ControllerBase
             return BadRequest(new { message = "A valid positive workflow ID is required." });
         }
 
-        var workflow = await _workflowService.GetWorkflowByIdAsync(id, cancellationToken);
-        if (workflow == null)
+        if (!TryGetCurrentUser(out var currentUserId, out var currentUserRole))
         {
-            return NotFound(new { message = $"AgentWorkflow with ID {id} was not found." });
+            return Unauthorized();
         }
 
-        return Ok(workflow);
+        try
+        {
+            var workflow = await _workflowService.GetWorkflowByIdAsync(id, currentUserId, currentUserRole, cancellationToken);
+            if (workflow == null)
+            {
+                return NotFound(new { message = $"AgentWorkflow with ID {id} was not found." });
+            }
+
+            return Ok(workflow);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     /// <summary>
@@ -82,13 +112,25 @@ public class AgentWorkflowController : ControllerBase
             return BadRequest(new { message = "A valid positive MaintenanceRequestId is required." });
         }
 
-        var workflow = await _workflowService.GetWorkflowByRequestIdAsync(maintenanceRequestId, cancellationToken);
-        if (workflow == null)
+        if (!TryGetCurrentUser(out var currentUserId, out var currentUserRole))
         {
-            return NotFound(new { message = $"No AgentWorkflow found for MaintenanceRequest ID {maintenanceRequestId}." });
+            return Unauthorized();
         }
 
-        return Ok(workflow);
+        try
+        {
+            var workflow = await _workflowService.GetWorkflowByRequestIdAsync(maintenanceRequestId, currentUserId, currentUserRole, cancellationToken);
+            if (workflow == null)
+            {
+                return NotFound(new { message = $"No AgentWorkflow found for MaintenanceRequest ID {maintenanceRequestId}." });
+            }
+
+            return Ok(workflow);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     /// <summary>
@@ -103,12 +145,24 @@ public class AgentWorkflowController : ControllerBase
             return BadRequest(new { message = "A valid positive workflow ID is required." });
         }
 
-        var logs = await _workflowService.GetWorkflowLogsAsync(id, cancellationToken);
-        if (logs == null)
+        if (!TryGetCurrentUser(out var currentUserId, out var currentUserRole))
         {
-            return NotFound(new { message = $"AgentWorkflow with ID {id} was not found." });
+            return Unauthorized();
         }
 
-        return Ok(logs);
+        try
+        {
+            var logs = await _workflowService.GetWorkflowLogsAsync(id, currentUserId, currentUserRole, cancellationToken);
+            if (logs == null)
+            {
+                return NotFound(new { message = $"AgentWorkflow with ID {id} was not found." });
+            }
+
+            return Ok(logs);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 }

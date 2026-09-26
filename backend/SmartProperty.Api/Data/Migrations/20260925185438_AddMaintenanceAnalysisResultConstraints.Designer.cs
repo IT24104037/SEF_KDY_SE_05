@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartProperty.Api.Data;
@@ -11,9 +12,11 @@ using SmartProperty.Api.Data;
 namespace SmartProperty.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925185438_AddMaintenanceAnalysisResultConstraints")]
+    partial class AddMaintenanceAnalysisResultConstraints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -641,73 +644,6 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("MaintenanceRequestId");
 
                     b.ToTable("MaintenanceStatusHistories");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.WorkerMatchRecommendation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ActiveJobCount")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("CategoryId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsEmergency")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("MaintenanceRequestId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Priority")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("RequiredSkill")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Result")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Safety")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("SuggestedDateTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("WorkerId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("YearsOfExperience")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("MaintenanceRequestId");
-
-                    b.HasIndex("WorkerId");
-
-                    b.ToTable("WorkerMatchRecommendations");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerProfileChangeRequest", b =>
@@ -1586,31 +1522,6 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("ChangedByUser");
 
                     b.Navigation("MaintenanceRequest");
-                });
-
-            modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.WorkerMatchRecommendation", b =>
-                {
-                    b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceCategory", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceRequest", "MaintenanceRequest")
-                        .WithMany()
-                        .HasForeignKey("MaintenanceRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SmartProperty.Api.Entities.Worker.Worker", "Worker")
-                        .WithMany()
-                        .HasForeignKey("WorkerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Category");
-
-                    b.Navigation("MaintenanceRequest");
-
-                    b.Navigation("Worker");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerProfileChangeRequest", b =>

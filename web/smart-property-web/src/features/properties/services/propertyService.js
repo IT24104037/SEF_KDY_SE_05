@@ -24,16 +24,26 @@ async function handleResponse(response) {
   return data;
 }
 
-export async function getMyProperties() {
-  const response = await fetch(
-    `${API_URL}/api/properties`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    }
-  );
+export async function getMyProperties(params = {}) {
+  const queryParams = new URLSearchParams();
+
+  if (params.search) queryParams.append("search", params.search);
+  if (params.city) queryParams.append("city", params.city);
+  if (params.status) queryParams.append("status", params.status);
+  if (params.sortBy) queryParams.append("sortBy", params.sortBy);
+  if (params.sortDirection) queryParams.append("sortDirection", params.sortDirection);
+  if (params.page) queryParams.append("page", params.page);
+  if (params.pageSize) queryParams.append("pageSize", params.pageSize);
+
+  const queryString = queryParams.toString();
+  const url = `${API_URL}/api/properties${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
 
   return handleResponse(response);
 }

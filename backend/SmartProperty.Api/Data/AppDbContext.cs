@@ -7,6 +7,7 @@ using SmartProperty.Api.Entities.Maintenance;
 using SmartProperty.Api.Entities.Worker;
 using SmartProperty.Api.Entities.AgenticAI;
 
+
 namespace SmartProperty.Api.Data;
 
 public class AppDbContext : DbContext
@@ -49,7 +50,11 @@ public class AppDbContext : DbContext
     public DbSet<ToolExecution> ToolExecutions => Set<ToolExecution>();
     public DbSet<AgentExecutionLog> AgentExecutionLogs => Set<AgentExecutionLog>();
 
-
+public DbSet<MaintenanceAnalysisResult> MaintenanceAnalysisResults
+{
+    get;
+    set;
+}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -551,6 +556,22 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.WorkflowStepId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+
+
+            modelBuilder.Entity<MaintenanceAnalysisResult>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+
+                entity.HasOne(x => x.MaintenanceRequest)
+                    .WithOne()
+                    .HasForeignKey<MaintenanceAnalysisResult>(
+                        x => x.MaintenanceRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => x.MaintenanceRequestId)
+                    .IsUnique();
+            });
     }
 }
 

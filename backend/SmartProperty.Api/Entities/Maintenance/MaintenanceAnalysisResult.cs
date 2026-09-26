@@ -1,7 +1,12 @@
-namespace SmartProperty.Api.AgenticAI.Contracts;
+namespace SmartProperty.Api.Entities.Maintenance;
 
-public class AnalysisOutput
+public class MaintenanceAnalysisResult
 {
+    public int Id { get; set; }
+
+    public int MaintenanceRequestId { get; set; }
+    public MaintenanceRequest MaintenanceRequest { get; set; } = null!;
+
     public string DetectedProblem { get; set; } = string.Empty;
 
     public string Category { get; set; } = string.Empty;
@@ -19,4 +24,8 @@ public class AnalysisOutput
     public bool NeedsMoreInformation { get; set; }
 
     public string EmergencyClass { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
