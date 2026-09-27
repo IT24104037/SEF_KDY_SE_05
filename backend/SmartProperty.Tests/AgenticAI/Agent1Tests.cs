@@ -649,4 +649,72 @@ public class Agent1Tests
         Assert.Single(logs);
         Assert.Equal("PlannerCoordinatorAgent", logs[0].AgentName);
     }
+
+    [Fact]
+    public async Task PlannerCoordinatorAgent_NullDescription_DoesNotCrash()
+    {
+        // Arrange
+        using var db = CreateInMemoryDbContext("Agent1_NullDescription");
+        SeedBaseData(db, requestId: 601);
+        var req = db.MaintenanceRequests.First(r => r.Id == 601);
+        req.Description = null!; // Simulate null description in DB
+        db.SaveChanges();
+
+        var maintTool = new MaintenanceContextTool(db);
+        var propTool = new PropertyContextTool(db);
+        var agent = new PlannerCoordinatorAgent(maintTool, propTool);
+
+        // Act
+        var result = await agent.CreatePlanAsync(601);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Output.IsSuccess);
+        Assert.Equal("Pending Agent 2 Analysis", result.Output.RequiredTrade);
+    }
+
+    [Fact]
+    public async Task PlannerCoordinatorAgent_NullRequestTypeAndPriority_DoesNotCrash()
+    {
+        // Arrange
+        using var db = CreateInMemoryDbContext("Agent1_NullTypePriority");
+        SeedBaseData(db, requestId: 602);
+        var req = db.MaintenanceRequests.First(r => r.Id == 602);
+        req.RequestType = null!;
+        req.Priority = null;
+        req.EmergencyType = null;
+        db.SaveChanges();
+
+        var maintTool = new MaintenanceContextTool(db);
+        var propTool = new PropertyContextTool(db);
+        var agent = new PlannerCoordinatorAgent(maintTool, propTool);
+
+        // Act
+        var result = await agent.CreatePlanAsync(602);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Output.IsSuccess);
+        Assert.Equal("Pending Agent 2 Analysis", result.Output.Urgency);
+    }
+
+    [Fact]
+    public async Task StartPlannerWorkflowAsync_PlannerExecution_SucceedsWithRunningStatus()
+    {
+        // Arrange
+        using var db = CreateInMemoryDbContext("Agent1_FailureRecovery");
+        SeedBaseData(db, requestId: 603);
+
+        var maintTool = new MaintenanceContextTool(db);
+        var propTool = new PropertyContextTool(db);
+        var agent = new PlannerCoordinatorAgent(maintTool, propTool);
+        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+
+        // Act
+        var response = await service.StartPlannerWorkflowAsync(603, 10, "PropertyOwner");
+
+        // Assert
+        Assert.Equal("Running", response.Status);
+        Assert.Equal("Agent 1 Complete - Pending Downstream Analysis", response.CurrentStep);
+    }
 }

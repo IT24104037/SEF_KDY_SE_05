@@ -219,19 +219,21 @@ public class PlannerCoordinatorAgent
         };
     }
 
-    private static string DetermineUrgency(string requestType, string? priority, string? emergencyType)
+    private static string DetermineUrgency(string? requestType, string? priority, string? emergencyType)
     {
-        if (string.Equals(requestType, "EMERGENCY", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrWhiteSpace(emergencyType))
+        var typeStr = requestType ?? string.Empty;
+        if (string.Equals(typeStr, "EMERGENCY", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrWhiteSpace(emergencyType))
         {
             return "Emergency";
         }
 
-        if (string.Equals(priority, "High", StringComparison.OrdinalIgnoreCase))
+        var priorityStr = priority ?? string.Empty;
+        if (string.Equals(priorityStr, "High", StringComparison.OrdinalIgnoreCase))
         {
             return "High";
         }
 
-        if (string.Equals(priority, "Medium", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(priorityStr, "Medium", StringComparison.OrdinalIgnoreCase))
         {
             return "Medium";
         }
@@ -239,7 +241,7 @@ public class PlannerCoordinatorAgent
         return "Low";
     }
 
-    private static string DetermineRequiredTrade(string? categoryName, string description)
+    private static string DetermineRequiredTrade(string? categoryName, string? description)
     {
         if (!string.IsNullOrWhiteSpace(categoryName))
         {
@@ -254,7 +256,7 @@ public class PlannerCoordinatorAgent
             if (cat.Contains("paint")) return "Painting";
         }
 
-        var desc = description.ToLowerInvariant();
+        var desc = (description ?? string.Empty).ToLowerInvariant();
         if (desc.Contains("leak") || desc.Contains("pipe") || desc.Contains("sink") || desc.Contains("toilet") || desc.Contains("water") || desc.Contains("drain"))
             return "Plumbing";
 
@@ -281,9 +283,10 @@ public class PlannerCoordinatorAgent
     {
         var categoryText = !string.IsNullOrWhiteSpace(maint.CategoryName) ? maint.CategoryName : "Uncategorized";
         var propertyText = prop.Exists ? $"{prop.PropertyName} (Unit {prop.UnitLabel}, {prop.PropertyAddress})" : "Property Details Unavailable";
-        var imagesText = maint.ImageUrls.Count > 0 ? $"{maint.ImageUrls.Count} attached image(s)" : "No images attached";
+        var imagesCount = maint.ImageUrls?.Count ?? 0;
+        var imagesText = imagesCount > 0 ? $"{imagesCount} attached image(s)" : "No images attached";
 
-        return $"Property: {propertyText}. Request Category: {categoryText}. Images: {imagesText}. Request Status: {maint.Status}.";
+        return $"Property: {propertyText}. Request Category: {categoryText}. Images: {imagesText}. Request Status: {maint.Status ?? "Submitted"}.";
     }
 
     private static List<PlannerResolutionStep> GenerateResolutionSteps()

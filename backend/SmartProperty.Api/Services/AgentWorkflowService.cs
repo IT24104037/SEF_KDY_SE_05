@@ -204,7 +204,31 @@ public class AgentWorkflowService : IAgentWorkflowService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Workflow execution was canceled for request ID {RequestId}", maintenanceRequestId);
+            _logger.LogWarning(
+                "Workflow execution was canceled for request ID {RequestId}. Marking workflow as Failed.",
+                maintenanceRequestId);
+
+            workflow.Status = AgentWorkflowStatus.Failed;
+            workflow.CurrentStep = "Planner Canceled";
+            workflow.FinalOutcome = "Execution was canceled or timed out.";
+            workflow.UpdatedAt = DateTime.UtcNow;
+
+            step.Status = WorkflowStepStatus.Failed;
+            step.ErrorSummary = "Execution was canceled or timed out.";
+            step.CompletedAt = DateTime.UtcNow;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception dbEx)
+            {
+                _logger.LogError(
+                    dbEx,
+                    "Failed to persist Failed workflow status after cancellation for request ID {RequestId}",
+                    maintenanceRequestId);
+            }
+
             throw;
         }
         catch (Exception ex)
