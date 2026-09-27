@@ -136,6 +136,53 @@ public class OwnerVerificationController : ControllerBase
             return BadRequest(new { message = "Only rejected owners can reapply." });
         }
 
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return BadRequest(new { message = "Full name is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { message = "Email is required." });
+        }
+
+        var email = request.Email.Trim();
+        if (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
+        {
+            return BadRequest(new { message = "Invalid email format." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Mobile))
+        {
+            return BadRequest(new { message = "Mobile number is required." });
+        }
+
+        var mobile = request.Mobile.Trim();
+        if (mobile.Length != 10 || !mobile.All(char.IsDigit))
+        {
+            return BadRequest(new { message = "Mobile number must contain exactly 10 digits." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.PropertyName))
+        {
+            return BadRequest(new { message = "Property name is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.PropertyAddress))
+        {
+            return BadRequest(new { message = "Property address is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DocumentType))
+        {
+            return BadRequest(new { message = "Document type is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DocumentUrl))
+        {
+            return BadRequest(new { message = "Document URL is required." });
+        }
+
         var duplicateContact = await _context.Users.AnyAsync(u =>
             u.Id != userId &&
             ((request.Email != null && u.Email != null &&

@@ -28,6 +28,15 @@ function OwnerRegisterPage() {
   function handleChange(event) {
     const { name, value } = event.target;
 
+    if (name === "mobile") {
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((previous) => ({
+        ...previous,
+        mobile: numericValue,
+      }));
+      return;
+    }
+
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -39,11 +48,78 @@ function OwnerRegisterPage() {
 
     setError("");
     setSuccess("");
+
+    if (!formData.fullName.trim()) {
+      setError("Full name is required.");
+      return;
+    }
+
+    const emailTrimmed = formData.email.trim();
+    if (!emailTrimmed) {
+      setError("Email is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const mobileTrimmed = formData.mobile.trim();
+    if (!mobileTrimmed) {
+      setError("Mobile number is required.");
+      return;
+    }
+    if (!/^\d+$/.test(mobileTrimmed)) {
+      setError("Mobile number must contain only numerical digits.");
+      return;
+    }
+    if (mobileTrimmed.length !== 10) {
+      setError("Mobile number must contain exactly 10 digits.");
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (!formData.propertyName.trim()) {
+      setError("Property name is required.");
+      return;
+    }
+
+    if (!formData.propertyAddress.trim()) {
+      setError("Property address is required.");
+      return;
+    }
+
+    if (!formData.documentType.trim()) {
+      setError("Document type is required.");
+      return;
+    }
+
+    if (!formData.documentUrl.trim()) {
+      setError("Document URL is required.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const ownerData = {
         ...formData,
+        fullName: formData.fullName.trim(),
+        email: emailTrimmed,
+        mobile: mobileTrimmed,
+        propertyName: formData.propertyName.trim(),
+        propertyAddress: formData.propertyAddress.trim(),
+        city: formData.city ? formData.city.trim() : null,
+        propertyDescription: formData.propertyDescription
+          ? formData.propertyDescription.trim()
+          : null,
+        documentType: formData.documentType.trim(),
+        documentUrl: formData.documentUrl.trim(),
         latitude: formData.latitude
           ? Number(formData.latitude)
           : null,
@@ -98,7 +174,7 @@ function OwnerRegisterPage() {
           required
         />
 
-        <label>Email</label>
+        <label>Email *</label>
         <input
           style={styles.input}
           type="email"
@@ -106,15 +182,19 @@ function OwnerRegisterPage() {
           value={formData.email}
           onChange={handleChange}
           placeholder="Enter your email"
+          required
         />
 
-        <label>Mobile</label>
+        <label>Mobile *</label>
         <input
           style={styles.input}
+          type="tel"
           name="mobile"
           value={formData.mobile}
           onChange={handleChange}
-          placeholder="Enter your mobile number"
+          placeholder="Enter 10-digit mobile number"
+          maxLength={10}
+          required
         />
 
         <label>Password *</label>

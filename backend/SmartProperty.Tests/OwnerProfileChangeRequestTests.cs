@@ -124,7 +124,8 @@ public class OwnerProfileChangeRequestTests
         await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
         {
             FullName = "New Name",
-            Email = "new@example.com"
+            Email = "new@example.com",
+            Mobile = "0771234567"
         });
 
         var dbOwner = await context.PropertyOwners.FindAsync(owner.Id);
@@ -144,6 +145,7 @@ public class OwnerProfileChangeRequestTests
             PropertyOwnerId = owner.Id,
             RequestedFullName = "Pending Name",
             RequestedEmail = "pending@example.com",
+            RequestedMobile = "0771234567",
             Status = OwnerProfileChangeRequestStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
@@ -188,7 +190,8 @@ public class OwnerProfileChangeRequestTests
         var requestDto = new CreateOwnerProfileChangeRequestDto
         {
             FullName = "Owner 1 Updated",
-            Email = "OWNER2@EXAMPLE.COM"
+            Email = "OWNER2@EXAMPLE.COM",
+            Mobile = "0771234567"
         };
 
         var result = await controller.CreateProfileChangeRequest(requestDto);
@@ -218,6 +221,7 @@ public class OwnerProfileChangeRequestTests
         var requestDto = new CreateOwnerProfileChangeRequestDto
         {
             FullName = "Owner 1 Updated",
+            Email = "owner1updated@example.com",
             Mobile = "0772222222"
         };
 
@@ -255,7 +259,8 @@ public class OwnerProfileChangeRequestTests
         var requestDto = new CreateOwnerProfileChangeRequestDto
         {
             FullName = "Pending Change 2",
-            Email = "newemail@example.com"
+            Email = "newemail@example.com",
+            Mobile = "0771234567"
         };
 
         var result = await controller.CreateProfileChangeRequest(requestDto);
@@ -316,7 +321,7 @@ public class OwnerProfileChangeRequestTests
             }
         };
 
-        var unauthResult = await controllerUnauth.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto { FullName = "Test" });
+        var unauthResult = await controllerUnauth.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto { FullName = "Test", Email = "test@example.com", Mobile = "0771234567" });
         Assert.IsType<UnauthorizedResult>(unauthResult);
 
         // Scenario 9b: Unverified Owner attempting request
@@ -325,7 +330,154 @@ public class OwnerProfileChangeRequestTests
             ControllerContext = CreateControllerContext(unverifiedUser.Id)
         };
 
-        var unverifiedResult = await controllerUnverified.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto { FullName = "Test" });
+        var unverifiedResult = await controllerUnverified.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto { FullName = "Test", Email = "test@example.com", Mobile = "0771234567" });
         Assert.IsType<BadRequestObjectResult>(unverifiedResult);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_MissingEmail_ReturnsBadRequest()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "",
+            Mobile = "0771234567"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_InvalidEmail_ReturnsBadRequest()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "invalid-email-format",
+            Mobile = "0771234567"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_MissingMobile_ReturnsBadRequest()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "john.updated@example.com",
+            Mobile = ""
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_NonNumericMobile_ReturnsBadRequest()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "john.updated@example.com",
+            Mobile = "077123456A"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_MobileFewerThan10Digits_ReturnsBadRequest()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "john.updated@example.com",
+            Mobile = "077123456"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_MobileMoreThan10Digits_ReturnsBadRequest()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "john.updated@example.com",
+            Mobile = "07712345678"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateProfileChangeRequest_ValidEmailAnd10DigitMobile_ReturnsOk()
+    {
+        using var context = CreateDbContext(Guid.NewGuid().ToString());
+        var user = new User { Id = 1, FullName = "John Owner", Email = "john@example.com", Mobile = "0771234567", RoleId = 2 };
+        var owner = new PropertyOwner { Id = 10, UserId = 1, VerificationStatus = OwnerVerificationStatus.Verified };
+        context.Users.Add(user);
+        context.PropertyOwners.Add(owner);
+        await context.SaveChangesAsync();
+
+        var controller = new OwnerProfileController(context) { ControllerContext = CreateControllerContext(user.Id) };
+        var result = await controller.CreateProfileChangeRequest(new CreateOwnerProfileChangeRequestDto
+        {
+            FullName = "John Updated",
+            Email = "john.updated@example.com",
+            Mobile = "0779998887"
+        });
+
+        Assert.IsType<OkObjectResult>(result);
     }
 }

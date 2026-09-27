@@ -101,9 +101,19 @@ public class AuthService : IAuthService
             .WriteToken(token);
     }
     public async Task<bool> RegisterOwnerAsync(RegisterOwnerDto request)
-{
-    var email = request.Email?.Trim();
-    var mobile = request.Mobile?.Trim();
+    {
+        var email = request.Email?.Trim();
+        var mobile = request.Mobile?.Trim();
+
+        if (string.IsNullOrWhiteSpace(email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(mobile) || mobile.Length != 10 || !mobile.All(char.IsDigit))
+        {
+            return false;
+        }
 
     // Check whether the email or mobile is already registered.
     var existingUser = await _context.Users

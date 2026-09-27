@@ -12,35 +12,46 @@ namespace SmartProperty.Tests;
 
 public class OwnerVerificationWorkflowTests
 {
+    private static ControllerContext CreateControllerContext(int userId)
+    {
+        return new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+                }))
+            }
+        };
+    }
+
+    private static OwnerReapplyRequestDto CreateValidReapplyDto()
+    {
+        return new OwnerReapplyRequestDto
+        {
+            FullName = "Updated Owner",
+            Email = "owner@example.com",
+            Mobile = "0771234567",
+            PropertyName = "Updated Property",
+            PropertyAddress = "2 Main Street",
+            DocumentType = "Updated deed",
+            DocumentUrl = "https://example.com/new-proof"
+        };
+    }
+
     [Fact]
     public async Task RejectedOwnerCanReapplyWithoutCreatingDuplicateRecords()
     {
         await using var context = CreateContext();
         var controller = new OwnerVerificationController(null!, context)
         {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, "10")
-                    }))
-                }
-            }
+            ControllerContext = CreateControllerContext(10)
         };
 
-        var result = await controller.Reapply(new OwnerReapplyRequestDto
-        {
-            FullName = "Updated Owner",
-            Email = "owner@example.com",
-            PropertyName = "Updated Property",
-            PropertyAddress = "2 Main Street",
-            DocumentType = "Updated deed",
-            DocumentUrl = "https://example.com/new-proof"
-        });
+        var result = await controller.Reapply(CreateValidReapplyDto());
 
-        Assert.IsType<OkObjectResult>(result);
+        var okResult = Assert.IsType<OkObjectResult>(result);
         var owner = await context.PropertyOwners.Include(item => item.User).SingleAsync();
         var property = await context.Properties.SingleAsync();
         Assert.Equal(OwnerVerificationStatus.PendingVerification, owner.VerificationStatus);
@@ -51,6 +62,102 @@ public class OwnerVerificationWorkflowTests
         Assert.Single(await context.Properties.ToListAsync());
         Assert.Equal("https://example.com/new-proof",
             (await context.OwnerVerificationDocuments.SingleAsync()).DocumentUrl);
+    }
+
+    [Fact]
+    public async Task Reapply_MissingEmail_ReturnsBadRequest()
+    {
+        await using var context = CreateContext();
+        var controller = new OwnerVerificationController(null!, context)
+        {
+            ControllerContext = CreateControllerContext(10)
+        };
+
+        var dto = CreateValidReapplyDto();
+        dto.Email = "";
+
+        var result = await controller.Reapply(dto);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Reapply_InvalidEmail_ReturnsBadRequest()
+    {
+        await using var context = CreateContext();
+        var controller = new OwnerVerificationController(null!, context)
+        {
+            ControllerContext = CreateControllerContext(10)
+        };
+
+        var dto = CreateValidReapplyDto();
+        dto.Email = "invalid-email-format";
+
+        var result = await controller.Reapply(dto);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Reapply_MissingMobile_ReturnsBadRequest()
+    {
+        await using var context = CreateContext();
+        var controller = new OwnerVerificationController(null!, context)
+        {
+            ControllerContext = CreateControllerContext(10)
+        };
+
+        var dto = CreateValidReapplyDto();
+        dto.Mobile = "";
+
+        var result = await controller.Reapply(dto);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Reapply_NonNumericMobile_ReturnsBadRequest()
+    {
+        await using var context = CreateContext();
+        var controller = new OwnerVerificationController(null!, context)
+        {
+            ControllerContext = CreateControllerContext(10)
+        };
+
+        var dto = CreateValidReapplyDto();
+        dto.Mobile = "077123456A";
+
+        var result = await controller.Reapply(dto);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Reapply_MobileFewerThan10Digits_ReturnsBadRequest()
+    {
+        await using var context = CreateContext();
+        var controller = new OwnerVerificationController(null!, context)
+        {
+            ControllerContext = CreateControllerContext(10)
+        };
+
+        var dto = CreateValidReapplyDto();
+        dto.Mobile = "077123456";
+
+        var result = await controller.Reapply(dto);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Reapply_MobileMoreThan10Digits_ReturnsBadRequest()
+    {
+        await using var context = CreateContext();
+        var controller = new OwnerVerificationController(null!, context)
+        {
+            ControllerContext = CreateControllerContext(10)
+        };
+
+        var dto = CreateValidReapplyDto();
+        dto.Mobile = "07712345678";
+
+        var result = await controller.Reapply(dto);
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 
     private static AppDbContext CreateContext()
@@ -64,6 +171,7 @@ public class OwnerVerificationWorkflowTests
             Id = 10,
             FullName = "Owner",
             Email = "owner@example.com",
+            Mobile = "0771234567",
             RoleId = 2
         });
         context.PropertyOwners.Add(new PropertyOwner

@@ -65,6 +65,11 @@ export default function OwnerProfilePage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === "mobile") {
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, mobile: numericValue }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -73,17 +78,43 @@ export default function OwnerProfilePage() {
     setError("");
     setSuccessMessage("");
 
-    if (!formData.fullName.trim()) {
-      setError("Full Name is required.");
+    const fullNameTrimmed = formData.fullName ? formData.fullName.trim() : "";
+    if (!fullNameTrimmed) {
+      setError("Full name is required.");
+      return;
+    }
+
+    const emailTrimmed = formData.email ? formData.email.trim() : "";
+    if (!emailTrimmed) {
+      setError("Email is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const mobileTrimmed = formData.mobile ? formData.mobile.trim() : "";
+    if (!mobileTrimmed) {
+      setError("Mobile number is required.");
+      return;
+    }
+    if (!/^\d+$/.test(mobileTrimmed)) {
+      setError("Mobile number must contain only numerical digits.");
+      return;
+    }
+    if (mobileTrimmed.length !== 10) {
+      setError("Mobile number must contain exactly 10 digits.");
       return;
     }
 
     try {
       setSubmitting(true);
       const newRequest = await submitProfileChangeRequest({
-        fullName: formData.fullName.trim(),
-        email: formData.email ? formData.email.trim() : null,
-        mobile: formData.mobile ? formData.mobile.trim() : null,
+        fullName: fullNameTrimmed,
+        email: emailTrimmed,
+        mobile: mobileTrimmed,
       });
 
       setPendingRequest(newRequest);
@@ -191,24 +222,27 @@ export default function OwnerProfilePage() {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Email</label>
+              <label style={styles.label}>Email *</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 style={styles.input}
+                required
               />
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Phone / Mobile</label>
+              <label style={styles.label}>Phone / Mobile *</label>
               <input
-                type="text"
+                type="tel"
                 name="mobile"
                 value={formData.mobile}
                 onChange={handleInputChange}
                 style={styles.input}
+                maxLength={10}
+                required
               />
             </div>
 

@@ -8,10 +8,13 @@ public class OwnerReapplyRequestDto
     [StringLength(100)]
     public string FullName { get; set; } = string.Empty;
 
-    [EmailAddress]
-    public string? Email { get; set; }
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Invalid email format.")]
+    public string Email { get; set; } = string.Empty;
 
-    public string? Mobile { get; set; }
+    [Required(ErrorMessage = "Mobile number is required.")]
+    [RegularExpression(@"^\d{10}$", ErrorMessage = "Mobile number must contain exactly 10 digits.")]
+    public string Mobile { get; set; } = string.Empty;
 
     [Required]
     [StringLength(150)]
