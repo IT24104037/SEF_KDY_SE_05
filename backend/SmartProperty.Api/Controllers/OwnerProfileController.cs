@@ -50,17 +50,32 @@ public class OwnerProfileController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.FullName))
         {
-            return BadRequest(new { message = "FullName is required." });
+            return BadRequest(new { message = "Full name is required." });
         }
 
-        var fullName = request.FullName.Trim();
-        var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
-        var mobile = string.IsNullOrWhiteSpace(request.Mobile) ? null : request.Mobile.Trim();
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { message = "Email is required." });
+        }
 
-        if (email != null && !new EmailAddressAttribute().IsValid(email))
+        var email = request.Email.Trim();
+        if (!new EmailAddressAttribute().IsValid(email))
         {
             return BadRequest(new { message = "Invalid email format." });
         }
+
+        if (string.IsNullOrWhiteSpace(request.Mobile))
+        {
+            return BadRequest(new { message = "Mobile number is required." });
+        }
+
+        var mobile = request.Mobile.Trim();
+        if (mobile.Length != 10 || !mobile.All(char.IsDigit))
+        {
+            return BadRequest(new { message = "Mobile number must contain exactly 10 digits." });
+        }
+
+        var fullName = request.FullName.Trim();
 
         var hasDuplicate = await _context.Users.AnyAsync(u =>
             u.Id != userId &&
