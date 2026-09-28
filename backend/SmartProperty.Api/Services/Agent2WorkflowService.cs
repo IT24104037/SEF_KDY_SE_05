@@ -185,13 +185,13 @@ public class Agent2WorkflowService
             _dbContext.AgentExecutionLogs.Add(log);
 
             await _dbContext.SaveChangesAsync(
-                cancellationToken);
+                CancellationToken.None);
 
             // Automatically continue from Agent 2 to Agent 3.
             await TryRunAgent3Async(
                 workflow.Id,
                 output,
-                cancellationToken);
+                CancellationToken.None);
 
             return output;
         }
@@ -267,25 +267,89 @@ public class Agent2WorkflowService
 {
     // Do not assign a worker when Agent 2 needs more information
     // or cannot identify an actionable category.
-    if (output.NeedsMoreInformation ||
+  if (output.NeedsMoreInformation ||
         string.Equals(
             output.Category,
             "UNKNOWN",
             StringComparison.OrdinalIgnoreCase))
-    {
-        _logger.LogInformation(
-            "Agent 3 was not started for workflow {WorkflowId} because Agent 2 requires further review.",
-            workflowId);
+{
+    var workflow = await _dbContext.AgentWorkflows
+        .Include(w => w.WorkflowSteps)
+        .FirstAsync(
+            w => w.Id == workflowId,
+            cancellationToken);
 
-        return;
+    var now = DateTime.UtcNow;
+
+    if (!workflow.WorkflowSteps.Any(x =>
+            x.StepOrder == 3))
+    {
+        _dbContext.WorkflowSteps.Add(
+            new WorkflowStep
+            {
+                AgentWorkflowId = workflowId,
+                StepOrder = 3,
+                StepName =
+                    "Technician Matching & Scheduling",
+                AgentName =
+                    "TechnicianMatchingAgent",
+                Status =
+                    WorkflowStepStatus.Skipped,
+                ErrorSummary =
+                    "Skipped because Agent 2 requires more information.",
+                CreatedAt = now,
+                CompletedAt = now
+            });
     }
+
+    if (!workflow.WorkflowSteps.Any(x =>
+            x.StepOrder == 4))
+    {
+        _dbContext.WorkflowSteps.Add(
+            new WorkflowStep
+            {
+                AgentWorkflowId = workflowId,
+                StepOrder = 4,
+                StepName =
+                    "Safety & Compliance Validation",
+                AgentName =
+                    "ValidationSafetyAgent",
+                Status =
+                    WorkflowStepStatus.Skipped,
+                ErrorSummary =
+                    "Skipped because no worker could be matched.",
+                CreatedAt = now,
+                CompletedAt = now
+            });
+    }
+
+    workflow.Status =
+        AgentWorkflowStatus.Completed;
+
+    workflow.CurrentStep =
+        "Stopped - More Information Required";
+
+    workflow.ApprovalStatus =
+        "NeedsMoreInformation";
+
+    workflow.FinalOutcome =
+        "Agent 2 could not safely classify the request. No worker was assigned.";
+
+    workflow.CompletedAt = now;
+    workflow.UpdatedAt = now;
+
+    await _dbContext.SaveChangesAsync(
+        cancellationToken);
+
+    return;
+}
 
     try
     {
         await _agent3WorkflowService.ExecuteAsync(
             workflowId,
             output,
-            cancellationToken);
+            CancellationToken.None);
     }
     catch (OperationCanceledException)
     {

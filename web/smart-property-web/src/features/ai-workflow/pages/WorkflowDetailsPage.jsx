@@ -74,8 +74,18 @@ export default function WorkflowDetailsPage() {
 
   async function handleDecision(decisionType) {
     const reqId = workflow?.maintenanceRequestId;
-    const workerId = recommendation?.recommendedWorkerId || fallbackWorkerId;
-    if (!reqId) return;
+    const workerId = recommendation?.recommendedWorkerId;
+
+        if (!reqId) return;
+        if (
+      decisionType === "Approve" &&
+      !workerId
+    ) {
+      setRecError(
+        "Cannot approve because no suitable technician has been matched."
+      );
+      return;
+    }
 
     if ((decisionType === "Reject" || decisionType === "Request Revision") && !decisionNote.trim()) {
       setRecError("Please provide a note or reason for rejection or revision request.");
@@ -185,18 +195,79 @@ export default function WorkflowDetailsPage() {
     }
   }
 
-  const fallbackWorkerId = step3Output?.workerId || step3Output?.WorkerId || 5;
-  const candidateWorkerId = recommendation?.recommendedWorkerId || fallbackWorkerId;
-  const candidateWorkerName = recommendation?.recommendedWorker || step3Output?.workerName || step3Output?.WorkerName || "Eranda (Verified Technician)";
-  const candidateSkill = recommendation?.workerSkill || planner?.requiredTrade || "Plumbing";
-  const candidateHourlyRate = recommendation?.hourlyRate ? `$${recommendation.hourlyRate}/hr` : "$45.00/hr";
-  const candidateArea = recommendation?.serviceArea || "Regional Coverage";
-  const candidatePhone = recommendation?.workerMobile || "0771234567";
-  const candidateEmail = recommendation?.workerEmail || "eranda@worker.com";
-  const fallbackProposedTime = step3Output?.suggestedDateTime || step3Output?.SuggestedDateTime;
-  const candidateProposedTime = recommendation?.proposedTime || fallbackProposedTime;
-  const candidateValidationStatus = recommendation?.validationStatus || (step4Output ? `Agent 4 Verified (${step4Output.Status || step4Output.status || "Pass"})` : "Agent 4 Verified (Pass)");
-  const candidateValidationSummary = recommendation?.validationSummary || step4Output?.Summary || step4Output?.summary || "Technician passed all 6 deterministic safety pillars: Identity Verified, Active Skill Certification, Workload Limits, Safety Score 100/100, and Clean Memory.";
+  const agent3Result =
+  step3Output?.result ||
+  step3Output?.Result ||
+  null;
+
+const hasAvailableWorker =
+  recommendation?.hasAvailableWorker === true &&
+  recommendation?.recommendedWorkerId != null;
+
+const candidateWorkerId =
+  hasAvailableWorker
+    ? recommendation.recommendedWorkerId
+    : null;
+
+const candidateWorkerName =
+  hasAvailableWorker
+    ? recommendation.recommendedWorker
+    : null;
+
+const candidateSkill =
+  hasAvailableWorker
+    ? recommendation.workerSkill
+    : null;
+
+const candidateHourlyRate =
+  hasAvailableWorker &&
+  recommendation?.hourlyRate != null
+    ? `$${recommendation.hourlyRate}/hr`
+    : null;
+
+const candidateArea =
+  hasAvailableWorker
+    ? recommendation?.serviceArea
+    : null;
+
+const candidatePhone =
+  hasAvailableWorker
+    ? recommendation?.workerMobile
+    : null;
+
+const candidateEmail =
+  hasAvailableWorker
+    ? recommendation?.workerEmail
+    : null;
+
+const candidateProposedTime =
+  hasAvailableWorker
+    ? recommendation?.proposedTime
+    : null;
+
+const candidateValidationStatus =
+  recommendation?.validationStatus || null;
+
+const candidateValidationSummary =
+  recommendation?.validationSummary ||
+  recommendation?.message ||
+  null;
+
+const validationPassed =
+  hasAvailableWorker &&
+  candidateValidationStatus
+    ?.toLowerCase()
+    .includes("pass");
+
+const noWorkerAvailable =
+  recommendation != null &&
+  recommendation?.hasAvailableWorker === false;
+
+const readyForApproval =
+  hasAvailableWorker &&
+  validationPassed &&
+  workflow?.approvalStatus ===
+    "PendingOwnerApproval";
 
   const isCandidateApproved =
     recommendation?.validationStatus?.includes("Approved") ||
@@ -205,12 +276,12 @@ export default function WorkflowDetailsPage() {
     actionSuccess !== "";
 
   // The approval section should appear whenever Agent 4 has validated or workflow is ready for owner approval
-  const showApprovalSection =
-    workflow.currentStep?.includes("Ready for Owner Approval") ||
-    workflow.currentStep?.includes("Agent 4") ||
-    workflow.status === "Completed" ||
-    workflow.approvalStatus === "PendingOwnerApproval" ||
-    recommendation != null;
+ const showApprovalSection =
+  hasAvailableWorker &&
+  (
+    readyForApproval ||
+    isCandidateApproved
+  );
 
   return (
     <div style={styles.page}>
@@ -247,6 +318,45 @@ export default function WorkflowDetailsPage() {
       </div>
 
       {/* AI SUGGESTED TECHNICIAN & OWNER APPROVAL SECTION */}
+
+          {noWorkerAvailable && (
+      <div style={styles.recommendationCard}>
+        <div style={styles.noWorkerBox}>
+          <h2
+            style={{
+              margin: "0 0 10px 0",
+              fontSize: "18px",
+            }}
+          >
+            No Suitable Worker Available
+          </h2>
+
+          <p
+            style={{
+              margin: 0,
+              color: "#92400e",
+              lineHeight: "1.5",
+            }}
+          >
+            {recommendation?.message ||
+              recommendation?.validationSummary ||
+              "No worker with the required skill, location and availability is currently available."}
+          </p>
+
+          {candidateValidationStatus && (
+            <p
+              style={{
+                marginTop: "10px",
+                fontSize: "13px",
+                fontWeight: "600",
+              }}
+            >
+              Result: {candidateValidationStatus}
+            </p>
+          )}
+        </div>
+      </div>
+    )}
       {showApprovalSection && (
         <div style={styles.recommendationCard}>
           <div style={styles.recommendationHeader}>
@@ -333,19 +443,40 @@ export default function WorkflowDetailsPage() {
                 <strong style={{ fontSize: "16px", color: "#111827" }}>
                   Agent 4 Safety &amp; Compliance Audit
                 </strong>
-                <span style={styles.verifiedBadge}>Verified (Pass)</span>
+                <span
+                  style={
+                    validationPassed
+                      ? styles.verifiedBadge
+                      : styles.skillBadge
+                  }
+                >
+                  {validationPassed
+                    ? "Verified (Pass)"
+                    : candidateValidationStatus ||
+                      "Pending Validation"}
+                </span>
               </div>
 
               <p style={styles.safetySummaryText}>
                 {candidateValidationSummary}
               </p>
 
-              <ul style={styles.checklist}>
-                <li>✓ Identity &amp; Platform Verification Active</li>
-                <li>✓ Required Trade Skill Certified</li>
-                <li>✓ Daily Workload Limit Compliant</li>
-                <li>✓ Safety Score: 100/100 (Clean History)</li>
-              </ul>
+              {validationPassed && (
+                  <ul style={styles.checklist}>
+                    <li>
+                      ✓ Identity & Platform Verification Active
+                    </li>
+                    <li>
+                      ✓ Required Trade Skill Certified
+                    </li>
+                    <li>
+                      ✓ Daily Workload Limit Compliant
+                    </li>
+                    <li>
+                      ✓ Safety validation passed
+                    </li>
+                  </ul>
+                )}
             </div>
           </div>
 
@@ -1015,4 +1146,12 @@ const styles = {
     borderRadius: "8px",
     textAlign: "center",
   },
+
+  noWorkerBox: {
+  backgroundColor: "#fffbeb",
+  border: "1px solid #fcd34d",
+  borderRadius: "8px",
+  padding: "20px",
+  color: "#92400e",
+},
 };

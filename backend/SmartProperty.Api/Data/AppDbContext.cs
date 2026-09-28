@@ -409,7 +409,7 @@ public DbSet<MaintenanceAnalysisResult> MaintenanceAnalysisResults
         .HasMaxLength(50);
 
     entity.Property(x => x.Safety)
-        .HasMaxLength(100);
+        .HasMaxLength(500);
 
     entity.Property(x => x.Reason)
         .HasMaxLength(500);

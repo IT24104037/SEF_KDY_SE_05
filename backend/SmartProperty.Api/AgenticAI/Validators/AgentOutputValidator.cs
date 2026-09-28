@@ -47,16 +47,18 @@ private static readonly HashSet<string> AllowedPriorities =
         "REVIEW"
     };
 
+
 private static readonly HashSet<string> AllowedRequiredSkills =
     new(StringComparer.OrdinalIgnoreCase)
     {
         "Plumbing",
         "Electrical",
-        "PROPERTY_MAINTENANCE",
-        "APPLIANCE_TECHNICIAN",
+        "Structural / Building",
+        "Doors / Windows / Locks",
+        "Drainage / Water Damage",
+        "Other",
         "UNKNOWN"
     };
-
 
 
 

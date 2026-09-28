@@ -5,6 +5,7 @@ using SmartProperty.Api.AgenticAI.Agents;
 using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.Entities.AgenticAI;
+using SmartProperty.Api.Entities.Maintenance;
 
 namespace SmartProperty.Api.Services;
 
@@ -70,9 +71,17 @@ public class Agent3WorkflowService
                     existingStep.OutputSummary);
 
             if (existingOutput != null)
-            {
-                return existingOutput;
-            }
+                {
+                    // Agent 3 is already complete.
+                    // Still make sure Agent 4 has completed.
+                    await TryRunAgent4Async(
+                        workflow.Id,
+                        analysisOutput,
+                        existingOutput,
+                        cancellationToken);
+
+                    return existingOutput;
+                }
         }
 
         var now = DateTime.UtcNow;
@@ -186,21 +195,44 @@ public class Agent3WorkflowService
 
             _dbContext.AgentExecutionLogs.Add(log);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
+                await _dbContext.SaveChangesAsync(
+                    CancellationToken.None);
             // Automatically continue from Agent 3 to Agent 4 (Validation & Safety Agent).
             await TryRunAgent4Async(
                 workflow.Id,
                 analysisOutput,
                 result,
-                cancellationToken);
+                CancellationToken.None);
 
             return result;
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
+
+       catch (OperationCanceledException)
+{
+    stopwatch.Stop();
+
+    _logger.LogWarning(
+        "Agent 3 execution was cancelled for workflow {WorkflowId}",
+        workflowId);
+
+    step.Status = WorkflowStepStatus.Failed;
+    step.ErrorSummary =
+        "Agent 3 execution was cancelled or timed out.";
+    step.CompletedAt = DateTime.UtcNow;
+
+    workflow.Status = AgentWorkflowStatus.Failed;
+    workflow.CurrentStep = "Agent 3 Cancelled";
+    workflow.FinalOutcome =
+        "Technician matching was cancelled or timed out.";
+    workflow.UpdatedAt = DateTime.UtcNow;
+
+    await _dbContext.SaveChangesAsync(
+        CancellationToken.None);
+
+    throw;
+}
+
+
         catch (Exception ex)
         {
             stopwatch.Stop();
@@ -221,6 +253,23 @@ public class Agent3WorkflowService
                 "Worker matching could not be completed.";
             workflow.UpdatedAt = DateTime.UtcNow;
 
+
+            // Remove a WorkerMatchRecommendation that failed to save.
+            // Otherwise the catch SaveChanges can attempt the same
+            // invalid insert again.
+            var failedRecommendations =
+                _dbContext.ChangeTracker
+                    .Entries<WorkerMatchRecommendation>()
+                    .Where(e =>
+                        e.State == EntityState.Added &&
+                        e.Entity.MaintenanceRequestId == request.Id)
+                    .ToList();
+
+            foreach (var entry in failedRecommendations)
+            {
+                entry.State = EntityState.Detached;
+            }
+
             var log = new AgentExecutionLog
             {
                 AgentWorkflowId = workflow.Id,
@@ -238,7 +287,7 @@ public class Agent3WorkflowService
 
             _dbContext.AgentExecutionLogs.Add(log);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
 
             throw;
         }
@@ -296,7 +345,7 @@ public class Agent3WorkflowService
                 workflowId,
                 analysisOutput,
                 matchResult,
-                cancellationToken);
+                CancellationToken.None);
         }
         catch (OperationCanceledException)
         {

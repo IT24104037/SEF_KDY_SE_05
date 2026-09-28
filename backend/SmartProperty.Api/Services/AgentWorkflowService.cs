@@ -118,13 +118,28 @@ public class AgentWorkflowService : IAgentWorkflowService
             var agent3Step = existingWorkflow.WorkflowSteps
                 .FirstOrDefault(x => x.StepOrder == 3);
 
-            // Resume an older workflow when Agent 2 completed,
-            // but Agent 3 has not run or previously failed.
+
             var shouldResumeAgent3 =
                 _agent2WorkflowService is not null &&
                 agent2Step?.Status == WorkflowStepStatus.Completed &&
-                (agent3Step == null ||
-                agent3Step.Status == WorkflowStepStatus.Failed);
+                (
+                    agent3Step == null ||
+
+                    agent3Step.Status ==
+                        WorkflowStepStatus.Failed ||
+
+                    (
+                        agent3Step.Status ==
+                            WorkflowStepStatus.Running &&
+
+                        agent3Step.StartedAt.HasValue &&
+
+                        agent3Step.StartedAt.Value <
+                            DateTime.UtcNow.AddSeconds(-30)
+                    )
+                );
+
+
 
             if (shouldResumeAgent3)
             {
@@ -133,7 +148,7 @@ public class AgentWorkflowService : IAgentWorkflowService
                     // Agent 2 returns its cached output and hands it to Agent 3.
                     await _agent2WorkflowService!.ExecuteAsync(
                         existingWorkflow.Id,
-                        cancellationToken);
+                        CancellationToken.None);
                 }
                 catch (OperationCanceledException)
                 {
@@ -329,7 +344,7 @@ if (plannerOutput.IsSuccess  && _agent2WorkflowService is not null)
     {
         await _agent2WorkflowService.ExecuteAsync(
             workflow.Id,
-            cancellationToken);
+            CancellationToken.None);
     }
     catch (OperationCanceledException)
     {

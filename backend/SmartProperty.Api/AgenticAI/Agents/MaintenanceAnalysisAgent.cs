@@ -52,37 +52,74 @@ public class MaintenanceAnalysisAgent
             $"{input.EmergencyType ?? string.Empty} {description}"
                 .ToLowerInvariant();
 
+        if (ContainsAny(
+    emergencyText,
+    "electrical fire",
+    "wire on fire",
+    "socket on fire",
+    "burning wire",
+    "burning cable",
+    "burning socket",
+    "smoke from wire",
+    "smoke from socket",
+    "electric shock",
+    "electrical shock",
+    "exposed live wire",
+    "live wire"))
+{
+    return new AnalysisOutput
+    {
+        DetectedProblem = "Potential life-safety electrical hazard",
+        Category = "SAFETY",
+        Priority = "CRITICAL",
+        RequiredSkill = "Electrical",
+        Responsibility = "PROPERTY_RESPONSIBILITY",
+        SafetyConcern =
+            "Move away from the affected area and avoid touching electrical components. Contact emergency services if there is immediate danger.",
+        Confidence = 0.95m,
+        NeedsMoreInformation = false,
+        EmergencyClass = "LIFE_SAFETY_EMERGENCY"
+    };
+}
 
-        if (ContainsAny(emergencyText,
-            "fire",
-            "smoke",
-            "gas leak",
-            "gas leakage",
-            "sparking",
-            "electric shock",
-            "exposed wire",
-            "electrical fire"))
-        {
-            return new AnalysisOutput
-            {
-                DetectedProblem = "Potential life-safety hazard",
-                Category = "SAFETY",
-                Priority = "CRITICAL",
-                RequiredSkill = "Electrical",
-                Responsibility = "PROPERTY_RESPONSIBILITY",
-                SafetyConcern =
-                    "Move away from the affected area and avoid touching exposed electrical or hazardous components. Contact emergency services if there is immediate danger.",
-                Confidence = 0.95m,
-                NeedsMoreInformation = false,
-                EmergencyClass = "LIFE_SAFETY_EMERGENCY"
-            };
-        }
+
+
+if (ContainsAny(
+    description,
+    "sparking",
+    "socket sparking",
+    "switch sparking",
+    "wire sparking",
+    "small spark",
+    "intermittent sparking"))
+{
+    return new AnalysisOutput
+    {
+        DetectedProblem = "Electrical sparking problem",
+        Category = "ELECTRICAL",
+        Priority = "HIGH",
+        RequiredSkill = "Electrical",
+
+        Responsibility = GetResponsibility(
+            input,
+            "ELECTRICAL"),
+
+        SafetyConcern =
+            "Avoid using or touching the affected electrical fitting until it is inspected.",
+
+        Confidence = 0.92m,
+        NeedsMoreInformation = false,
+
+        EmergencyClass =
+            "URGENT_MAINTENANCE"
+    };
+}
+        
 
         if (ContainsAny(description,
             "heavy leak",
             "water leaking",
             "water leakage",
-            "flooding",
             "burst pipe",
             "major leak"))
         {
@@ -102,12 +139,23 @@ public class MaintenanceAnalysisAgent
             };
         }
 
-        if (ContainsAny(description,
+       if (ContainsAny(
+            description,
             "light not working",
             "switch not working",
             "socket not working",
             "power failure",
-            "electricity problem"))
+            "electricity problem",
+            "electrical problem",
+            "damaged wire",
+            "damaged wiring",
+            "connection not working",
+                "electrical connection not working",
+                "loose connection",
+            "electrical wiring",
+            "wiring problem",
+            "circuit breaker",
+            "breaker tripping"))
         {
             return new AnalysisOutput
             {
@@ -116,24 +164,82 @@ public class MaintenanceAnalysisAgent
                 Priority = "MEDIUM",
                 RequiredSkill = "Electrical",
                 Responsibility = GetResponsibility(
-                        input,
-                        "ELECTRICAL"),
-                SafetyConcern = "Do not attempt electrical repairs without appropriate expertise.",
-                Confidence = 0.88m,
+                    input,
+                    "ELECTRICAL"),
+                SafetyConcern =
+                    "Do not attempt electrical repairs without appropriate expertise.",
+                Confidence = 0.90m,
                 NeedsMoreInformation = false,
                 EmergencyClass = "NORMAL_MAINTENANCE"
             };
         }
 
-        if (ContainsAny(description,
+
+
+        // Drainage / Water Damage
+if (ContainsAny(
+    description,
+    "drainage",
+    "drainage water",
+    "blocked drain",
+    "drain blocked",
+    "clogged drain",
+    "drain overflow",
+    "overflowing drain",
+    "water damage",
+    "standing water",
+    "water pooling",
+    "water pooled",
+    "flooded floor",
+    "flooded room"))
+{
+    return new AnalysisOutput
+    {
+        DetectedProblem =
+            "Drainage or water damage problem",
+
+        Category =
+            "DRAINAGE_WATER_DAMAGE",
+
+        Priority =
+            "MEDIUM",
+
+        RequiredSkill =
+            "Drainage / Water Damage",
+
+        Responsibility =
+            GetResponsibility(
+                input,
+                "DRAINAGE_WATER_DAMAGE"),
+
+        SafetyConcern =
+            "Avoid contact with standing water if electrical hazards may be present.",
+
+        Confidence =
+            0.90m,
+
+        NeedsMoreInformation =
+            false,
+
+        EmergencyClass =
+            "NORMAL_MAINTENANCE"
+    };
+}
+        if (ContainsAny(
+            description,
             "tap",
             "faucet",
             "sink",
             "toilet",
             "pipe",
-            "drain",
-            "water"))
-        {
+            "shower",
+            "leaking tap",
+            "tap leak",
+            "leaking pipe",
+            "pipe leak",
+            "toilet leak",
+            "sink leak"))
+                {
             return new AnalysisOutput
             {
                 DetectedProblem = "Plumbing problem",
@@ -164,7 +270,7 @@ public class MaintenanceAnalysisAgent
                     DetectedProblem = "Door, window or lock problem",
                     Category = "DOORS_WINDOWS_LOCKS",
                     Priority = "MEDIUM",
-                    RequiredSkill = "PROPERTY_MAINTENANCE",
+                    RequiredSkill = "Doors / Windows / Locks",
                     Responsibility = GetResponsibility(
                         input,
                         "DOORS_WINDOWS_LOCKS"),
@@ -178,9 +284,10 @@ public class MaintenanceAnalysisAgent
         if (ContainsAny(description,
             "wall crack",
             "ceiling crack",
-            "broken door",
-            "broken window",
             "damaged wall",
+             "structural crack",
+            "foundation crack",
+             "structural damage",
             "roof damage"))
         {
             return new AnalysisOutput
@@ -188,7 +295,7 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Possible structural/property damage",
                 Category = "STRUCTURAL",
                 Priority = "MEDIUM",
-                RequiredSkill = "PROPERTY_MAINTENANCE",
+                RequiredSkill = "Structural / Building",
                 Responsibility = GetResponsibility(
                         input,
                         "STRUCTURAL"),
@@ -211,7 +318,7 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Possible tenant-owned appliance problem",
                 Category = "APPLIANCE",
                 Priority = "LOW",
-                RequiredSkill = "APPLIANCE_TECHNICIAN",
+                RequiredSkill = "Other",
                 Responsibility = GetResponsibility(
                         input,
                         "APPLIANCE"),
@@ -233,7 +340,7 @@ public class MaintenanceAnalysisAgent
                 DetectedProblem = "Possible tenant-caused damage",
                 Category = "DAMAGE",
                 Priority = "MEDIUM",
-                RequiredSkill = "PROPERTY_MAINTENANCE",
+                RequiredSkill = "Other",
                 Responsibility = GetResponsibility(
                         input,
                         "DAMAGE"),

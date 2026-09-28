@@ -31,7 +31,23 @@ public class TechnicianMatchingAgent
                 input.CategoryId,
                 input.RequiredSkill))
             .ToList();
-
+        if (skilledWorkers.Count == 0)
+{
+    return await SaveResultAsync(
+        input,
+        new Agent3Result
+        {
+            MaintenanceRequestId = input.MaintenanceRequestId,
+            Result = "NO_WORKER_WITH_REQUIRED_SKILL",
+            WorkerId = null,
+            SuggestedDateTime = null,
+            ActiveJobCount = 0,
+            YearsOfExperience = null,
+            IsEmergency = input.IsEmergency,
+            Reason =
+                $"No verified and active worker has the required skill '{input.RequiredSkill}'."
+        });
+}
         // ---------------------------------
         // STEP 2 - Correct service area
         // ---------------------------------
@@ -43,7 +59,23 @@ public class TechnicianMatchingAgent
                 input.PropertyLatitude,
                 input.PropertyLongitude))
             .ToList();
-
+        if (areaMatchedWorkers.Count == 0)
+{
+    return await SaveResultAsync(
+        input,
+        new Agent3Result
+        {
+            MaintenanceRequestId = input.MaintenanceRequestId,
+            Result = "NO_WORKER_IN_LOCATION",
+            WorkerId = null,
+            SuggestedDateTime = null,
+            ActiveJobCount = 0,
+            YearsOfExperience = null,
+            IsEmergency = input.IsEmergency,
+            Reason =
+                $"Workers with skill '{input.RequiredSkill}' exist, but none serve this property location."
+        });
+}
         // =================================
         // EMERGENCY MATCHING
         // =================================

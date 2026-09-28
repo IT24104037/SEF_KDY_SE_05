@@ -16,44 +16,61 @@ public class WorkerMatchingTool
 
     // 1. Get only verified and globally available workers
     public async Task<List<WorkerEntity>> GetVerifiedWorkersAsync()
-    {
-        return await _context.Workers
-            .AsNoTracking()
-            .Where(w =>
-                w.VerificationStatus == WorkerVerificationStatus.Verified &&
-                w.IsAvailable)
-            .Include(w => w.User)    
-            .Include(w => w.Skills)
-            .Include(w => w.Availabilities)
-            .Include(w => w.ServiceAreas)
-            .Include(w => w.WorkOrders)
-            .ToListAsync();
-    }
+{
+    return await _context.Workers
+        .AsNoTracking()
+        .AsSplitQuery()
+        .Where(w =>
+            w.VerificationStatus == WorkerVerificationStatus.Verified &&
+            w.IsAvailable &&
+            w.User != null &&
+            w.User.IsActive)
+        .Include(w => w.User)
+        .Include(w => w.Skills)
+        .Include(w => w.Availabilities)
+        .Include(w => w.ServiceAreas)
+        .Include(w => w.WorkOrders)
+        .ToListAsync();
+}
 
     // 2. Check whether worker has the required skill/category
-    public bool HasRequiredSkill(
-        WorkerEntity worker,
-        int? categoryId,
-        string? requiredSkill)
+   public bool HasRequiredSkill(
+    WorkerEntity worker,
+    int? categoryId,
+    string? requiredSkill)
+{
+    if (string.IsNullOrWhiteSpace(requiredSkill) ||
+        string.Equals(
+            requiredSkill,
+            "UNKNOWN",
+            StringComparison.OrdinalIgnoreCase))
     {
-        if (categoryId.HasValue)
-        {
-            if (worker.Skills.Any(s => s.CategoryId == categoryId.Value))
-                return true;
-        }
-
-        if (!string.IsNullOrWhiteSpace(requiredSkill))
-        {
-            return worker.Skills.Any(s =>
-                string.Equals(
-                    s.SkillName,
-                    requiredSkill,
-                    StringComparison.OrdinalIgnoreCase));
-        }
-
         return false;
     }
 
+    var requiredSkillNormalized = requiredSkill.Trim();
+
+    var matchingSkill = worker.Skills.FirstOrDefault(s =>
+        string.Equals(
+            s.SkillName?.Trim(),
+            requiredSkillNormalized,
+            StringComparison.OrdinalIgnoreCase));
+
+    if (matchingSkill == null)
+    {
+        return false;
+    }
+
+    // If both have category IDs, they must also agree.
+    if (categoryId.HasValue &&
+        matchingSkill.CategoryId.HasValue &&
+        matchingSkill.CategoryId.Value != categoryId.Value)
+    {
+        return false;
+    }
+
+    return true;
+}
     // 3. Check availability for a particular date/time
     public bool IsAvailableAt(
         WorkerEntity worker,
@@ -84,76 +101,85 @@ public class WorkerMatchingTool
     }
 
     // 6. Get experience for the matching skill/category
-    public int? GetYearsOfExperience(
-        WorkerEntity worker,
-        int? categoryId,
-        string? requiredSkill)
+   public int? GetYearsOfExperience(
+    WorkerEntity worker,
+    int? categoryId,
+    string? requiredSkill)
+{
+    if (string.IsNullOrWhiteSpace(requiredSkill))
     {
-        var matchingSkill = worker.Skills.FirstOrDefault(s =>
-            (categoryId.HasValue &&
-             s.CategoryId == categoryId.Value) ||
-
-            (!string.IsNullOrWhiteSpace(requiredSkill) &&
-             string.Equals(
-                 s.SkillName,
-                 requiredSkill,
-                 StringComparison.OrdinalIgnoreCase)));
-
-        return matchingSkill?.YearsOfExperience;
+        return null;
     }
+
+    var matchingSkill = worker.Skills.FirstOrDefault(s =>
+        string.Equals(
+            s.SkillName?.Trim(),
+            requiredSkill.Trim(),
+            StringComparison.OrdinalIgnoreCase) &&
+        (!categoryId.HasValue ||
+         !s.CategoryId.HasValue ||
+         s.CategoryId.Value == categoryId.Value));
+
+    return matchingSkill?.YearsOfExperience;
+}
 
     // 7. Check whether property is inside worker service area
-    public bool IsInServiceArea(
-        WorkerEntity worker,
-        string? propertyCity,
-        string? propertyPostalCode,
-        double? propertyLatitude,
-        double? propertyLongitude)
+   public bool IsInServiceArea(
+    WorkerEntity worker,
+    string? propertyCity,
+    string? propertyPostalCode,
+    double? propertyLatitude,
+    double? propertyLongitude)
+{
+    foreach (var area in worker.ServiceAreas)
     {
-        foreach (var area in worker.ServiceAreas)
+        var hasCoordinateData =
+            propertyLatitude.HasValue &&
+            propertyLongitude.HasValue &&
+            area.Latitude.HasValue &&
+            area.Longitude.HasValue;
+
+        if (hasCoordinateData)
         {
-            // Prefer latitude/longitude when both are available
-            if (propertyLatitude.HasValue &&
-                propertyLongitude.HasValue &&
-                area.Latitude.HasValue &&
-                area.Longitude.HasValue)
-            {
-                var distance = CalculateDistanceKm(
-                    propertyLatitude.Value,
-                    propertyLongitude.Value,
-                    area.Latitude.Value,
-                    area.Longitude.Value);
+            var distance = CalculateDistanceKm(
+                propertyLatitude!.Value,
+                propertyLongitude!.Value,
+                area.Latitude!.Value,
+                area.Longitude!.Value);
 
-                if (distance <= area.RadiusKm)
-                    return true;
-            }
-
-            // Fallback to postal code
-            if (!string.IsNullOrWhiteSpace(propertyPostalCode) &&
-                !string.IsNullOrWhiteSpace(area.PostalCode) &&
-                string.Equals(
-                    propertyPostalCode.Trim(),
-                    area.PostalCode.Trim(),
-                    StringComparison.OrdinalIgnoreCase))
+            if (distance <= area.RadiusKm)
             {
                 return true;
             }
 
-            // Fallback to city
-            if (!string.IsNullOrWhiteSpace(propertyCity) &&
-                !string.IsNullOrWhiteSpace(area.City) &&
-                string.Equals(
-                    propertyCity.Trim(),
-                    area.City.Trim(),
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
+            // Coordinates were available but outside radius.
+            // Do NOT override this using city matching.
+            continue;
         }
 
-        return false;
+        if (!string.IsNullOrWhiteSpace(propertyPostalCode) &&
+            !string.IsNullOrWhiteSpace(area.PostalCode) &&
+            string.Equals(
+                propertyPostalCode.Trim(),
+                area.PostalCode.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(propertyCity) &&
+            !string.IsNullOrWhiteSpace(area.City) &&
+            string.Equals(
+                propertyCity.Trim(),
+                area.City.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
     }
 
+    return false;
+}
     // Haversine distance calculation
     private static double CalculateDistanceKm(
         double latitude1,

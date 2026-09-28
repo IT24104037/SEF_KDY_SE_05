@@ -120,30 +120,100 @@ public class Agent4WorkflowService
             step.CompletedAt = DateTime.UtcNow;
 
             // Route workflow outcome based on Agent 4 validation status
+           // A no-worker result is a valid completed workflow outcome,
+// not a technical workflow failure.
+        var noWorkerAvailable =
+            !matchResult.WorkerId.HasValue ||
+            string.Equals(
+                matchResult.Result,
+                "NO_WORKER_WITH_REQUIRED_SKILL",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                matchResult.Result,
+                "NO_WORKER_IN_LOCATION",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                matchResult.Result,
+                "NO_AVAILABLE_WORKER",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                matchResult.Result,
+                "NO_AVAILABLE_EMERGENCY_WORKER",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (noWorkerAvailable)
+        {
+            workflow.Status = AgentWorkflowStatus.Completed;
+
+            workflow.CurrentStep = matchResult.Result switch
+            {
+                "NO_WORKER_WITH_REQUIRED_SKILL"
+                    => "Completed - No Worker With Required Skill",
+
+                "NO_WORKER_IN_LOCATION"
+                    => "Completed - No Suitable Worker In This Location",
+
+                "NO_AVAILABLE_EMERGENCY_WORKER"
+                    => "Completed - No Emergency Worker Available",
+
+                _
+                    => "Completed - No Worker Currently Available"
+            };
+
+            workflow.ApprovalStatus = "NoWorkerAvailable";
+
+            workflow.FinalOutcome =
+                matchResult.Reason ??
+                "No suitable worker is currently available.";
+        }
+        else
+        {
             switch (output.Status)
             {
                 case ValidationStatus.Pass:
-                    workflow.Status = AgentWorkflowStatus.Completed;
-                    workflow.CurrentStep = "Validation Passed - Ready for Owner Approval";
-                    workflow.ApprovalStatus = "PendingOwnerApproval";
-                    workflow.FinalOutcome = output.Summary;
+                    workflow.Status =
+                        AgentWorkflowStatus.Completed;
+
+                    workflow.CurrentStep =
+                        "Validation Passed - Ready for Owner Approval";
+
+                    workflow.ApprovalStatus =
+                        "PendingOwnerApproval";
+
+                    workflow.FinalOutcome =
+                        output.Summary;
                     break;
 
                 case ValidationStatus.RevisionRequired:
-                    workflow.Status = AgentWorkflowStatus.Running;
-                    workflow.CurrentStep = "Validation Revision Required - Technician Re-matching Recommended";
-                    workflow.ApprovalStatus = "RevisionRequired";
-                    workflow.FinalOutcome = output.Summary;
+                    workflow.Status =
+                        AgentWorkflowStatus.Running;
+
+                    workflow.CurrentStep =
+                        "Validation Revision Required - Technician Re-matching Recommended";
+
+                    workflow.ApprovalStatus =
+                        "RevisionRequired";
+
+                    workflow.FinalOutcome =
+                        output.Summary;
                     break;
 
                 case ValidationStatus.Fail:
                 default:
-                    workflow.Status = AgentWorkflowStatus.Failed;
-                    workflow.CurrentStep = "Validation Failed - External Maintenance Required";
-                    workflow.ApprovalStatus = "ExternalMaintenanceRequired";
-                    workflow.FinalOutcome = output.Summary;
+                    workflow.Status =
+                        AgentWorkflowStatus.Failed;
+
+                    workflow.CurrentStep =
+                        "Validation Failed";
+
+                    workflow.ApprovalStatus =
+                        "ValidationFailed";
+
+                    workflow.FinalOutcome =
+                        output.Summary;
                     break;
             }
+        }
 
             workflow.UpdatedAt = DateTime.UtcNow;
 
