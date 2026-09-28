@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerWorker } from "../services/workerService.js";
 
-const skillOptions = ["Plumbing", "Electrical", "HVAC", "Carpentry", "Masonry"];
+const skillOptions = [
+  "Plumbing",
+  "Electrical",
+  "Structural / Building",
+  "Doors / Windows / Locks",
+  "Drainage / Water Damage",
+  "Other",
+];
 
 function WorkerRegistrationPage() {
   const navigate = useNavigate();
@@ -110,7 +117,7 @@ function WorkerRegistrationPage() {
           <label style={styles.field}>Mobile number<input style={styles.input} name="mobile" value={form.mobile} onChange={updateField} required /></label>
           <label style={styles.field}>Password<input style={styles.input} name="password" type="password" value={form.password} onChange={updateField} placeholder="Min 6 characters" required /></label>
           <label style={styles.field}>Confirm password<input style={styles.input} name="confirmPassword" type="password" value={form.confirmPassword} onChange={updateField} required /></label>
-          <label style={styles.field}>Service area<input style={styles.input} name="serviceArea" value={form.serviceArea} onChange={updateField} placeholder="e.g. Colombo 05, within 15 km" required /></label>
+          <label style={styles.field}>Service area<input style={styles.input} name="serviceArea" value={form.serviceArea} onChange={updateField} placeholder="e.g. Colombo" required /></label>
         </div>
 
         <fieldset style={styles.fieldset}>

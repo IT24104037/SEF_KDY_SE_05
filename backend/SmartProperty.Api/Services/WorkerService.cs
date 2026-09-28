@@ -12,7 +12,16 @@ public class WorkerService : IWorkerService
 {
     private readonly AppDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
-
+    private static readonly HashSet<string> AllowedSkills =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                "Plumbing",
+                "Electrical",
+                "Structural / Building",
+                "Doors / Windows / Locks",
+                "Drainage / Water Damage",
+                "Other"
+            };  
     public WorkerService(AppDbContext context, IPasswordHasher<User> passwordHasher)
     {
         _context = context;
@@ -74,8 +83,14 @@ public class WorkerService : IWorkerService
         if (dto.Skills != null && dto.Skills.Count > 0)
         {
             foreach (var skillName in dto.Skills.Distinct(StringComparer.OrdinalIgnoreCase))
-            {
+                            {
                 var skillTrimmed = skillName.Trim();
+
+                if (!AllowedSkills.Contains(skillTrimmed))
+                {
+                    throw new ArgumentException(
+                        $"Invalid worker skill: '{skillTrimmed}'.");
+                }
                 if (!string.IsNullOrEmpty(skillTrimmed))
                 {
                     var matchingCategory = await _context.MaintenanceCategories

@@ -107,125 +107,100 @@ public class WorkerRecommendationService : IWorkerRecommendationService
         }
 
         // Check if Agent 3 already selected a worker via WorkerMatchRecommendations
+     // Get the LATEST Agent 3 result.
+// Do not filter WorkerId != null because NO_WORKER results must also be respected.
         var aiMatch = await _context.WorkerMatchRecommendations
-            .Where(r => r.MaintenanceRequestId == maintenanceRequestId && r.WorkerId != null)
+            .Where(r => r.MaintenanceRequestId == maintenanceRequestId)
             .OrderByDescending(r => r.CreatedAt)
             .FirstOrDefaultAsync();
 
-        if (aiMatch != null && aiMatch.WorkerId.HasValue)
+        // Agent 3 has not completed
+        if (aiMatch == null)
         {
-            var matchedWorker = await _context.Workers
-                .Include(w => w.User)
-                .Include(w => w.Skills)
-                .Include(w => w.ServiceAreas)
-                .FirstOrDefaultAsync(w => w.Id == aiMatch.WorkerId.Value);
-
-            if (matchedWorker != null)
-            {
-                var valResult = await _context.ValidationResults
-                    .Where(v => v.MaintenanceRequestId == maintenanceRequestId)
-                    .OrderByDescending(v => v.CreatedAt)
-                    .FirstOrDefaultAsync();
-
-                var assignedSkillName = matchedWorker.Skills.FirstOrDefault()?.SkillName ?? aiMatch.RequiredSkill ?? skillRequired ?? "General Maintenance";
-                var assignedServiceArea = matchedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
-
-                return new RecommendationResponseDto
-                {
-                    Id = request.Id,
-                    Title = GetDisplayTitle(request),
-                    Property = request.Property.Name,
-                    PropertyId = request.PropertyId,
-                    Unit = request.Unit?.UnitLabel ?? "N/A",
-                    UnitId = request.UnitId,
-                    Tenant = request.Tenant?.User?.FullName ?? "Tenant",
-                    Priority = request.Priority ?? (isEmergency ? "Emergency" : "Normal"),
-                    Description = request.Description,
-                    RequestType = request.RequestType,
-                    IsEmergency = isEmergency,
-                    HasAvailableWorker = true,
-                    RecommendedWorkerId = matchedWorker.Id,
-                    RecommendedWorker = matchedWorker.User?.FullName ?? "Candidate Technician",
-                    WorkerEmail = matchedWorker.User?.Email,
-                    WorkerMobile = matchedWorker.User?.Mobile,
-                    WorkerSkill = assignedSkillName,
-                    HourlyRate = matchedWorker.HourlyRate,
-                    ServiceArea = string.IsNullOrEmpty(assignedServiceArea) ? "Regional Coverage" : assignedServiceArea,
-                    ProposedTime = aiMatch.SuggestedDateTime ?? DateTime.UtcNow.AddDays(1),
-                    ValidationStatus = valResult != null ? $"Agent 4 Verified ({valResult.Status})" : "Agent 4 Verified (Pass)",
-                    ValidationSummary = valResult?.Summary ?? "Technician verified against 6 safety pillars: Identity, Active Certification, Workload Limits, Owner Matching, Safety Rating, and Clean Episodic History.",
-                    Message = $"Candidate technician {matchedWorker.User?.FullName} matched by Agent 3 and verified by Agent 4."
-                };
-            }
+            return BuildUnavailableResponse(
+                request,
+                isEmergency,
+                "AGENT3_NOT_COMPLETED",
+                "Technician matching has not completed yet.");
         }
 
-        // Query verified & available workers
-        var query = _context.Workers
+
+        // Agent 3 completed but did not find a suitable worker
+        if (!string.Equals(
+                aiMatch.Result,
+                "MATCH_FOUND",
+                StringComparison.OrdinalIgnoreCase) ||
+            !aiMatch.WorkerId.HasValue)
+        {
+            return BuildUnavailableResponse(
+                request,
+                isEmergency,
+                aiMatch.Result,
+                aiMatch.Reason
+                ?? "No suitable worker is currently available.");
+        }
+
+
+        // Load exactly the worker selected by Agent 3
+        var matchedWorker = await _context.Workers
             .Include(w => w.User)
             .Include(w => w.Skills)
             .Include(w => w.ServiceAreas)
             .Include(w => w.Availabilities)
-            .Include(w => w.WorkOrders)
-            .Where(w => w.VerificationStatus == WorkerVerificationStatus.Verified
-                        && w.IsAvailable
-                        && w.User != null
-                        && w.User.IsActive);
+            .FirstOrDefaultAsync(
+                w => w.Id == aiMatch.WorkerId.Value);
 
-        var allVerifiedWorkers = await query.ToListAsync();
 
-        // 1. Filter by skill (if category exists)
-        var matchedWorkers = allVerifiedWorkers.Where(w =>
+        // Safety check - Agent 3 points to a worker that no longer exists
+        if (matchedWorker == null)
         {
-            if (string.IsNullOrEmpty(skillRequired)) return true;
-            return w.Skills.Any(s =>
-                s.SkillName.Contains(skillRequired, StringComparison.OrdinalIgnoreCase)
-                || skillRequired.Contains(s.SkillName, StringComparison.OrdinalIgnoreCase));
-        }).ToList();
-
-        // If no workers match the exact skill, fall back to any verified worker
-        if (matchedWorkers.Count == 0 && string.IsNullOrEmpty(skillRequired))
-        {
-            matchedWorkers = allVerifiedWorkers;
+            return BuildUnavailableResponse(
+                request,
+                isEmergency,
+                "MATCHED_WORKER_NOT_FOUND",
+                "The technician selected by Agent 3 could not be found.");
         }
 
-        // 2. Filter by service area if available
-        var areaMatchedWorkers = matchedWorkers.Where(w =>
-        {
-            if (string.IsNullOrEmpty(propertyCity) || !w.ServiceAreas.Any()) return true;
-            return w.ServiceAreas.Any(sa =>
-                sa.City.Contains(propertyCity, StringComparison.OrdinalIgnoreCase)
-                || propertyCity.Contains(sa.City, StringComparison.OrdinalIgnoreCase));
-        }).ToList();
 
-        if (areaMatchedWorkers.Count > 0)
+        // Find the EXACT skill matched by Agent 3
+        var matchedSkill = matchedWorker.Skills
+            .FirstOrDefault(s =>
+                string.Equals(
+                    s.SkillName?.Trim(),
+                    aiMatch.RequiredSkill?.Trim(),
+                    StringComparison.OrdinalIgnoreCase));
+
+
+        // Extra protection against wrong skill
+        if (matchedSkill == null)
         {
-            matchedWorkers = areaMatchedWorkers;
+            return BuildUnavailableResponse(
+                request,
+                isEmergency,
+                "SKILL_MISMATCH",
+                $"The selected technician does not have the required skill '{aiMatch.RequiredSkill}'.");
         }
 
-        // 3. Emergency vs Normal Path
-        Worker? selectedWorker = null;
-        DateTime? proposedTime = null;
 
-        if (isEmergency)
-        {
-            // Emergency: Must be FreeNow with no active conflicting job
-            foreach (var worker in matchedWorkers)
+        // Check Agent 4 result
+        var valResult = await _context.ValidationResults
+            .Where(v =>
+                v.MaintenanceRequestId == maintenanceRequestId &&
+                v.WorkerId == matchedWorker.Id)
+            .OrderByDescending(v => v.CreatedAt)
+            .FirstOrDefaultAsync();
+
+
+        var matchedServiceArea = matchedWorker.ServiceAreas
+            .FirstOrDefault(sa =>
+                string.Equals(
+                    sa.City?.Trim(),
+                    propertyCity,
+                    StringComparison.OrdinalIgnoreCase));
+
+
+        if (valResult == null)
             {
-                bool isFree = await _workerService.IsWorkerFreeNowAsync(worker.Id);
-                if (isFree)
-                {
-                    selectedWorker = worker;
-                    proposedTime = DateTime.UtcNow.AddMinutes(30); // Immediate emergency dispatch
-                    break;
-                }
-            }
-
-            if (selectedWorker == null)
-            {
-                // Record validation failure
-                await RecordValidationResultAsync(request.Id, null, ValidationStatus.Fail,
-                    "NO_AVAILABLE_EMERGENCY_WORKER: No verified technician is free right now.");
-
                 return new RecommendationResponseDto
                 {
                     Id = request.Id,
@@ -235,104 +210,154 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     Unit = request.Unit?.UnitLabel ?? "N/A",
                     UnitId = request.UnitId,
                     Tenant = request.Tenant?.User?.FullName ?? "Tenant",
-                    Priority = request.Priority ?? "Emergency",
+                    Priority = aiMatch.Priority ??
+                            request.Priority ??
+                            "Normal",
                     Description = request.Description,
                     RequestType = request.RequestType,
-                    IsEmergency = true,
-                    HasAvailableWorker = false,
-                    ValidationStatus = "NO_AVAILABLE_EMERGENCY_WORKER",
-                    ValidationSummary = "No verified technician with required skill and coverage is free now.",
-                    Message = "NO_AVAILABLE_EMERGENCY_WORKER: No technician is available right now. Immediate external emergency maintenance arrangement is recommended."
-                };
-            }
-        }
-        else
-        {
-            // Normal: select worker with least active workload and compute next suitable slot
-            selectedWorker = matchedWorkers
-                .OrderBy(w => w.WorkOrders.Count(wo => wo.Status == WorkOrderStatus.Assigned || wo.Status == WorkOrderStatus.InProgress))
-                .ThenBy(w => w.HourlyRate ?? decimal.MaxValue)
-                .FirstOrDefault();
+                    IsEmergency = isEmergency,
 
-            if (selectedWorker == null)
-            {
-                await RecordValidationResultAsync(request.Id, null, ValidationStatus.RevisionRequired,
-                    "NO_AVAILABLE_WORKER: No suitable technician found matching category and service area.");
+                    HasAvailableWorker = true,
+                    RecommendedWorkerId = matchedWorker.Id,
+                    RecommendedWorker = matchedWorker.User?.FullName,
+                    WorkerEmail = matchedWorker.User?.Email,
+                    WorkerMobile = matchedWorker.User?.Mobile,
 
-                return new RecommendationResponseDto
-                {
-                    Id = request.Id,
-                    Title = GetDisplayTitle(request),
-                    Property = request.Property.Name,
-                    PropertyId = request.PropertyId,
-                    Unit = request.Unit?.UnitLabel ?? "N/A",
-                    UnitId = request.UnitId,
-                    Tenant = request.Tenant?.User?.FullName ?? "Tenant",
-                    Priority = request.Priority ?? "Normal",
-                    Description = request.Description,
-                    RequestType = request.RequestType,
-                    IsEmergency = false,
-                    HasAvailableWorker = false,
-                    ValidationStatus = "NO_AVAILABLE_WORKER",
-                    ValidationSummary = "No suitable technician available.",
-                    Message = "No suitable technician found. You can retry, pick another time, or arrange external maintenance."
+                    WorkerSkill = matchedSkill.SkillName,
+
+                    HourlyRate = matchedWorker.HourlyRate,
+
+                    ServiceArea = matchedWorker.ServiceAreas
+                        .FirstOrDefault(sa =>
+                            string.Equals(
+                                sa.City?.Trim(),
+                                propertyCity,
+                                StringComparison.OrdinalIgnoreCase))
+                        ?.City,
+
+                    ProposedTime = aiMatch.SuggestedDateTime,
+
+                    ValidationStatus =
+                        "PENDING_AGENT4_VALIDATION",
+
+                    ValidationSummary =
+                        "Agent 3 found a candidate, but Agent 4 validation has not completed.",
+
+                    Message =
+                        "Candidate worker found. Waiting for safety and compliance validation."
                 };
             }
 
-            proposedTime = CalculateProposedTime(selectedWorker);
-        }
-
-        // Deterministic validation pass
-        var matchedSkillName = selectedWorker.Skills.FirstOrDefault()?.SkillName ?? skillRequired ?? "General Maintenance";
-        var serviceAreaName = selectedWorker.ServiceAreas.FirstOrDefault()?.City ?? propertyCity;
-
-        var existingVal = await _context.ValidationResults
-            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
-
-        string validationStatusDisplay;
-        string validationSummaryDisplay;
-
-        if (existingVal != null)
+        // Agent 4 rejected the worker
+        if (valResult.Status != ValidationStatus.Pass)
         {
-            validationStatusDisplay = $"Agent 4 Verified ({existingVal.Status})";
-            validationSummaryDisplay = existingVal.Summary;
-        }
-        else
-        {
-            validationStatusDisplay = "Passed (Deterministic Rule Validation)";
-            validationSummaryDisplay = $"Technician verified, matches skill '{matchedSkillName}', and covers service area.";
-
-            await RecordValidationResultAsync(request.Id, selectedWorker.Id, ValidationStatus.Pass,
-                $"Deterministic validation passed: Technician {selectedWorker.User?.FullName} matched for {matchedSkillName} covering {serviceAreaName}.");
+            return BuildUnavailableResponse(
+                request,
+                isEmergency,
+                $"AGENT4_{valResult.Status.ToString().ToUpperInvariant()}",
+                valResult.Summary);
         }
 
+
+        // SUCCESS - Agent 3 matched the correct skill and Agent 4 passed
         return new RecommendationResponseDto
         {
             Id = request.Id,
             Title = GetDisplayTitle(request),
+
             Property = request.Property.Name,
             PropertyId = request.PropertyId,
+
             Unit = request.Unit?.UnitLabel ?? "N/A",
             UnitId = request.UnitId,
+
             Tenant = request.Tenant?.User?.FullName ?? "Tenant",
-            Priority = request.Priority ?? (isEmergency ? "Emergency" : "Normal"),
+
+            Priority = aiMatch.Priority
+                    ?? request.Priority
+                    ?? (isEmergency ? "Emergency" : "Normal"),
+
             Description = request.Description,
             RequestType = request.RequestType,
             IsEmergency = isEmergency,
+
             HasAvailableWorker = true,
-            RecommendedWorkerId = selectedWorker.Id,
-            RecommendedWorker = selectedWorker.User?.FullName ?? "Technician",
-            WorkerEmail = selectedWorker.User?.Email,
-            WorkerMobile = selectedWorker.User?.Mobile,
-            WorkerSkill = matchedSkillName,
-            HourlyRate = selectedWorker.HourlyRate,
-            ServiceArea = string.IsNullOrEmpty(serviceAreaName) ? "Regional Coverage" : serviceAreaName,
-            ProposedTime = proposedTime,
-            ValidationStatus = validationStatusDisplay,
-            ValidationSummary = validationSummaryDisplay,
-            Message = "Technician recommendation ready for property owner review and approval."
+
+            RecommendedWorkerId = matchedWorker.Id,
+
+            RecommendedWorker =
+                matchedWorker.User?.FullName
+                ?? "Technician",
+
+            WorkerEmail = matchedWorker.User?.Email,
+            WorkerMobile = matchedWorker.User?.Mobile,
+
+            WorkerSkill = matchedSkill.SkillName,
+
+            HourlyRate = matchedWorker.HourlyRate,
+
+            ServiceArea =
+                matchedServiceArea?.City
+                ?? propertyCity,
+
+            ProposedTime =
+                aiMatch.SuggestedDateTime,
+
+            ValidationStatus =
+                $"Agent 4 Verified ({valResult.Status})",
+
+            ValidationSummary =
+                valResult.Summary,
+
+            Message =
+                $"Technician {matchedWorker.User?.FullName} was matched by Agent 3 and verified by Agent 4."
         };
     }
+
+
+    private static RecommendationResponseDto BuildUnavailableResponse(
+    MaintenanceRequest request,
+    bool isEmergency,
+    string status,
+    string message)
+{
+    return new RecommendationResponseDto
+    {
+        Id = request.Id,
+        Title = GetDisplayTitle(request),
+
+        Property = request.Property.Name,
+        PropertyId = request.PropertyId,
+
+        Unit = request.Unit?.UnitLabel ?? "N/A",
+        UnitId = request.UnitId,
+
+        Tenant = request.Tenant?.User?.FullName ?? "Tenant",
+
+        Priority = request.Priority
+                   ?? (isEmergency ? "Emergency" : "Normal"),
+
+        Description = request.Description,
+        RequestType = request.RequestType,
+        IsEmergency = isEmergency,
+
+        HasAvailableWorker = false,
+
+        RecommendedWorkerId = null,
+        RecommendedWorker = null,
+        WorkerEmail = null,
+        WorkerMobile = null,
+        WorkerSkill = null,
+        HourlyRate = null,
+        ServiceArea = null,
+        ProposedTime = null,
+
+        ValidationStatus = status,
+        ValidationSummary = message,
+        Message = message
+    };
+}
+
 
     public async Task<ApprovalResponseDto> ProcessApprovalAsync(
         int maintenanceRequestId,
@@ -403,20 +428,61 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                 }
 
                 // Must have a valid worker to assign
-                int targetWorkerId;
-                if (dto.WorkerId.HasValue && dto.WorkerId.Value > 0)
+               // Must use the exact worker selected by Agent 3
+                var latestMatch = await _context.WorkerMatchRecommendations
+                    .Where(x =>
+                        x.MaintenanceRequestId == maintenanceRequestId)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+
+                // Agent 3 must have successfully matched a worker
+                if (latestMatch == null ||
+                    !string.Equals(
+                        latestMatch.Result,
+                        "MATCH_FOUND",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !latestMatch.WorkerId.HasValue)
                 {
-                    targetWorkerId = dto.WorkerId.Value;
+                    throw new InvalidOperationException(
+                        "Cannot approve: Agent 3 has not produced a valid technician match.");
                 }
-                else
+
+
+                var targetWorkerId = latestMatch.WorkerId.Value;
+
+
+                // If frontend sends WorkerId,
+                // it MUST be the same worker selected by Agent 3
+                if (dto.WorkerId.HasValue &&
+                    dto.WorkerId.Value > 0 &&
+                    dto.WorkerId.Value != targetWorkerId)
                 {
-                    // Fall back to finding candidate via recommendation
-                    var rec = await GetRecommendationAsync(maintenanceRequestId, currentUserId, currentUserRole);
-                    if (!rec.HasAvailableWorker || !rec.RecommendedWorkerId.HasValue)
-                    {
-                        throw new InvalidOperationException("Cannot approve: no suitable verified technician is available.");
-                    }
-                    targetWorkerId = rec.RecommendedWorkerId.Value;
+                    throw new InvalidOperationException(
+                        "Cannot approve a different technician. The selected worker must match the technician recommended by Agent 3.");
+                }
+
+
+                // Agent 4 must have validated the SAME worker
+                var latestValidation = await _context.ValidationResults
+                    .Where(v =>
+                        v.MaintenanceRequestId == maintenanceRequestId &&
+                        v.WorkerId == targetWorkerId)
+                    .OrderByDescending(v => v.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+
+                if (latestValidation == null)
+                {
+                    throw new InvalidOperationException(
+                        "Cannot approve: Agent 4 validation has not completed for this technician.");
+                }
+
+
+                if (latestValidation.Status != ValidationStatus.Pass)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot approve: Agent 4 validation status is {latestValidation.Status}.");
                 }
 
                 var worker = await _context.Workers.FirstOrDefaultAsync(w => w.Id == targetWorkerId);

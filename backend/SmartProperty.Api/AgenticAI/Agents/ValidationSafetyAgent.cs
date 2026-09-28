@@ -177,52 +177,54 @@ public class ValidationSafetyAgent
         }
 
         // -------------------------------------------------------------
-        // PILLAR 2: Trade & Skill Alignment
-        // -------------------------------------------------------------
-        bool skillMatched = false;
-        string matchedSkill = string.Empty;
-        int yearsExp = 0;
+// PILLAR 2: Trade & Skill Alignment
+// -------------------------------------------------------------
+    bool skillMatched = false;
+    string matchedSkill = string.Empty;
+    int yearsExp = 0;
 
-        if (request.CategoryId > 0 && worker.Skills != null)
+        if (!string.IsNullOrWhiteSpace(
+                analysisOutput.RequiredSkill) &&
+            worker.Skills != null)
         {
-            var matchingSkillObj = worker.Skills.FirstOrDefault(s => s.CategoryId == request.CategoryId);
+            var matchingSkillObj =
+                worker.Skills.FirstOrDefault(s =>
+                    string.Equals(
+                        s.SkillName?.Trim(),
+                        analysisOutput.RequiredSkill.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+
             if (matchingSkillObj != null)
             {
                 skillMatched = true;
                 matchedSkill = matchingSkillObj.SkillName;
-                yearsExp = matchingSkillObj.YearsOfExperience ?? 0;
+
+                yearsExp =
+                    matchingSkillObj.YearsOfExperience ?? 0;
             }
         }
 
-        if (!skillMatched && !string.IsNullOrWhiteSpace(analysisOutput.RequiredSkill) && worker.Skills != null)
-        {
-            var matchingSkillObj = worker.Skills.FirstOrDefault(s =>
-                string.Equals(s.SkillName, analysisOutput.RequiredSkill, StringComparison.OrdinalIgnoreCase));
-            if (matchingSkillObj != null)
+        memory.SkillMatchCheck =
+            new SkillMatchCheckMemory
             {
-                skillMatched = true;
-                matchedSkill = matchingSkillObj.SkillName;
-                yearsExp = matchingSkillObj.YearsOfExperience ?? 0;
-            }
-        }
-
-        memory.SkillMatchCheck = new SkillMatchCheckMemory
-        {
-            SkillMatchesCategory = skillMatched,
-            MatchedSkillName = matchedSkill,
-            YearsOfExperience = yearsExp,
-            MeetsExperienceThreshold = yearsExp >= 1
-        };
+                SkillMatchesCategory = skillMatched,
+                MatchedSkillName = matchedSkill,
+                YearsOfExperience = yearsExp,
+                MeetsExperienceThreshold =
+                    yearsExp >= 1
+            };
 
         if (!skillMatched)
         {
-            memory.BlockingFailures.Add($"Technician skills do not cover required category '{request.Category?.Name ?? analysisOutput.Category}' or skill '{analysisOutput.RequiredSkill}'.");
+            memory.BlockingFailures.Add(
+                $"Technician does not have required skill '{analysisOutput.RequiredSkill}'.");
         }
         else
         {
-            memory.ValidationPassedChecks.Add($"Pillar 2: Verified trade skill '{matchedSkill}' ({yearsExp} yrs experience) aligned with category.");
+            memory.ValidationPassedChecks.Add(
+                $"Pillar 2: Required skill '{matchedSkill}' verified.");
         }
-
+        
         // -------------------------------------------------------------
         // PILLAR 3: Geospatial Service Area Coverage
         // -------------------------------------------------------------
@@ -356,8 +358,16 @@ public class ValidationSafetyAgent
 
         memory.SafetyComplianceCheck = new SafetyComplianceCheckMemory
         {
-            RequiresLicensedTrade = string.Equals(analysisOutput.Category, "ELECTRICAL", StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(analysisOutput.Category, "GAS", StringComparison.OrdinalIgnoreCase),
+           RequiresLicensedTrade =
+    string.Equals(
+        analysisOutput.RequiredSkill,
+        "Electrical",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        analysisOutput.Category,
+        "GAS",
+        StringComparison.OrdinalIgnoreCase),
             EmergencyProtocolAdhered = emergencyProtocolAdhered,
             SafetyHazardIdentified = !string.IsNullOrWhiteSpace(analysisOutput.SafetyConcern),
             SafetyMitigations = safetyMitigations

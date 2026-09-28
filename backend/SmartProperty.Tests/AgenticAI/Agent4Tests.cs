@@ -265,7 +265,7 @@ public class Agent4Tests
         var analysisOutput = new AnalysisOutput
         {
             Category = "ELECTRICAL",
-            RequiredSkill = "Electrician",
+            RequiredSkill = "Electrical",
             Priority = "HIGH"
         };
 
@@ -276,7 +276,11 @@ public class Agent4Tests
         Assert.NotNull(output);
         Assert.Equal(ValidationStatus.Fail, output.Status);
         Assert.NotEmpty(output.Violations);
-        Assert.Contains(output.Violations, v => v.Contains("skills", StringComparison.OrdinalIgnoreCase) || v.Contains("category", StringComparison.OrdinalIgnoreCase));
+       Assert.Contains(
+        output.Violations,
+        v => v.Contains(
+            "skill",
+            StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
