@@ -1645,6 +1645,12 @@ public async Task<PagedMaintenanceRequestsDto>
             .OrderByDescending(wo => wo.CreatedAt)
             .FirstOrDefaultAsync();
 
+        var analysisResult = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .Where(a => a.MaintenanceRequestId == request.Id)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync();
+
         return new MaintenanceRequestDto
 
         {
@@ -1671,7 +1677,9 @@ public async Task<PagedMaintenanceRequestsDto>
 
             CategoryName =
 
-                request.Category?.Name,
+                !string.IsNullOrWhiteSpace(request.Category?.Name)
+                    ? request.Category.Name
+                    : analysisResult?.Category,
 
             RequestType = request.RequestType,
 
@@ -1681,7 +1689,9 @@ public async Task<PagedMaintenanceRequestsDto>
 
             Status = request.Status,
 
-            Priority = request.Priority,
+            Priority = !string.IsNullOrWhiteSpace(request.Priority)
+                ? request.Priority
+                : analysisResult?.Priority,
 
             WorkOrderId = activeWorkOrder?.Id,
 
