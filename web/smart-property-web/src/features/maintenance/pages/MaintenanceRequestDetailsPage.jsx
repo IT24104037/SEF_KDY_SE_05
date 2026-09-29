@@ -128,6 +128,12 @@ function MaintenanceRequestDetailsPage() {
     return new Date(value).toLocaleString();
   }
 
+  function formatOnlyDate(value) {
+    if (!value) return "-";
+
+    return new Date(value).toLocaleDateString();
+  }
+
   if (loading) {
     return <p>Loading maintenance request...</p>;
   }
@@ -263,6 +269,66 @@ function MaintenanceRequestDetailsPage() {
             <p>No photo available.</p>
           )}
         </div>
+
+        {/* TENANT DETAILS */}
+        <div style={styles.card}>
+          <h2>Tenant Information</h2>
+
+          <p>
+            <strong>Tenant Name:</strong>{" "}
+            {request.tenantName || "-"}
+          </p>
+
+          <p>
+            <strong>Tenant Email:</strong>{" "}
+            {request.tenantEmail || "-"}
+          </p>
+
+          <p>
+            <strong>Tenant Mobile:</strong>{" "}
+            {request.tenantMobile || "-"}
+          </p>
+        </div>
+
+        {/* TECHNICIAN ASSIGNMENT */}
+        {(request.assignedWorkerName || request.workOrderId) && (
+          <div style={styles.card}>
+            <h2>Technician Assignment</h2>
+
+            {request.assignedWorkerName && (
+              <p>
+                <strong>Assigned Worker:</strong>{" "}
+                {request.assignedWorkerName}
+              </p>
+            )}
+
+            {request.assignedWorkerEmail && (
+              <p>
+                <strong>Worker Email:</strong>{" "}
+                {request.assignedWorkerEmail}
+              </p>
+            )}
+
+            {request.assignedWorkerMobile && (
+              <p>
+                <strong>Worker Mobile:</strong>{" "}
+                {request.assignedWorkerMobile}
+              </p>
+            )}
+
+            <p>
+              <strong>Assignment Status:</strong>{" "}
+              {request.workOrderStatus || request.status}
+            </p>
+
+            {request.scheduledDate && (
+              <p>
+                <strong>Scheduled Visit Date:</strong>{" "}
+                {formatOnlyDate(request.scheduledDate)}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* EMERGENCY APPROVE / REJECT */}

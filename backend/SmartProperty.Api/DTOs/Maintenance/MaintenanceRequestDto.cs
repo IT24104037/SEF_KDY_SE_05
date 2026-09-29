@@ -5,6 +5,9 @@ public class MaintenanceRequestDto
     public int Id { get; set; }
 
     public int TenantId { get; set; }
+    public string? TenantName { get; set; }
+    public string? TenantEmail { get; set; }
+    public string? TenantMobile { get; set; }
 
     public int TenancyId { get; set; }
 

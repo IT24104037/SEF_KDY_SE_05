@@ -455,6 +455,9 @@ public class MaintenanceRequestService : IMaintenanceRequestService
 
             .Include(x => x.Unit)
 
+            .Include(x => x.Tenant)
+                .ThenInclude(t => t.User)
+
             .AsNoTracking()
 
             .AsQueryable();
@@ -768,6 +771,9 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             .Include(x => x.Property)
 
             .Include(x => x.Unit)
+
+            .Include(x => x.Tenant)
+                .ThenInclude(t => t.User)
 
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -1658,6 +1664,12 @@ public async Task<PagedMaintenanceRequestsDto>
             Id = request.Id,
 
             TenantId = request.TenantId,
+
+            TenantName = request.Tenant?.User?.FullName ?? request.Tenant?.FullName,
+
+            TenantEmail = request.Tenant?.User?.Email ?? request.Tenant?.Email,
+
+            TenantMobile = request.Tenant?.User?.Mobile ?? request.Tenant?.MobileNumber,
 
             TenancyId = request.TenancyId,
 
