@@ -85,9 +85,15 @@ public class WorkOrderService : IWorkOrderService
             .Take(pageSize)
             .ToListAsync();
 
+        var reqIds = orders.Select(wo => wo.MaintenanceRequestId).Distinct().ToList();
+        var analysisMap = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .Where(ar => reqIds.Contains(ar.MaintenanceRequestId) && !string.IsNullOrEmpty(ar.Priority))
+            .ToDictionaryAsync(ar => ar.MaintenanceRequestId, ar => ar.Priority);
+
         return new WorkOrderListResponseDto
         {
-            WorkOrders = orders.Select(MapToDto).ToList(),
+            WorkOrders = orders.Select(wo => MapToDto(wo, analysisMap.TryGetValue(wo.MaintenanceRequestId, out var priority) ? priority : null)).ToList(),
             Total = total,
             Page = page,
             PageSize = pageSize
@@ -145,7 +151,11 @@ public class WorkOrderService : IWorkOrderService
             throw new UnauthorizedAccessException("You do not have permission to access this work order.");
         }
 
-        return MapToDto(workOrder);
+        var analysisResult = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ar => ar.MaintenanceRequestId == workOrder.MaintenanceRequestId);
+
+        return MapToDto(workOrder, analysisResult?.Priority);
     }
 
     public async Task<WorkOrderResponseDto> UpdateWorkOrderStatusAsync(
@@ -327,7 +337,11 @@ public class WorkOrderService : IWorkOrderService
             await _context.SaveChangesAsync();
             if (transaction != null) await transaction.CommitAsync();
 
-            return MapToDto(workOrder);
+            var analysisResult = await _context.MaintenanceAnalysisResults
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ar => ar.MaintenanceRequestId == workOrder.MaintenanceRequestId);
+
+            return MapToDto(workOrder, analysisResult?.Priority);
         }
         catch
         {
@@ -340,7 +354,7 @@ public class WorkOrderService : IWorkOrderService
         }
     }
 
-    private static WorkOrderResponseDto MapToDto(WorkOrder wo)
+    private static WorkOrderResponseDto MapToDto(WorkOrder wo, string? analysisPriority = null)
     {
         var req = wo.MaintenanceRequest;
         return new WorkOrderResponseDto
@@ -357,7 +371,9 @@ public class WorkOrderService : IWorkOrderService
             TenantName = req?.Tenant?.User?.FullName ?? "Tenant",
             TenantEmail = req?.Tenant?.User?.Email,
             TenantMobile = req?.Tenant?.User?.Mobile,
-            Priority = req?.Priority ?? "Normal",
+            Priority = !string.IsNullOrWhiteSpace(req?.Priority)
+                ? req.Priority
+                : (!string.IsNullOrWhiteSpace(analysisPriority) ? analysisPriority : "Normal"),
             IsEmergency = wo.IsEmergency,
             WorkerId = wo.WorkerId,
             WorkerName = wo.Worker?.User?.FullName ?? "Technician",
