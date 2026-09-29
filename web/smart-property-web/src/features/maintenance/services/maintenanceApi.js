@@ -159,6 +159,7 @@ export async function archiveMaintenanceRequest(id) {
   }
 }
 
+
 export async function getMaintenanceHistoryRequests(params = {}) {
   try {
     const response = await apiClient.get(
@@ -175,4 +176,118 @@ export async function getMaintenanceHistoryRequests(params = {}) {
         "Failed to load maintenance history."
     );
   }
+}
+
+
+export async function startMaintenanceWorkflow(
+  maintenanceRequestId
+) {
+  const response = await fetch(
+    `${API_URL}/api/agent-workflows/start`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        maintenanceRequestId,
+      }),
+    }
+  );
+
+  let result = null;
+
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+        `Failed to start maintenance analysis. Status: ${response.status}`
+    );
+  }
+
+  return result;
+}
+
+export function getAgent2SafetyConcern(workflow) {
+  if (!workflow) {
+    return null;
+  }
+
+  const steps =
+    workflow.steps ||
+    workflow.Steps ||
+    [];
+
+  const agent2Step = steps.find((step) => {
+    const stepOrder =
+      step.stepOrder ??
+      step.StepOrder;
+
+    const agentName =
+      step.agentName ??
+      step.AgentName ??
+      "";
+
+    const stepName =
+      step.stepName ??
+      step.StepName ??
+      "";
+
+    return (
+      stepOrder === 2 ||
+      agentName === "MaintenanceAnalysisAgent" ||
+      stepName === "Visual Analysis & Responsibility"
+    );
+  });
+
+  if (agent2Step) {
+    const outputSummary =
+      agent2Step.outputSummary ??
+      agent2Step.OutputSummary;
+
+    if (outputSummary) {
+      try {
+        const analysis =
+          typeof outputSummary === "string"
+            ? JSON.parse(outputSummary)
+            : outputSummary;
+
+        const safetyConcern =
+          analysis.safetyConcern ??
+          analysis.SafetyConcern;
+
+        if (
+          typeof safetyConcern === "string" &&
+          safetyConcern.trim()
+        ) {
+          return safetyConcern;
+        }
+      } catch (error) {
+        console.error(
+          "Could not parse Agent 2 output:",
+          error
+        );
+      }
+    }
+  }
+
+  const approvalStatus =
+    workflow.approvalStatus ??
+    workflow.ApprovalStatus;
+
+  const finalOutcome =
+    workflow.finalOutcome ??
+    workflow.FinalOutcome;
+
+  if (
+    approvalStatus === "EmergencyServicesRequired" &&
+    finalOutcome
+  ) {
+    return finalOutcome;
+  }
+
+  return null;
 }

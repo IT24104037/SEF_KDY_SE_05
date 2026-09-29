@@ -2,6 +2,7 @@ using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.AgenticAI.Tools;
 
 using SmartProperty.Api.AgenticAI.Agents;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace SmartProperty.Api.AgenticAI.Agents;
 
@@ -39,8 +40,8 @@ public class MaintenanceAnalysisAgent
                 "The maintenance description contains unsupported instructions.");
         }
 
-        string description = input.Description.ToLowerInvariant();
-
+        string description = NormalizeDescription(input.Description);
+        
         bool isEmergencyRequest =
             string.Equals(
                 input.RequestType,
@@ -52,15 +53,38 @@ public class MaintenanceAnalysisAgent
             $"{input.EmergencyType ?? string.Empty} {description}"
                 .ToLowerInvariant();
 
+// FIRE / LIFE-SAFETY EMERGENCY
+if (ContainsAny(
+    emergencyText,
+    "fire",
+    "on fire",
+    "flame",
+    "flames",
+    "burning",
+    "electrical fire",
+    "electric fire",
+    "burning smell",
+    "smoke and fire"))
+{
+    return new AnalysisOutput
+    {
+        DetectedProblem = "Fire / immediate life-safety emergency",
+        Category = "SAFETY",
+        Priority = "CRITICAL",
+        RequiredSkill = "EMERGENCY_SERVICES",
+        Responsibility = "EMERGENCY_SERVICES_REQUIRED",
+        SafetyConcern =
+            "Fire detected. Move to a safe location immediately and contact 119 Emergency Services. Do not wait for a maintenance worker.",
+        Confidence = 0.99m,
+        NeedsMoreInformation = false,
+        EmergencyClass = "LIFE_SAFETY_EMERGENCY"
+    };
+}
+
+
         if (ContainsAny(
     emergencyText,
-    "electrical fire",
-    "wire on fire",
-    "socket on fire",
-    "burning wire",
-    "burning cable",
     "burning socket",
-    "smoke from wire",
     "smoke from socket",
     "electric shock",
     "electrical shock",
@@ -87,6 +111,7 @@ public class MaintenanceAnalysisAgent
 if (ContainsAny(
     description,
     "sparking",
+    "spark",
     "socket sparking",
     "switch sparking",
     "wire sparking",
@@ -118,6 +143,7 @@ if (ContainsAny(
 
         if (ContainsAny(description,
             "heavy leak",
+             " water leak",
             "water leaking",
             "water leakage",
             "burst pipe",
@@ -149,9 +175,22 @@ if (ContainsAny(
             "electrical problem",
             "damaged wire",
             "damaged wiring",
+             "light",
+            "bulb",
+            "switch",
+            "socket",
+            "outlet",
+            "power",
+            "electric",
+            "electrical",
+            "electricity",
+            "wire",
+            "wiring",
+            "circuit",
+            "breaker",
             "connection not working",
-                "electrical connection not working",
-                "loose connection",
+            "electrical connection not working",
+             "loose connection",
             "electrical wiring",
             "wiring problem",
             "circuit breaker",
@@ -180,6 +219,11 @@ if (ContainsAny(
 if (ContainsAny(
     description,
     "drainage",
+     "drain",
+     "blockage",
+     "flood",
+     "flooding",
+     "water pooling",
     "drainage water",
     "blocked drain",
     "drain blocked",
@@ -233,10 +277,16 @@ if (ContainsAny(
             "toilet",
             "pipe",
             "shower",
+             "leak",
+             "leaked",
+          "leaking",
             "leaking tap",
             "tap leak",
             "leaking pipe",
             "pipe leak",
+            "samll leak",
+            "small leaking",
+             "dripping",
             "toilet leak",
             "sink leak"))
                 {
@@ -261,6 +311,18 @@ if (ContainsAny(
                 "window",
                 "lock",
                 "key",
+                "door",
+                "window",
+                "lock",
+                "key",
+                "hinge",
+                "handle",
+                "door knob",
+                "doorknob",
+                "jammed door",
+                "stuck door",
+                "cannot open",
+                "cannot close",
                 "hinge",
                 "door handle",
                 "broken lock"))
@@ -282,6 +344,16 @@ if (ContainsAny(
             }
     
         if (ContainsAny(description,
+             "wall",
+            "ceiling",
+            "roof",
+            "foundation",
+            "crack",
+            "cracked",
+            "concrete",
+            "plaster",
+            "structural",
+            "building damage",
             "wall crack",
             "ceiling crack",
             "damaged wall",
@@ -306,6 +378,16 @@ if (ContainsAny(
         }
 
         if (ContainsAny(description,
+           "air conditioner",
+            "air conditioning",
+            "aircon",
+            "ac not working",
+            "refrigerator",
+            "fridge",
+            "microwave",
+            "washing machine",
+            "appliance",
+            "exhaust fan",
             "my microwave",
             "my refrigerator",
             "my fridge",
@@ -399,6 +481,29 @@ if (ContainsAny(
             EmergencyClass = "NORMAL_MAINTENANCE"
         };
     }
+
+
+    private static string NormalizeDescription(string text)
+{
+    if (string.IsNullOrWhiteSpace(text))
+    {
+        return string.Empty;
+    }
+
+    var normalized = text
+        .Trim()
+        .ToLowerInvariant()
+        .Replace("-", " ")
+        .Replace("_", " ")
+        .Replace("/", " ");
+
+    while (normalized.Contains("  "))
+    {
+        normalized = normalized.Replace("  ", " ");
+    }
+
+    return normalized;
+}
 
     private static bool ContainsAny(string text, params string[] keywords)
     {
