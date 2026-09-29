@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import {
   createMaintenanceRequest,
   uploadMaintenanceImage,
+  startMaintenanceWorkflow,
+  getAgent2SafetyConcern,
 } from "../services/maintenanceApi.js";
+
 
 function ReportEmergencyPage() {
   const [emergencyType, setEmergencyType] = useState("");
@@ -87,18 +90,54 @@ function ReportEmergencyPage() {
         imageUrl = await uploadMaintenanceImage(photo);
       }
 
+
       const createdRequest =
-        await createMaintenanceRequest({
-          description: description.trim(),
-          requestType: "EMERGENCY",
-          emergencyType,
-          imageUrl,
-        });
+  await createMaintenanceRequest({
+    description: description.trim(),
+    requestType: "EMERGENCY",
+    emergencyType,
+    imageUrl,
+  });
 
-      setMessage(
-        `Emergency request #${createdRequest.id} submitted successfully.`
-      );
+// Immediately run the AI workflow so Agent 2
+// can return the safety instructions.
+let workflow = null;
 
+try {
+  workflow =
+    await startMaintenanceWorkflow(
+      createdRequest.id
+    );
+} catch (workflowError) {
+  console.error(
+    "Emergency request was created, but AI analysis could not start:",
+    workflowError
+  );
+}
+
+const safetyConcern =
+  getAgent2SafetyConcern(workflow);
+
+if (safetyConcern) {
+  const isLifeSafetyEmergency =
+    workflow?.approvalStatus ===
+    "EmergencyServicesRequired";
+
+  if (isLifeSafetyEmergency) {
+    window.alert(
+      `🚨 CRITICAL EMERGENCY\n\n${safetyConcern}`
+    );
+  } else {
+    window.alert(
+      `⚠️ SAFETY WARNING\n\n${safetyConcern}`
+    );
+  }
+}
+
+setMessage(
+  `Emergency request #${createdRequest.id} submitted successfully.`
+);
+      
       setEmergencyType("");
       setDescription("");
       setPhoto(null);

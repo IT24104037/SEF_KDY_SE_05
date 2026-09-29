@@ -56,7 +56,11 @@ export default function WorkflowDetailsPage() {
         await loadLogs(activeWorkflow.id);
       }
 
-      if (activeWorkflow && activeWorkflow.maintenanceRequestId) {
+      if (
+        activeWorkflow &&
+        activeWorkflow.maintenanceRequestId &&
+        activeWorkflow.approvalStatus !== "EmergencyServicesRequired"
+      ) {
         try {
           setRecLoading(true);
           const rec = await getApprovalRequest(activeWorkflow.maintenanceRequestId);
@@ -259,15 +263,28 @@ const validationPassed =
     ?.toLowerCase()
     .includes("pass");
 
+const emergencyServicesRequired =
+  workflow?.approvalStatus === "EmergencyServicesRequired" ||
+  workflow?.currentStep === "Emergency Services Required";
+
+const needsMoreInformation =
+  !emergencyServicesRequired &&
+  (
+    workflow?.approvalStatus === "NeedsMoreInformation" ||
+    workflow?.currentStep?.includes("More Information Required")
+  );
+
 const noWorkerAvailable =
+  !emergencyServicesRequired &&
+  !needsMoreInformation &&
   recommendation != null &&
   recommendation?.hasAvailableWorker === false;
 
 const readyForApproval =
+  !emergencyServicesRequired &&
   hasAvailableWorker &&
   validationPassed &&
-  workflow?.approvalStatus ===
-    "PendingOwnerApproval";
+  workflow?.approvalStatus === "PendingOwnerApproval";
 
   const isCandidateApproved =
     recommendation?.validationStatus?.includes("Approved") ||
@@ -317,7 +334,110 @@ const readyForApproval =
         </div>
       </div>
 
+
+
       {/* AI SUGGESTED TECHNICIAN & OWNER APPROVAL SECTION */}
+
+      {emergencyServicesRequired && (
+  <div
+    style={{
+      backgroundColor: "#fef2f2",
+      border: "2px solid #dc2626",
+      borderRadius: "10px",
+      padding: "22px",
+      marginBottom: "24px",
+      color: "#991b1b",
+    }}
+  >
+    <h2
+      style={{
+        margin: "0 0 10px 0",
+        fontSize: "20px",
+      }}
+    >
+      🚨 Emergency Services Required
+    </h2>
+
+    <p
+      style={{
+        margin: "0 0 8px 0",
+        lineHeight: "1.6",
+        fontWeight: "600",
+      }}
+    >
+      A fire or immediate life-safety emergency was detected.
+    </p>
+
+    <p
+      style={{
+        margin: "0 0 8px 0",
+        lineHeight: "1.6",
+      }}
+    >
+      The tenant should move to a safe location immediately and
+      contact 119 Emergency Services.
+    </p>
+
+    <p
+      style={{
+        margin: 0,
+        lineHeight: "1.6",
+      }}
+    >
+      No maintenance worker has been assigned or scheduled.
+    </p>
+
+    <p
+      style={{
+        marginTop: "12px",
+        marginBottom: 0,
+        fontSize: "13px",
+        fontWeight: "700",
+      }}
+    >
+      Result: EMERGENCY_SERVICES_REQUIRED
+    </p>
+  </div>
+)}
+
+
+    {needsMoreInformation && (
+  <div style={styles.recommendationCard}>
+    <div style={styles.noWorkerBox}>
+      <h2
+        style={{
+          margin: "0 0 10px 0",
+          fontSize: "18px",
+        }}
+      >
+        More Information Required
+      </h2>
+
+      <p
+        style={{
+          margin: 0,
+          color: "#92400e",
+          lineHeight: "1.5",
+        }}
+      >
+        Agent 2 could not confidently classify the maintenance issue.
+        Please ask the tenant to provide clearer information about
+        what is damaged, where the problem is located, and what is happening.
+      </p>
+
+      <p
+        style={{
+          marginTop: "10px",
+          fontSize: "13px",
+          fontWeight: "600",
+        }}
+      >
+        Result: NEEDS_MORE_INFORMATION
+      </p>
+    </div>
+  </div>
+)}
+
 
           {noWorkerAvailable && (
       <div style={styles.recommendationCard}>

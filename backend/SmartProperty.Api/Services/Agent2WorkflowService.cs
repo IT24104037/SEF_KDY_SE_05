@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.Entities.AgenticAI;
+using SmartProperty.Api.Entities.Maintenance;
 
 namespace SmartProperty.Api.Services;
 
@@ -265,6 +266,131 @@ public class Agent2WorkflowService
     AnalysisOutput output,
     CancellationToken cancellationToken)
 {
+
+// ---------------------------------------------------------
+// FIRE / IMMEDIATE LIFE-SAFETY EMERGENCY
+// No maintenance worker must be assigned.
+// ---------------------------------------------------------
+var emergencyServicesRequired =
+    string.Equals(
+        output.EmergencyClass,
+        "LIFE_SAFETY_EMERGENCY",
+        StringComparison.OrdinalIgnoreCase)
+    &&
+    string.Equals(
+        output.RequiredSkill,
+        "EMERGENCY_SERVICES",
+        StringComparison.OrdinalIgnoreCase);
+
+if (emergencyServicesRequired)
+{
+    var workflow = await _dbContext.AgentWorkflows
+        .Include(w => w.WorkflowSteps)
+        .FirstAsync(
+            w => w.Id == workflowId,
+            cancellationToken);
+
+    var now = DateTime.UtcNow;
+
+    var request = await _dbContext.MaintenanceRequests
+        .FirstOrDefaultAsync(
+            r => r.Id == workflow.MaintenanceRequestId,
+            cancellationToken);
+
+    if (request != null)
+    {
+        var oldStatus = request.Status;
+
+        request.Status = "Emergency";
+        request.Priority = "Critical";
+        request.UpdatedAt = now;
+
+        if (!string.Equals(
+                oldStatus,
+                "Emergency",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            _dbContext.MaintenanceStatusHistories.Add(
+                new MaintenanceStatusHistory
+                {
+                    MaintenanceRequestId = request.Id,
+                    OldStatus = oldStatus,
+                    NewStatus = "Emergency",
+                    ChangedByUserId = null,
+                    Note =
+                        "Agent 2 detected a fire/life-safety emergency. Immediate emergency services are required.",
+                    ChangedAt = now
+                });
+        }
+    }
+
+    // Agent 3 must not run for active fire.
+    if (!workflow.WorkflowSteps.Any(
+            x => x.StepOrder == 3))
+    {
+        _dbContext.WorkflowSteps.Add(
+            new WorkflowStep
+            {
+                AgentWorkflowId = workflowId,
+                StepOrder = 3,
+                StepName =
+                    "Technician Matching & Scheduling",
+                AgentName =
+                    "TechnicianMatchingAgent",
+                Status =
+                    WorkflowStepStatus.Skipped,
+                ErrorSummary =
+                    "Skipped because immediate emergency services are required.",
+                CreatedAt = now,
+                CompletedAt = now
+            });
+    }
+
+    // Agent 4 also does not need to validate a worker
+    // because no worker is being assigned.
+    if (!workflow.WorkflowSteps.Any(
+            x => x.StepOrder == 4))
+    {
+        _dbContext.WorkflowSteps.Add(
+            new WorkflowStep
+            {
+                AgentWorkflowId = workflowId,
+                StepOrder = 4,
+                StepName =
+                    "Safety & Compliance Validation",
+                AgentName =
+                    "ValidationSafetyAgent",
+                Status =
+                    WorkflowStepStatus.Skipped,
+                ErrorSummary =
+                    "Skipped because immediate emergency services are required.",
+                CreatedAt = now,
+                CompletedAt = now
+            });
+    }
+
+    workflow.Status =
+        AgentWorkflowStatus.Completed;
+
+    workflow.CurrentStep =
+        "Emergency Services Required";
+
+    workflow.ApprovalStatus =
+        "EmergencyServicesRequired";
+
+    workflow.FinalOutcome =
+        output.SafetyConcern ??
+        "Immediate life-safety emergency detected. Contact emergency services. No maintenance worker was assigned.";
+
+    workflow.CompletedAt = now;
+    workflow.UpdatedAt = now;
+
+    await _dbContext.SaveChangesAsync(
+        CancellationToken.None);
+
+    return;
+}
+  
     // Do not assign a worker when Agent 2 needs more information
     // or cannot identify an actionable category.
   if (output.NeedsMoreInformation ||

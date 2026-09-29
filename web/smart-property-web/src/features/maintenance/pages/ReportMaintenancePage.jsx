@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import {
   createMaintenanceRequest,
   uploadMaintenanceImage,
+  startMaintenanceWorkflow,
+  getAgent2SafetyConcern,
 } from "../services/maintenanceApi.js";
 
 function ReportMaintenancePage() {
@@ -89,16 +91,47 @@ function ReportMaintenancePage() {
       // Property, unit and tenancy are NOT sent by the tenant.
       // Backend gets them from the active tenancy.
       const createdRequest =
-        await createMaintenanceRequest({
-          description: description.trim(),
-          requestType: "NORMAL",
-          emergencyType: null,
-          imageUrl,
-        });
+  await createMaintenanceRequest({
+    description: description.trim(),
+    requestType: "NORMAL",
+    emergencyType: null,
+    imageUrl,
+  });
 
-      setMessage(
-        `Maintenance request #${createdRequest.id} submitted successfully.`
-      );
+// Start the AI workflow immediately after
+// successfully creating the maintenance request.
+const workflow =
+  await startMaintenanceWorkflow(
+    createdRequest.id
+  );
+
+console.log(
+  "AI WORKFLOW RESULT:",
+  workflow
+);
+// Show Agent 2 safety concern immediately.
+const safetyConcern =
+  getAgent2SafetyConcern(workflow);
+
+if (safetyConcern) {
+  const isLifeSafetyEmergency =
+    workflow?.approvalStatus ===
+    "EmergencyServicesRequired";
+
+  if (isLifeSafetyEmergency) {
+    window.alert(
+      `🚨 CRITICAL EMERGENCY\n\n${safetyConcern}`
+    );
+  } else {
+    window.alert(
+      `⚠️ SAFETY WARNING\n\n${safetyConcern}`
+    );
+  }
+}
+
+setMessage(
+  `Maintenance request #${createdRequest.id} submitted successfully.`
+);
 
       setDescription("");
       setPhoto(null);

@@ -10,7 +10,8 @@ public class AgentOutputValidator
             "PROPERTY_RESPONSIBILITY",
             "TENANT_OWNED_ITEM",
             "POSSIBLE_TENANT_CAUSED_DAMAGE",
-            "REQUIRES_OWNER_REVIEW"
+            "REQUIRES_OWNER_REVIEW",
+         "EMERGENCY_SERVICES_REQUIRED"
         };
 
     private static readonly HashSet<string> AllowedEmergencyClasses =
@@ -57,7 +58,8 @@ private static readonly HashSet<string> AllowedRequiredSkills =
         "Doors / Windows / Locks",
         "Drainage / Water Damage",
         "Other",
-        "UNKNOWN"
+        "UNKNOWN",
+        "EMERGENCY_SERVICES"
     };
 
 
