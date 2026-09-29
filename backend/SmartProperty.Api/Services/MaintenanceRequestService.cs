@@ -9,6 +9,7 @@ using SmartProperty.Api.Entities.Maintenance;
 using SmartProperty.Api.Interfaces;
 
 using SmartProperty.Api.Entities.Tenancy;
+using SmartProperty.Api.Entities.Worker;
 
 
 
@@ -1636,7 +1637,13 @@ public async Task<PagedMaintenanceRequestsDto>
 
                 .ToListAsync();
 
-
+        var activeWorkOrder = await _context.WorkOrders
+            .AsNoTracking()
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.User)
+            .Where(wo => wo.MaintenanceRequestId == request.Id && wo.Status != WorkOrderStatus.Cancelled)
+            .OrderByDescending(wo => wo.CreatedAt)
+            .FirstOrDefaultAsync();
 
         return new MaintenanceRequestDto
 
@@ -1675,6 +1682,18 @@ public async Task<PagedMaintenanceRequestsDto>
             Status = request.Status,
 
             Priority = request.Priority,
+
+            WorkOrderId = activeWorkOrder?.Id,
+
+            AssignedWorkerName = activeWorkOrder?.Worker?.User?.FullName,
+
+            AssignedWorkerEmail = activeWorkOrder?.Worker?.User?.Email,
+
+            AssignedWorkerMobile = activeWorkOrder?.Worker?.User?.Mobile,
+
+            ScheduledDate = activeWorkOrder?.ScheduledDate,
+
+            WorkOrderStatus = activeWorkOrder?.Status.ToString(),
 
             IsArchived = request.IsArchived,
 

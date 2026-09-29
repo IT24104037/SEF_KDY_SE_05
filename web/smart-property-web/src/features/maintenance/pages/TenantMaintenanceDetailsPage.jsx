@@ -50,6 +50,12 @@ function TenantMaintenanceDetailsPage() {
     return new Date(value).toLocaleString();
   }
 
+  function formatOnlyDate(value) {
+    if (!value) return "-";
+
+    return new Date(value).toLocaleDateString();
+  }
+
   function canCancel() {
     if (!request) return false;
 
@@ -216,6 +222,45 @@ function TenantMaintenanceDetailsPage() {
               <p>No photo was provided.</p>
             )}
           </div>
+
+          {(request.assignedWorkerName || request.workOrderId) && (
+            <div style={styles.card}>
+              <h2>Technician Assignment</h2>
+
+              {request.assignedWorkerName && (
+                <p>
+                  <strong>Assigned Worker:</strong>{" "}
+                  {request.assignedWorkerName}
+                </p>
+              )}
+
+              {request.assignedWorkerEmail && (
+                <p>
+                  <strong>Worker Email:</strong>{" "}
+                  {request.assignedWorkerEmail}
+                </p>
+              )}
+
+              {request.assignedWorkerMobile && (
+                <p>
+                  <strong>Worker Mobile:</strong>{" "}
+                  {request.assignedWorkerMobile}
+                </p>
+              )}
+
+              <p>
+                <strong>Assignment Status:</strong>{" "}
+                {request.workOrderStatus || request.status}
+              </p>
+
+              {request.scheduledDate && (
+                <p>
+                  <strong>Scheduled Visit Date:</strong>{" "}
+                  {formatOnlyDate(request.scheduledDate)}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {canCancel() && (

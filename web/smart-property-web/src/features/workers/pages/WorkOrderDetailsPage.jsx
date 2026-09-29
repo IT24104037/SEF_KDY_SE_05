@@ -186,16 +186,41 @@ function WorkOrderDetailsPage() {
               )}
             </div>
             <div>
+              <span style={styles.detailLabel}>Tenant Details:</span>
+              <strong style={styles.detailVal}>{workOrder.tenantName || "N/A"}</strong>
+              {workOrder.tenantEmail && (
+                <span style={{ fontSize: "12px", color: "#64748b", display: "block" }}>
+                  Email: {workOrder.tenantEmail}
+                </span>
+              )}
+              {workOrder.tenantMobile && (
+                <span style={{ fontSize: "12px", color: "#64748b", display: "block" }}>
+                  Mobile: {workOrder.tenantMobile}
+                </span>
+              )}
+            </div>
+            <div>
+              <span style={styles.detailLabel}>Property & Unit:</span>
+              <strong style={styles.detailVal}>
+                {workOrder.propertyName} · Unit {workOrder.unitLabel}
+              </strong>
+              {workOrder.propertyAddress && (
+                <span style={{ fontSize: "12px", color: "#64748b", display: "block" }}>
+                  {workOrder.propertyAddress}
+                </span>
+              )}
+            </div>
+            <div>
               <span style={styles.detailLabel}>Priority:</span>
               <strong style={styles.detailVal}>
                 {workOrder.isEmergency ? "EMERGENCY" : workOrder.priority}
               </strong>
             </div>
             <div>
-              <span style={styles.detailLabel}>Scheduled Date:</span>
+              <span style={styles.detailLabel}>Scheduled Visit Date:</span>
               <strong style={styles.detailVal}>
                 {workOrder.scheduledDate
-                  ? new Date(workOrder.scheduledDate).toLocaleString()
+                  ? new Date(workOrder.scheduledDate).toLocaleDateString()
                   : "Not specified"}
               </strong>
             </div>

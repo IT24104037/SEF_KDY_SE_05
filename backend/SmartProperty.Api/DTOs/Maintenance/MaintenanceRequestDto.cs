@@ -30,6 +30,13 @@ public class MaintenanceRequestDto
 
     public string? Priority { get; set; }
 
+    public int? WorkOrderId { get; set; }
+    public string? AssignedWorkerName { get; set; }
+    public string? AssignedWorkerEmail { get; set; }
+    public string? AssignedWorkerMobile { get; set; }
+    public DateTime? ScheduledDate { get; set; }
+    public string? WorkOrderStatus { get; set; }
+
     public List<string> ImageUrls { get; set; } = new();
 
     public DateTime CreatedAt { get; set; }
