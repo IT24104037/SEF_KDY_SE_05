@@ -16,6 +16,12 @@ public interface ITenancyRepository
     Task<SmartProperty.Api.Entities.Property.Unit?> GetUnitForOwnerAsync(
         int unitId, int propertyId, int ownerUserId);
 
+
+    Task<Tenant?> GetTenantByUserIdAsync(int userId);
+
+    Task<bool> MobileNumberExistsForOtherTenantAsync(
+    string mobileNumber,
+    int tenantId);
     Task<(List<Tenant> Items, int TotalCount)> GetTenantsAsync(
         string? search,
         bool? isActive,

@@ -98,7 +98,19 @@ public class TenancyRepository : ITenancyRepository
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return (items, totalCount);
     }
+    public async Task<Tenant?> GetTenantByUserIdAsync(int userId) =>
+    await _context.Tenants
+        .Include(t => t.Property)
+        .Include(t => t.Unit)
+        .Include(t => t.User)
+        .FirstOrDefaultAsync(t => t.UserId == userId);
 
+public async Task<bool> MobileNumberExistsForOtherTenantAsync(
+    string mobileNumber,
+    int tenantId) =>
+    await _context.Tenants.AnyAsync(t =>
+        t.MobileNumber == mobileNumber &&
+        t.Id != tenantId);
     public async Task UpdateTenantAsync(Tenant tenant)
     {
         tenant.UpdatedAt = DateTime.UtcNow;
