@@ -77,7 +77,57 @@ public class TenancyService : ITenancyService
             PinExpiresAt = pinExpiresAt
         };
     }
+      public async Task<TenantResponseDto?> GetMyProfileAsync(int userId)
+{
+    var tenant =
+        await _repository.GetTenantByUserIdAsync(userId);
 
+    return tenant == null
+        ? null
+        : ToResponseDto(tenant);
+}
+
+public async Task<TenantResponseDto?> UpdateMyProfileAsync(
+    int userId,
+    UpdateTenantProfileDto dto)
+{
+    var tenant =
+        await _repository.GetTenantByUserIdAsync(userId);
+
+    if (tenant == null)
+    {
+        return null;
+    }
+
+    var mobileNumber = dto.MobileNumber.Trim();
+
+    if (await _repository.MobileNumberExistsForOtherTenantAsync(
+            mobileNumber,
+            tenant.Id))
+    {
+        throw new InvalidOperationException(
+            "A tenant with this phone number already exists.");
+    }
+
+    tenant.MobileNumber = mobileNumber;
+
+    tenant.Email =
+        string.IsNullOrWhiteSpace(dto.Email)
+            ? null
+            : dto.Email.Trim();
+
+    // Keep the login User record synchronized.
+    if (tenant.User != null)
+    {
+        tenant.User.Mobile = tenant.MobileNumber;
+        tenant.User.Email = tenant.Email;
+        tenant.User.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await _repository.UpdateTenantAsync(tenant);
+
+    return ToResponseDto(tenant);
+}
     public async Task<PagedResult<TenantResponseDto>> GetTenantsAsync(TenantQueryParameters query, int ownerUserId)
     {
         var (items, totalCount) = await _repository.GetTenantsAsync(
