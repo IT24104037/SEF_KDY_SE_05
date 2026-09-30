@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SmartProperty.Api.AgenticAI.Agents;
 using SmartProperty.Api.AgenticAI.Contracts;
+using SmartProperty.Api.AgenticAI.Validators;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.AgenticAI;
 using SmartProperty.Api.Entities.AgenticAI;
@@ -16,27 +17,32 @@ public class AgentWorkflowService : IAgentWorkflowService
     private readonly AppDbContext _dbContext;
     private readonly PlannerCoordinatorAgent _plannerAgent;
     private readonly Agent2WorkflowService? _agent2WorkflowService;
+    private readonly PlannerOutputValidator _plannerOutputValidator;
     private readonly ILogger<AgentWorkflowService> _logger;
     
     public AgentWorkflowService(
         AppDbContext dbContext,
         PlannerCoordinatorAgent plannerAgent,
         Agent2WorkflowService agent2WorkflowService,
+        PlannerOutputValidator plannerOutputValidator,
         ILogger<AgentWorkflowService> logger)
     {
         _dbContext = dbContext;
         _plannerAgent = plannerAgent;
         _agent2WorkflowService = agent2WorkflowService;
+        _plannerOutputValidator = plannerOutputValidator;
         _logger = logger;
     }
     public AgentWorkflowService(
     AppDbContext dbContext,
     PlannerCoordinatorAgent plannerAgent,
+    PlannerOutputValidator plannerOutputValidator,
     ILogger<AgentWorkflowService> logger)
 {
     _dbContext = dbContext;
     _plannerAgent = plannerAgent;
     _agent2WorkflowService = null;
+    _plannerOutputValidator = plannerOutputValidator;
     _logger = logger;
 }
 
@@ -263,6 +269,29 @@ public class AgentWorkflowService : IAgentWorkflowService
 
         var plannerOutput = plannerResult.Output;
         var executionDurationMs = stopwatch.ElapsedMilliseconds;
+
+        // Validate PlannerOutput before accepting, persisting, or handing off to Agent 2.
+        // Only applied when the agent reports success — failure outputs are already handled
+        // by the existing IsSuccess == false branch below.
+        if (plannerOutput.IsSuccess)
+        {
+            var isValid = _plannerOutputValidator.Validate(
+                plannerOutput,
+                maintenanceRequestId,
+                out var validationErrors);
+
+            if (!isValid)
+            {
+                _logger.LogWarning(
+                    "PlannerOutput validation failed for request ID {RequestId}: {Errors}",
+                    maintenanceRequestId,
+                    string.Join("; ", validationErrors));
+
+                plannerOutput.IsSuccess = false;
+                plannerOutput.ErrorMessage =
+                    "PlannerOutput validation failed: " + string.Join("; ", validationErrors);
+            }
+        }
 
         // G. Persist ToolExecutions
         if (plannerResult.ToolExecutions != null)
