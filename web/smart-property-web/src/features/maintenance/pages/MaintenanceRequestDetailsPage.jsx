@@ -128,6 +128,33 @@ function MaintenanceRequestDetailsPage() {
     return new Date(value).toLocaleString();
   }
 
+  function formatOnlyDate(value) {
+    if (!value) return "-";
+
+    return new Date(value).toLocaleDateString();
+  }
+
+  function formatSchedule(value) {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "-";
+
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const year = d.getUTCFullYear();
+    const dateStr = `${day}/${month}/${year}`;
+
+    const hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+
+    if (hours !== 0 || minutes !== 0) {
+      const hh = String(hours).padStart(2, "0");
+      const mm = String(minutes).padStart(2, "0");
+      return `${dateStr}, ${hh}:${mm}`;
+    }
+    return dateStr;
+  }
+
   if (loading) {
     return <p>Loading maintenance request...</p>;
   }
@@ -263,6 +290,66 @@ function MaintenanceRequestDetailsPage() {
             <p>No photo available.</p>
           )}
         </div>
+
+        {/* TENANT DETAILS */}
+        <div style={styles.card}>
+          <h2>Tenant Information</h2>
+
+          <p>
+            <strong>Tenant Name:</strong>{" "}
+            {request.tenantName || "-"}
+          </p>
+
+          <p>
+            <strong>Tenant Email:</strong>{" "}
+            {request.tenantEmail || "-"}
+          </p>
+
+          <p>
+            <strong>Tenant Mobile:</strong>{" "}
+            {request.tenantMobile || "-"}
+          </p>
+        </div>
+
+        {/* TECHNICIAN ASSIGNMENT */}
+        {(request.assignedWorkerName || request.workOrderId) && (
+          <div style={styles.card}>
+            <h2>Technician Assignment</h2>
+
+            {request.assignedWorkerName && (
+              <p>
+                <strong>Assigned Worker:</strong>{" "}
+                {request.assignedWorkerName}
+              </p>
+            )}
+
+            {request.assignedWorkerEmail && (
+              <p>
+                <strong>Worker Email:</strong>{" "}
+                {request.assignedWorkerEmail}
+              </p>
+            )}
+
+            {request.assignedWorkerMobile && (
+              <p>
+                <strong>Worker Mobile:</strong>{" "}
+                {request.assignedWorkerMobile}
+              </p>
+            )}
+
+            <p>
+              <strong>Assignment Status:</strong>{" "}
+              {request.workOrderStatus || request.status}
+            </p>
+
+            {request.scheduledDate && (
+              <p>
+                <strong>Scheduled Visit Date:</strong>{" "}
+                {formatSchedule(request.scheduledDate)}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* EMERGENCY APPROVE / REJECT */}

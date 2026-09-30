@@ -512,7 +512,7 @@ public class WorkerRecommendationService : IWorkerRecommendationService
                     MaintenanceRequestId = request.Id,
                     WorkerId = targetWorkerId,
                     Status = WorkOrderStatus.Assigned,
-                    ScheduledDate = dto.ScheduledDate ?? DateTime.UtcNow.AddDays(1),
+                    ScheduledDate = (dto.ScheduledDate ?? DateTime.UtcNow.AddDays(1)).Date,
                     IsEmergency = isEmergency,
                     Notes = dto.Notes?.Trim(),
                     CreatedAt = DateTime.UtcNow,

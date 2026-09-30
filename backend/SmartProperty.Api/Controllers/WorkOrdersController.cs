@@ -103,6 +103,41 @@ public class WorkOrdersController : ControllerBase
         }
     }
 
+    // PUT /api/work-orders/{id}/schedule
+    [HttpPut("{id:int}/schedule")]
+    [Authorize(Roles = "MaintenanceWorker,Admin")]
+    public async Task<IActionResult> UpdateSchedule(int id, [FromBody] UpdateWorkOrderScheduleDto dto)
+    {
+        var userId = GetCurrentUserId();
+        var role = GetCurrentUserRole();
+
+        try
+        {
+            var updated = await _workOrderService.UpdateWorkOrderScheduleAsync(id, dto, userId, role);
+            return Ok(updated);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
     private int GetCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);

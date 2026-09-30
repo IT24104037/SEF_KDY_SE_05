@@ -9,6 +9,9 @@ public class WorkOrderResponseDto
     public string PropertyName { get; set; } = string.Empty;
     public string UnitLabel { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
+    public string? TenantEmail { get; set; }
+    public string? TenantMobile { get; set; }
+    public string? PropertyAddress { get; set; }
     public string Priority { get; set; } = string.Empty;
     public bool IsEmergency { get; set; }
     public int WorkerId { get; set; }
@@ -32,6 +35,11 @@ public class UpdateWorkOrderStatusDto
     public string? Notes { get; set; }
     public string? CompletionNotes { get; set; }
     public string? CompletionEvidenceUrl { get; set; }
+}
+
+public class UpdateWorkOrderScheduleDto
+{
+    public string VisitTime { get; set; } = string.Empty;
 }
 
 public class WorkOrderListResponseDto

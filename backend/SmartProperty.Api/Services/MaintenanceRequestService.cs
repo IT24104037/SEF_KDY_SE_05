@@ -9,6 +9,7 @@ using SmartProperty.Api.Entities.Maintenance;
 using SmartProperty.Api.Interfaces;
 
 using SmartProperty.Api.Entities.Tenancy;
+using SmartProperty.Api.Entities.Worker;
 
 
 
@@ -454,6 +455,9 @@ public class MaintenanceRequestService : IMaintenanceRequestService
 
             .Include(x => x.Unit)
 
+            .Include(x => x.Tenant)
+                .ThenInclude(t => t.User)
+
             .AsNoTracking()
 
             .AsQueryable();
@@ -767,6 +771,9 @@ public class MaintenanceRequestService : IMaintenanceRequestService
             .Include(x => x.Property)
 
             .Include(x => x.Unit)
+
+            .Include(x => x.Tenant)
+                .ThenInclude(t => t.User)
 
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -1636,7 +1643,19 @@ public async Task<PagedMaintenanceRequestsDto>
 
                 .ToListAsync();
 
+        var activeWorkOrder = await _context.WorkOrders
+            .AsNoTracking()
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.User)
+            .Where(wo => wo.MaintenanceRequestId == request.Id && wo.Status != WorkOrderStatus.Cancelled)
+            .OrderByDescending(wo => wo.CreatedAt)
+            .FirstOrDefaultAsync();
 
+        var analysisResult = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .Where(a => a.MaintenanceRequestId == request.Id)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync();
 
         return new MaintenanceRequestDto
 
@@ -1645,6 +1664,12 @@ public async Task<PagedMaintenanceRequestsDto>
             Id = request.Id,
 
             TenantId = request.TenantId,
+
+            TenantName = request.Tenant?.User?.FullName ?? request.Tenant?.FullName,
+
+            TenantEmail = request.Tenant?.User?.Email ?? request.Tenant?.Email,
+
+            TenantMobile = request.Tenant?.User?.Mobile ?? request.Tenant?.MobileNumber,
 
             TenancyId = request.TenancyId,
 
@@ -1664,7 +1689,9 @@ public async Task<PagedMaintenanceRequestsDto>
 
             CategoryName =
 
-                request.Category?.Name,
+                !string.IsNullOrWhiteSpace(request.Category?.Name)
+                    ? request.Category.Name
+                    : analysisResult?.Category,
 
             RequestType = request.RequestType,
 
@@ -1674,7 +1701,21 @@ public async Task<PagedMaintenanceRequestsDto>
 
             Status = request.Status,
 
-            Priority = request.Priority,
+            Priority = !string.IsNullOrWhiteSpace(request.Priority)
+                ? request.Priority
+                : analysisResult?.Priority,
+
+            WorkOrderId = activeWorkOrder?.Id,
+
+            AssignedWorkerName = activeWorkOrder?.Worker?.User?.FullName,
+
+            AssignedWorkerEmail = activeWorkOrder?.Worker?.User?.Email,
+
+            AssignedWorkerMobile = activeWorkOrder?.Worker?.User?.Mobile,
+
+            ScheduledDate = activeWorkOrder?.ScheduledDate,
+
+            WorkOrderStatus = activeWorkOrder?.Status.ToString(),
 
             IsArchived = request.IsArchived,
 

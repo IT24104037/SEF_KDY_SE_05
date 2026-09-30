@@ -5,6 +5,9 @@ public class MaintenanceRequestDto
     public int Id { get; set; }
 
     public int TenantId { get; set; }
+    public string? TenantName { get; set; }
+    public string? TenantEmail { get; set; }
+    public string? TenantMobile { get; set; }
 
     public int TenancyId { get; set; }
 
@@ -29,6 +32,13 @@ public class MaintenanceRequestDto
     public string Status { get; set; } = string.Empty;
 
     public string? Priority { get; set; }
+
+    public int? WorkOrderId { get; set; }
+    public string? AssignedWorkerName { get; set; }
+    public string? AssignedWorkerEmail { get; set; }
+    public string? AssignedWorkerMobile { get; set; }
+    public DateTime? ScheduledDate { get; set; }
+    public string? WorkOrderStatus { get; set; }
 
     public List<string> ImageUrls { get; set; } = new();
 

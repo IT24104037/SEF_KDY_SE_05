@@ -85,9 +85,15 @@ public class WorkOrderService : IWorkOrderService
             .Take(pageSize)
             .ToListAsync();
 
+        var reqIds = orders.Select(wo => wo.MaintenanceRequestId).Distinct().ToList();
+        var analysisMap = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .Where(ar => reqIds.Contains(ar.MaintenanceRequestId) && !string.IsNullOrEmpty(ar.Priority))
+            .ToDictionaryAsync(ar => ar.MaintenanceRequestId, ar => ar.Priority);
+
         return new WorkOrderListResponseDto
         {
-            WorkOrders = orders.Select(MapToDto).ToList(),
+            WorkOrders = orders.Select(wo => MapToDto(wo, analysisMap.TryGetValue(wo.MaintenanceRequestId, out var priority) ? priority : null)).ToList(),
             Total = total,
             Page = page,
             PageSize = pageSize
@@ -145,7 +151,11 @@ public class WorkOrderService : IWorkOrderService
             throw new UnauthorizedAccessException("You do not have permission to access this work order.");
         }
 
-        return MapToDto(workOrder);
+        var analysisResult = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ar => ar.MaintenanceRequestId == workOrder.MaintenanceRequestId);
+
+        return MapToDto(workOrder, analysisResult?.Priority);
     }
 
     public async Task<WorkOrderResponseDto> UpdateWorkOrderStatusAsync(
@@ -327,7 +337,11 @@ public class WorkOrderService : IWorkOrderService
             await _context.SaveChangesAsync();
             if (transaction != null) await transaction.CommitAsync();
 
-            return MapToDto(workOrder);
+            var analysisResult = await _context.MaintenanceAnalysisResults
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ar => ar.MaintenanceRequestId == workOrder.MaintenanceRequestId);
+
+            return MapToDto(workOrder, analysisResult?.Priority);
         }
         catch
         {
@@ -340,7 +354,82 @@ public class WorkOrderService : IWorkOrderService
         }
     }
 
-    private static WorkOrderResponseDto MapToDto(WorkOrder wo)
+    public async Task<WorkOrderResponseDto> UpdateWorkOrderScheduleAsync(
+        int id,
+        UpdateWorkOrderScheduleDto dto,
+        int currentUserId,
+        string currentUserRole)
+    {
+        var workOrder = await _context.WorkOrders
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.User)
+            .Include(wo => wo.MaintenanceRequest)
+                .ThenInclude(mr => mr.Property)
+            .Include(wo => wo.MaintenanceRequest)
+                .ThenInclude(mr => mr.Unit)
+            .Include(wo => wo.MaintenanceRequest)
+                .ThenInclude(mr => mr.Tenant)
+                    .ThenInclude(t => t.User)
+            .FirstOrDefaultAsync(wo => wo.Id == id);
+
+        if (workOrder == null)
+        {
+            throw new KeyNotFoundException($"Work order #{id} not found.");
+        }
+
+        if (currentUserRole == "MaintenanceWorker")
+        {
+            var worker = await _context.Workers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(w => w.UserId == currentUserId);
+
+            if (worker == null || workOrder.WorkerId != worker.Id)
+            {
+                throw new UnauthorizedAccessException("You can only schedule work orders assigned to you.");
+            }
+        }
+        else if (currentUserRole != "Admin")
+        {
+            throw new UnauthorizedAccessException("You do not have permission to update the schedule for this work order.");
+        }
+
+        if (workOrder.Status == WorkOrderStatus.Completed || workOrder.Status == WorkOrderStatus.Cancelled)
+        {
+            throw new InvalidOperationException($"Cannot update schedule for a work order in '{workOrder.Status}' state.");
+        }
+
+        if (!workOrder.ScheduledDate.HasValue)
+        {
+            throw new InvalidOperationException("Cannot set visit time for a work order without a scheduled date.");
+        }
+
+        var timeStr = dto?.VisitTime?.Trim();
+        if (string.IsNullOrWhiteSpace(timeStr) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(timeStr, @"^([01][0-9]|2[0-3]):[0-5][0-9]$"))
+        {
+            throw new ArgumentException("Visit time must be provided in valid HH:mm format (e.g., '09:30', '14:00').");
+        }
+
+        var parts = timeStr.Split(':');
+        var hours = int.Parse(parts[0]);
+        var minutes = int.Parse(parts[1]);
+
+        var existingDateOnly = workOrder.ScheduledDate.Value.Date;
+        var combined = existingDateOnly.AddHours(hours).AddMinutes(minutes);
+
+        workOrder.ScheduledDate = DateTime.SpecifyKind(combined, DateTimeKind.Utc);
+        workOrder.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        var analysisResult = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ar => ar.MaintenanceRequestId == workOrder.MaintenanceRequestId);
+
+        return MapToDto(workOrder, analysisResult?.Priority);
+    }
+
+    private static WorkOrderResponseDto MapToDto(WorkOrder wo, string? analysisPriority = null)
     {
         var req = wo.MaintenanceRequest;
         return new WorkOrderResponseDto
@@ -352,9 +441,14 @@ public class WorkOrderService : IWorkOrderService
                 : "Maintenance Request",
             Description = req?.Description ?? string.Empty,
             PropertyName = req?.Property?.Name ?? string.Empty,
+            PropertyAddress = req?.Property?.Address,
             UnitLabel = req?.Unit?.UnitLabel ?? string.Empty,
             TenantName = req?.Tenant?.User?.FullName ?? "Tenant",
-            Priority = req?.Priority ?? "Normal",
+            TenantEmail = req?.Tenant?.User?.Email,
+            TenantMobile = req?.Tenant?.User?.Mobile,
+            Priority = !string.IsNullOrWhiteSpace(req?.Priority)
+                ? req.Priority
+                : (!string.IsNullOrWhiteSpace(analysisPriority) ? analysisPriority : "Normal"),
             IsEmergency = wo.IsEmergency,
             WorkerId = wo.WorkerId,
             WorkerName = wo.Worker?.User?.FullName ?? "Technician",

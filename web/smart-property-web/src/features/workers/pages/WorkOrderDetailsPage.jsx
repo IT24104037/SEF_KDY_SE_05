@@ -4,15 +4,64 @@ import {
   createExternalArrangement,
   getWorkOrder,
   updateWorkOrderStatus,
+  updateWorkOrderSchedule,
 } from "../services/workerService.js";
+import { useAuth } from "../../../hooks/useAuth.js";
+import { getRole } from "../../../utils/auth.js";
+
+function formatSchedule(scheduledDate) {
+  if (!scheduledDate) return "Not specified";
+  const d = new Date(scheduledDate);
+  if (isNaN(d.getTime())) return "Not specified";
+
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+
+  const hours = d.getUTCHours();
+  const minutes = d.getUTCMinutes();
+
+  if (hours !== 0 || minutes !== 0) {
+    const hh = String(hours).padStart(2, "0");
+    const mm = String(minutes).padStart(2, "0");
+    return `${dateStr}, ${hh}:${mm}`;
+  }
+  return dateStr;
+}
+
+function formatOnlyDate(scheduledDate) {
+  if (!scheduledDate) return "-";
+  const d = new Date(scheduledDate);
+  if (isNaN(d.getTime())) return "-";
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function getHHMM(scheduledDate) {
+  if (!scheduledDate) return "";
+  const d = new Date(scheduledDate);
+  if (isNaN(d.getTime())) return "";
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return "";
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
 
 function WorkOrderDetailsPage() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const currentRole = user?.role || getRole();
+  const isWorker = currentRole === "MaintenanceWorker";
+
   const [workOrder, setWorkOrder] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [visitTime, setVisitTime] = useState("");
 
   // Form states for completion & notes
   const [actionNotes, setActionNotes] = useState("");
@@ -38,10 +87,37 @@ function WorkOrderDetailsPage() {
     try {
       const data = await getWorkOrder(id);
       setWorkOrder(data);
+      if (data.scheduledDate) {
+        setVisitTime(getHHMM(data.scheduledDate));
+      }
     } catch (err) {
       setError(err.message || "Failed to load work order.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSaveSchedule(e) {
+    e.preventDefault();
+    if (!visitTime) {
+      setError("Please select a visit time.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    setMessage("");
+    try {
+      const updated = await updateWorkOrderSchedule(id, visitTime);
+      setWorkOrder(updated);
+      if (updated.scheduledDate) {
+        setVisitTime(getHHMM(updated.scheduledDate));
+      }
+      setMessage("Visit time saved successfully.");
+    } catch (err) {
+      setError(err.message || "Failed to update visit time.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -186,17 +262,40 @@ function WorkOrderDetailsPage() {
               )}
             </div>
             <div>
+              <span style={styles.detailLabel}>Tenant Details:</span>
+              <strong style={styles.detailVal}>{workOrder.tenantName || "N/A"}</strong>
+              {workOrder.tenantEmail && (
+                <span style={{ fontSize: "12px", color: "#64748b", display: "block" }}>
+                  Email: {workOrder.tenantEmail}
+                </span>
+              )}
+              {workOrder.tenantMobile && (
+                <span style={{ fontSize: "12px", color: "#64748b", display: "block" }}>
+                  Mobile: {workOrder.tenantMobile}
+                </span>
+              )}
+            </div>
+            <div>
+              <span style={styles.detailLabel}>Property & Unit:</span>
+              <strong style={styles.detailVal}>
+                {workOrder.propertyName} · Unit {workOrder.unitLabel}
+              </strong>
+              {workOrder.propertyAddress && (
+                <span style={{ fontSize: "12px", color: "#64748b", display: "block" }}>
+                  {workOrder.propertyAddress}
+                </span>
+              )}
+            </div>
+            <div>
               <span style={styles.detailLabel}>Priority:</span>
               <strong style={styles.detailVal}>
                 {workOrder.isEmergency ? "EMERGENCY" : workOrder.priority}
               </strong>
             </div>
             <div>
-              <span style={styles.detailLabel}>Scheduled Date:</span>
+              <span style={styles.detailLabel}>Scheduled Visit Date:</span>
               <strong style={styles.detailVal}>
-                {workOrder.scheduledDate
-                  ? new Date(workOrder.scheduledDate).toLocaleString()
-                  : "Not specified"}
+                {formatSchedule(workOrder.scheduledDate)}
               </strong>
             </div>
             <div>
@@ -216,6 +315,38 @@ function WorkOrderDetailsPage() {
               </strong>
             </div>
           </div>
+
+          {/* Visit Time Selection (Worker only) */}
+          {isWorker &&
+            workOrder.scheduledDate &&
+            workOrder.status !== "Completed" &&
+            workOrder.status !== "Cancelled" && (
+              <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid #e2e8f0" }}>
+                <p style={styles.label}>Select Visit Time</p>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 10px" }}>
+                  Scheduled Date: <strong>{formatOnlyDate(workOrder.scheduledDate)}</strong>
+                </p>
+                <form onSubmit={handleSaveSchedule} style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: "#334155" }}>
+                    Visit Time:
+                    <input
+                      type="time"
+                      value={visitTime}
+                      onChange={(e) => setVisitTime(e.target.value)}
+                      required
+                      style={styles.input}
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    style={styles.primary}
+                    disabled={submitting}
+                  >
+                    {submitting ? "Saving..." : getHHMM(workOrder.scheduledDate) ? "Update Visit Time" : "Set Visit Time"}
+                  </button>
+                </form>
+              </div>
+            )}
         </article>
 
         {/* Execution Actions Card */}

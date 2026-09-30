@@ -154,6 +154,16 @@ export async function updateWorkOrderStatus(id, status, completionNotes = "", co
   }
 }
 
+export async function updateWorkOrderSchedule(id, visitTime) {
+  try {
+    const response = await apiClient.put(`/api/work-orders/${id}/schedule`, { visitTime });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to update visit time.";
+    throw new Error(message);
+  }
+}
+
 export async function getPendingApprovals() {
   try {
     const response = await apiClient.get("/api/maintenance-requests/pending-approvals");
