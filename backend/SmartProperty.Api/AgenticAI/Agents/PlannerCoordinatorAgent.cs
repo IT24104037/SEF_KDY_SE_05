@@ -19,7 +19,7 @@ public class PlannerCoordinatorAgent
         _propertyContextTool = propertyContextTool;
     }
 
-    public async Task<PlannerExecutionResult> CreatePlanAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
+    public virtual async Task<PlannerExecutionResult> CreatePlanAsync(int maintenanceRequestId, CancellationToken cancellationToken = default)
     {
         var toolExecutions = new List<ToolExecutionMetadata>();
 

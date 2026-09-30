@@ -28,6 +28,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<MaintenanceAnalysisAgent>();
 builder.Services.AddScoped<AgentOutputValidator>();
+builder.Services.AddScoped<PlannerOutputValidator>();
 builder.Services.AddScoped<Agent2MaintenanceAnalysisService>();
 builder.Services.AddScoped<MaintenanceResponsibilityTool>();
 builder.Services.AddScoped<Agent2WorkflowService>();
