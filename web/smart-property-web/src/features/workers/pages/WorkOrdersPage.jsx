@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getWorkOrders } from "../services/workerService.js";
 
 function WorkOrdersPage() {
@@ -7,6 +7,14 @@ function WorkOrdersPage() {
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const role = sessionStorage.getItem("role");
+const navigate = useNavigate();
+const isPropertyOwner = role === "PropertyOwner";
+const isMaintenanceWorker = role === "MaintenanceWorker";
+
+const dashboardPath = isMaintenanceWorker
+  ? "/worker"
+  : "/owner/dashboard";
 
   useEffect(() => {
     fetchOrders(filter);
@@ -38,14 +46,34 @@ function WorkOrdersPage() {
             Track and manage official work orders, execution progress, and completion evidence.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Link to="/owner/approval" style={styles.primary}>
-            Review Recommendations
-          </Link>
-          <Link to="/owner" style={styles.secondary}>
-            Dashboard
-          </Link>
-        </div>
+    <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  }}
+>
+  <button
+    type="button"
+    onClick={() => navigate(-1)}
+    style={styles.secondaryButton}
+  >
+    ← Back
+  </button>
+
+  <div style={{ display: "flex", gap: "10px" }}>
+    {isPropertyOwner && (
+      <Link to="/owner/approval" style={styles.primary}>
+        Review Recommendations
+      </Link>
+    )}
+
+    <Link to={dashboardPath} style={styles.secondary}>
+      Dashboard
+    </Link>
+  </div>
+</div>
       </header>
 
       {error && <div style={styles.error}>{error}</div>}
@@ -149,6 +177,16 @@ const styles = {
   muted: { color: "#64748b", margin: 0, fontSize: "14px" },
   primary: { padding: "9px 16px", borderRadius: "6px", background: "#0f766e", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: "14px" },
   secondary: { padding: "9px 16px", borderRadius: "6px", background: "#fff", color: "#475569", border: "1px solid #cbd5e1", textDecoration: "none", fontWeight: 600, fontSize: "14px" },
+  secondaryButton: {
+    padding: "9px 16px",
+    borderRadius: "6px",
+    background: "#fff",
+    color: "#475569",
+    border: "1px solid #cbd5e1",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: "pointer",
+  },
   error: { padding: "12px", background: "#fee2e2", color: "#991b1b", borderRadius: "6px", marginBottom: "16px" },
   filters: { display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap" },
   filter: { padding: "8px 14px", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", color: "#475569", cursor: "pointer", fontWeight: 500, fontSize: "13px" },

@@ -59,14 +59,6 @@ function AdminLayout() {
           <NavLink to="/admin/ai-monitoring" style={linkStyle}>
             AI Workflow Monitoring
           </NavLink>
-
-          <NavLink to="/admin/reports" style={linkStyle}>
-            Reports & Analytics
-          </NavLink>
-
-          <NavLink to="/admin/activity" style={linkStyle}>
-            System Activity
-          </NavLink>
         </nav>
 
         <button style={styles.logoutButton} onClick={handleLogout}>

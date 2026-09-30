@@ -142,9 +142,50 @@ function WorkOrderDetailsPage() {
 
   return (
     <main style={styles.page}>
-      <Link to="/owner/work-orders" style={styles.back}>
-        ← Back to work orders
-      </Link>
+     <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  }}
+>
+  <Link
+    to={
+      sessionStorage.getItem("role") === "MaintenanceWorker"
+        ? "/worker"
+        : "/owner/dashboard"
+    }
+    style={{
+      padding: "9px 16px",
+      borderRadius: "6px",
+      background: "#ffffff",
+      color: "#475569",
+      border: "1px solid #cbd5e1",
+      textDecoration: "none",
+      fontWeight: 600,
+      fontSize: "14px",
+    }}
+  >
+    ← Back
+  </Link>
+
+  <Link
+    to="/owner/work-orders"
+    style={{padding: "9px 16px",
+      borderRadius: "6px",
+      background: "#ffffff",
+      color: "#475569",
+      border: "1px solid #cbd5e1",
+      textDecoration: "none",
+      fontWeight: 600,
+      fontSize: "14px",
+      
+    }}
+  >
+    Go to work orders →
+  </Link>
+</div>
 
       <header style={styles.header}>
         <div>

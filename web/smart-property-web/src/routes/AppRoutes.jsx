@@ -16,8 +16,6 @@ import AdminOwnerVerificationPage from "../features/admin/pages/OwnerVerificatio
 import OwnerProfileRequestsPage from "../features/admin/pages/OwnerProfileRequestsPage";
 import PropertyVerificationPage from "../features/admin/pages/PropertyVerificationPage";
 import AiWorkflowPage from "../features/admin/pages/AiWorkflowPage";
-import ReportsPage from "../features/admin/pages/ReportsPage";
-import SystemActivityPage from "../features/admin/pages/SystemActivityPage";
 import AdminMaintenanceRequestsPage from "../features/admin/pages/MaintenanceRequestsPage";
 import MaintenanceCategoriesPage from "../features/admin/pages/MaintenanceCategoriesPage";
 import EmergencyRequestsPage from "../features/admin/pages/EmergencyRequestsPage";
@@ -90,7 +88,7 @@ export default function AppRoutes() {
                 <Route path="/owner/profile" element={<OwnerProfilePage />} />
                 <Route path="/owner/approval" element={<ApprovalPage />} />
                 <Route path="/owner/ai-workflow" element={<WorkflowHistoryPage />} />
-                <Route path="/owner/ai-workflow/:workflowId" element={<WorkflowDetailsPage />} />
+                <Route  path="/owner/ai-workflow/:workflowId" element={<WorkflowDetailsPage />} />  
                 <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
                 <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
                 <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
@@ -135,8 +133,7 @@ export default function AppRoutes() {
               <Route path="emergencies" element={<EmergencyRequestsPage />} />
               <Route path="categories" element={<MaintenanceCategoriesPage />} />
               <Route path="ai-monitoring" element={<AiWorkflowPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="activity" element={<SystemActivityPage />} />
+              <Route  path="ai-workflow/:workflowId" element={<WorkflowDetailsPage />} />
               <Route  path="/admin/maintenance-history" element={<MaintenanceHistoryPage />} />
             </Route> 
           </Route>

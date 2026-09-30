@@ -26,6 +26,18 @@ export default function WorkflowDetailsPage() {
   const requestIdParam = searchParams.get("requestId");
   const navigate = useNavigate();
 
+
+  const currentUserRole =
+  sessionStorage.getItem("role");
+
+const isAdmin =
+  currentUserRole === "Admin";
+
+const isPropertyOwner =
+  currentUserRole === "PropertyOwner";
+
+
+
   const {
     workflow,
     logs,
@@ -57,6 +69,7 @@ export default function WorkflowDetailsPage() {
       }
 
       if (
+        (isPropertyOwner || isAdmin) &&
         activeWorkflow &&
         activeWorkflow.maintenanceRequestId &&
         activeWorkflow.approvalStatus !== "EmergencyServicesRequired"
@@ -74,9 +87,15 @@ export default function WorkflowDetailsPage() {
     }
 
     fetchData();
-  }, [workflowId, requestIdParam, loadWorkflowById, loadWorkflowByRequestId, loadLogs]);
+  }, [workflowId, requestIdParam, loadWorkflowById, loadWorkflowByRequestId, loadLogs, isPropertyOwner,isAdmin,]);
 
   async function handleDecision(decisionType) {
+        if (!isPropertyOwner) {
+      setRecError(
+        "Only the Property Owner can make an approval decision."
+      );
+      return;
+      }
     const reqId = workflow?.maintenanceRequestId;
     const workerId = recommendation?.recommendedWorkerId;
 
@@ -166,9 +185,12 @@ export default function WorkflowDetailsPage() {
           <p>
             No active or historical AI maintenance workflow was found for this reference.
           </p>
-          <button style={styles.buttonSecondary} onClick={() => navigate("/owner/maintenance")}>
-            ← Back to Maintenance Requests
-          </button>
+         <button
+          style={styles.buttonSecondary}
+          onClick={() => navigate(-1)}
+        >
+          ← Go Back
+        </button>
         </div>
       </div>
     );
@@ -600,8 +622,9 @@ const readyForApproval =
             </div>
           </div>
 
-          {/* OWNER APPROVAL ACTION PANEL */}
-          <div style={styles.approvalSection}>
+        {/* OWNER APPROVAL ACTION PANEL */}
+      {isPropertyOwner && (
+        <div style={styles.approvalSection}>
             {isCandidateApproved ? (
               <div style={styles.alreadyApprovedBox}>
                 <div>
@@ -662,6 +685,7 @@ const readyForApproval =
               </div>
             )}
           </div>
+      )}
         </div>
       )}
 
