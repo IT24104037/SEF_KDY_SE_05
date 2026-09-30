@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using SmartProperty.Api.AgenticAI.Agents;
+using SmartProperty.Api.AgenticAI.Contracts;
 using SmartProperty.Api.AgenticAI.Tools;
+using SmartProperty.Api.AgenticAI.Validators;
 using SmartProperty.Api.Controllers;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.AgenticAI;
@@ -110,7 +112,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act
         var response = await service.StartPlannerWorkflowAsync(101, 10, "PropertyOwner");
@@ -191,7 +193,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act
         var response = await service.StartPlannerWorkflowAsync(301, 10, "PropertyOwner");
@@ -217,7 +219,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => service.StartPlannerWorkflowAsync(99999, 10, "PropertyOwner"));
@@ -233,7 +235,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act 1: First call
         var firstResponse = await service.StartPlannerWorkflowAsync(102, 10, "PropertyOwner");
@@ -256,7 +258,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         var created = await service.StartPlannerWorkflowAsync(103, 10, "PropertyOwner");
 
@@ -277,7 +279,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act
         var result = await service.GetWorkflowByIdAsync(999, 10, "PropertyOwner");
@@ -296,7 +298,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         await service.StartPlannerWorkflowAsync(104, 10, "PropertyOwner");
 
@@ -318,7 +320,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         var created = await service.StartPlannerWorkflowAsync(105, 10, "PropertyOwner");
 
@@ -346,7 +348,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act & Assert: User ID 999 is a PropertyOwner, but does NOT own property 200
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -363,7 +365,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         var created = await service.StartPlannerWorkflowAsync(202, currentUserId: 10, currentUserRole: "PropertyOwner");
 
@@ -382,7 +384,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         await service.StartPlannerWorkflowAsync(203, currentUserId: 10, currentUserRole: "PropertyOwner");
 
@@ -401,7 +403,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         var created = await service.StartPlannerWorkflowAsync(204, currentUserId: 10, currentUserRole: "PropertyOwner");
 
@@ -420,7 +422,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act: TenantUser has UserId = 20
         var response = await service.StartPlannerWorkflowAsync(205, currentUserId: 20, currentUserRole: "Tenant");
@@ -440,7 +442,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act & Assert: Tenant with UserId 888 did not create request 206
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -457,7 +459,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act: Admin can access any request
         var response = await service.StartPlannerWorkflowAsync(207, currentUserId: 777, currentUserRole: "Admin");
@@ -481,7 +483,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
         SetControllerUser(controller, 10, "PropertyOwner");
 
@@ -504,7 +506,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
         // Controller Context is NOT set with user claims -> unauthenticated
 
@@ -525,7 +527,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
         SetControllerUser(controller, 999, "PropertyOwner"); // User 999 does not own property
 
@@ -544,7 +546,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
         SetControllerUser(controller, 10, "PropertyOwner");
 
@@ -563,7 +565,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
         SetControllerUser(controller, 10, "PropertyOwner");
 
@@ -584,7 +586,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var created = await service.StartPlannerWorkflowAsync(107, 10, "PropertyOwner");
 
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
@@ -609,7 +611,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         await service.StartPlannerWorkflowAsync(108, 10, "PropertyOwner");
 
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
@@ -634,7 +636,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
         var created = await service.StartPlannerWorkflowAsync(109, 10, "PropertyOwner");
 
         var controller = new AgentWorkflowController(service, NullLogger<AgentWorkflowController>.Instance);
@@ -708,7 +710,7 @@ public class Agent1Tests
         var maintTool = new MaintenanceContextTool(db);
         var propTool = new PropertyContextTool(db);
         var agent = new PlannerCoordinatorAgent(maintTool, propTool);
-        var service = new AgentWorkflowService(db, agent, NullLogger<AgentWorkflowService>.Instance);
+        var service = new AgentWorkflowService(db, agent, new PlannerOutputValidator(), NullLogger<AgentWorkflowService>.Instance);
 
         // Act
         var response = await service.StartPlannerWorkflowAsync(603, 10, "PropertyOwner");
@@ -716,5 +718,258 @@ public class Agent1Tests
         // Assert
         Assert.Equal("Running", response.Status);
         Assert.Equal("Agent 1 Complete - Pending Downstream Analysis", response.CurrentStep);
+    }
+}
+
+// =============================================================================
+// PlannerOutputValidator unit tests (same namespace, separate class)
+// =============================================================================
+
+public class PlannerOutputValidatorTests
+{
+    // Builds a fully-valid PlannerOutput that satisfies every rule.
+    private static PlannerOutput ValidOutput(int requestId = 1) => new PlannerOutput
+    {
+        MaintenanceRequestId = requestId,
+        IsSuccess = true,
+        Summary = "Planning coordination completed for request #1.",
+        RelevantContextSummary = "Property: Ocean Breeze. Category: Plumbing.",
+        ResolutionSteps = new List<PlannerResolutionStep>
+        {
+            new PlannerResolutionStep { StepNumber = 1, Title = "Gather Context",     Description = "Validate.",  RecommendedAction = "Prepare." },
+            new PlannerResolutionStep { StepNumber = 2, Title = "Analysis",           Description = "Analyse.",  RecommendedAction = "Pass to Agent 2." },
+            new PlannerResolutionStep { StepNumber = 3, Title = "Technician Match",   Description = "Match.",    RecommendedAction = "Pass to Agent 3." },
+            new PlannerResolutionStep { StepNumber = 4, Title = "Validation",         Description = "Validate.", RecommendedAction = "Prepare approval." }
+        },
+        PlannedAt = DateTime.UtcNow,
+        ErrorMessage = null
+    };
+
+    [Fact]
+    public void PlannerOutputValidator_ValidOutput_ReturnsTrue()
+    {
+        var validator = new PlannerOutputValidator();
+        var result = validator.Validate(ValidOutput(requestId: 42), expectedRequestId: 42, out var errors);
+        Assert.True(result);
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_NullOutput_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var result = validator.Validate(null, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("null"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_EmptySummary_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var output = ValidOutput();
+        output.Summary = "   "; // whitespace only
+        var result = validator.Validate(output, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("Summary"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_EmptyResolutionSteps_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var output = ValidOutput();
+        output.ResolutionSteps = new List<PlannerResolutionStep>(); // empty
+        var result = validator.Validate(output, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("ResolutionSteps"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_RequestIdMismatch_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        // Output says request 1 but workflow expected request 99
+        var result = validator.Validate(ValidOutput(requestId: 1), expectedRequestId: 99, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("does not match"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_SuccessWithErrorMessage_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var output = ValidOutput();
+        output.IsSuccess = true;
+        output.ErrorMessage = "Unexpected error text on a success output"; // contradictory
+        var result = validator.Validate(output, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("ErrorMessage must be null"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_WrongStepCount_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var output = ValidOutput();
+        // Remove one step — only 3 instead of required 4
+        output.ResolutionSteps.RemoveAt(3);
+        var result = validator.Validate(output, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("exactly 4"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_BlankStepTitle_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var output = ValidOutput();
+        output.ResolutionSteps[2].Title = ""; // blank title on step 3
+        var result = validator.Validate(output, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("Title"));
+    }
+
+    [Fact]
+    public void PlannerOutputValidator_DefaultPlannedAt_ReturnsFalse()
+    {
+        var validator = new PlannerOutputValidator();
+        var output = ValidOutput();
+        output.PlannedAt = DateTime.MinValue;
+        var result = validator.Validate(output, expectedRequestId: 1, out var errors);
+        Assert.False(result);
+        Assert.Contains(errors, e => e.Contains("PlannedAt"));
+    }
+
+    // =========================================================================
+    // Integration test: invalid successful PlannerOutput is rejected by the
+    // workflow service, workflow is marked Failed, and Agent 2 is not invoked.
+    // =========================================================================
+
+    /// <summary>
+    /// A test-only subclass of PlannerCoordinatorAgent that returns a structurally
+    /// invalid output with IsSuccess = true (empty Summary and no ResolutionSteps).
+    /// This simulates an agent that technically succeeded but produced malformed output.
+    /// </summary>
+    private class InvalidOutputPlannerAgent : PlannerCoordinatorAgent
+    {
+        public InvalidOutputPlannerAgent(
+            MaintenanceContextTool mct,
+            PropertyContextTool pct) : base(mct, pct) { }
+
+        public override Task<PlannerExecutionResult> CreatePlanAsync(
+            int maintenanceRequestId,
+            CancellationToken cancellationToken = default)
+        {
+            // IsSuccess = true, but Summary is empty and ResolutionSteps is empty —
+            // both violate the PlannerOutput contract and must be caught by the validator.
+            return Task.FromResult(new PlannerExecutionResult
+            {
+                Output = new PlannerOutput
+                {
+                    MaintenanceRequestId = maintenanceRequestId,
+                    IsSuccess = true,
+                    Summary = "",                                         // INVALID
+                    RelevantContextSummary = "Some context",
+                    ResolutionSteps = new List<PlannerResolutionStep>(),  // INVALID
+                    PlannedAt = DateTime.UtcNow,
+                    ErrorMessage = null
+                },
+                ToolExecutions = new List<ToolExecutionMetadata>()
+            });
+        }
+    }
+
+    [Fact]
+    public async Task AgentWorkflow_ValidationFailure_WorkflowMarkedFailed_Agent2NotInvoked()
+    {
+        // Arrange: seed valid data so pre-execution checks all pass.
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase("Agent1_Validator_Integration")
+            .Options;
+        using var db = new AppDbContext(options);
+
+        db.Roles.AddRange(
+            new Role { Id = 1, Name = "Admin" },
+            new Role { Id = 2, Name = "PropertyOwner" },
+            new Role { Id = 3, Name = "Tenant" },
+            new Role { Id = 4, Name = "MaintenanceWorker" });
+
+        var ownerUser  = new User           { Id = 10,  FullName = "Owner",  Email = "o@test.com", RoleId = 2 };
+        var tenantUser = new User           { Id = 20,  FullName = "Tenant", Email = "t@test.com", RoleId = 3 };
+        var owner      = new PropertyOwner  { Id = 100, UserId = ownerUser.Id, User = ownerUser };
+        var property   = new Property       { Id = 200, Name = "Test Property", Address = "1 St", PropertyOwnerId = owner.Id };
+        var unit       = new Unit           { Id = 300, PropertyId = property.Id, UnitLabel = "A-101" };
+        var tenant     = new Tenant         { Id = 400, UserId = tenantUser.Id, FullName = "Tenant", PropertyId = property.Id, UnitId = unit.Id };
+        var tenancy    = new Tenancy        { Id = 500, TenantId = tenant.Id, UnitId = unit.Id, Status = TenancyStatus.Active };
+        var category   = new MaintenanceCategory { Id = 600, Name = "Plumbing" };
+        var request    = new MaintenanceRequest
+        {
+            Id = 901, TenantId = tenant.Id, TenancyId = tenancy.Id,
+            PropertyId = property.Id, UnitId = unit.Id, CategoryId = category.Id,
+            Description = "Leak", RequestType = "NORMAL", Status = "Submitted",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        db.Users.AddRange(ownerUser, tenantUser);
+        db.PropertyOwners.Add(owner);
+        db.Properties.Add(property);
+        db.Units.Add(unit);
+        db.Tenants.Add(tenant);
+        db.Tenancies.Add(tenancy);
+        db.MaintenanceCategories.Add(category);
+        db.MaintenanceRequests.Add(request);
+        db.SaveChanges();
+
+        // Use the invalid-output test agent — returns IsSuccess=true with empty Summary
+        // and empty ResolutionSteps, both of which violate the PlannerOutput contract.
+        var maintTool = new MaintenanceContextTool(db);
+        var propTool  = new PropertyContextTool(db);
+        var badAgent  = new InvalidOutputPlannerAgent(maintTool, propTool);
+
+        // Secondary constructor: no Agent2WorkflowService injected.
+        // This proves Agent 2 cannot be invoked structurally, and the validation
+        // failure path sets IsSuccess=false which also blocks the Agent 2 guard:
+        //   if (plannerOutput.IsSuccess && _agent2WorkflowService is not null)   <-- never reached
+        var service = new AgentWorkflowService(
+            db, badAgent, new PlannerOutputValidator(),
+            NullLogger<AgentWorkflowService>.Instance);
+
+        // Act
+        var response = await service.StartPlannerWorkflowAsync(
+            maintenanceRequestId: 901,
+            currentUserId: 10,
+            currentUserRole: "PropertyOwner");
+
+        // Assert — workflow must be Failed, not Running
+        Assert.Equal("Failed", response.Status);
+
+        // Assert — step 1 must be Failed with the validation error in ErrorSummary
+        Assert.Single(response.Steps);
+        Assert.Equal("Failed", response.Steps[0].Status);
+        Assert.NotNull(response.Steps[0].ErrorSummary);
+        Assert.Contains(
+            "PlannerOutput validation failed",
+            response.Steps[0].ErrorSummary,
+            StringComparison.OrdinalIgnoreCase);
+
+        // Assert — PlannerOutput is NOT surfaced to the caller (only set when IsSuccess=true)
+        Assert.Null(response.PlannerOutput);
+
+        // Assert — the failure is persisted to the database
+        var persistedWorkflow = db.AgentWorkflows.First(w => w.Id == response.Id);
+        Assert.Equal(AgentWorkflowStatus.Failed, persistedWorkflow.Status);
+        Assert.NotNull(persistedWorkflow.FinalOutcome);
+        Assert.Contains(
+            "PlannerOutput validation failed",
+            persistedWorkflow.FinalOutcome,
+            StringComparison.OrdinalIgnoreCase);
+
+        var persistedStep = db.WorkflowSteps.First(s => s.AgentWorkflowId == response.Id);
+        Assert.Equal(WorkflowStepStatus.Failed, persistedStep.Status);
+        Assert.Contains(
+            "PlannerOutput validation failed",
+            persistedStep.ErrorSummary ?? string.Empty,
+            StringComparison.OrdinalIgnoreCase);
     }
 }
