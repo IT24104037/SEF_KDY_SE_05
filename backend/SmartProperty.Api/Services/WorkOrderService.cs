@@ -354,6 +354,81 @@ public class WorkOrderService : IWorkOrderService
         }
     }
 
+    public async Task<WorkOrderResponseDto> UpdateWorkOrderScheduleAsync(
+        int id,
+        UpdateWorkOrderScheduleDto dto,
+        int currentUserId,
+        string currentUserRole)
+    {
+        var workOrder = await _context.WorkOrders
+            .Include(wo => wo.Worker)
+                .ThenInclude(w => w.User)
+            .Include(wo => wo.MaintenanceRequest)
+                .ThenInclude(mr => mr.Property)
+            .Include(wo => wo.MaintenanceRequest)
+                .ThenInclude(mr => mr.Unit)
+            .Include(wo => wo.MaintenanceRequest)
+                .ThenInclude(mr => mr.Tenant)
+                    .ThenInclude(t => t.User)
+            .FirstOrDefaultAsync(wo => wo.Id == id);
+
+        if (workOrder == null)
+        {
+            throw new KeyNotFoundException($"Work order #{id} not found.");
+        }
+
+        if (currentUserRole == "MaintenanceWorker")
+        {
+            var worker = await _context.Workers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(w => w.UserId == currentUserId);
+
+            if (worker == null || workOrder.WorkerId != worker.Id)
+            {
+                throw new UnauthorizedAccessException("You can only schedule work orders assigned to you.");
+            }
+        }
+        else if (currentUserRole != "Admin")
+        {
+            throw new UnauthorizedAccessException("You do not have permission to update the schedule for this work order.");
+        }
+
+        if (workOrder.Status == WorkOrderStatus.Completed || workOrder.Status == WorkOrderStatus.Cancelled)
+        {
+            throw new InvalidOperationException($"Cannot update schedule for a work order in '{workOrder.Status}' state.");
+        }
+
+        if (!workOrder.ScheduledDate.HasValue)
+        {
+            throw new InvalidOperationException("Cannot set visit time for a work order without a scheduled date.");
+        }
+
+        var timeStr = dto?.VisitTime?.Trim();
+        if (string.IsNullOrWhiteSpace(timeStr) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(timeStr, @"^([01][0-9]|2[0-3]):[0-5][0-9]$"))
+        {
+            throw new ArgumentException("Visit time must be provided in valid HH:mm format (e.g., '09:30', '14:00').");
+        }
+
+        var parts = timeStr.Split(':');
+        var hours = int.Parse(parts[0]);
+        var minutes = int.Parse(parts[1]);
+
+        var existingDateOnly = workOrder.ScheduledDate.Value.Date;
+        var combined = existingDateOnly.AddHours(hours).AddMinutes(minutes);
+
+        workOrder.ScheduledDate = DateTime.SpecifyKind(combined, DateTimeKind.Utc);
+        workOrder.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        var analysisResult = await _context.MaintenanceAnalysisResults
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ar => ar.MaintenanceRequestId == workOrder.MaintenanceRequestId);
+
+        return MapToDto(workOrder, analysisResult?.Priority);
+    }
+
     private static WorkOrderResponseDto MapToDto(WorkOrder wo, string? analysisPriority = null)
     {
         var req = wo.MaintenanceRequest;

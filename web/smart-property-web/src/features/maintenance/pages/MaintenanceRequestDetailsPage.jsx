@@ -134,6 +134,27 @@ function MaintenanceRequestDetailsPage() {
     return new Date(value).toLocaleDateString();
   }
 
+  function formatSchedule(value) {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "-";
+
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const year = d.getUTCFullYear();
+    const dateStr = `${day}/${month}/${year}`;
+
+    const hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+
+    if (hours !== 0 || minutes !== 0) {
+      const hh = String(hours).padStart(2, "0");
+      const mm = String(minutes).padStart(2, "0");
+      return `${dateStr}, ${hh}:${mm}`;
+    }
+    return dateStr;
+  }
+
   if (loading) {
     return <p>Loading maintenance request...</p>;
   }
@@ -324,7 +345,7 @@ function MaintenanceRequestDetailsPage() {
             {request.scheduledDate && (
               <p>
                 <strong>Scheduled Visit Date:</strong>{" "}
-                {formatOnlyDate(request.scheduledDate)}
+                {formatSchedule(request.scheduledDate)}
               </p>
             )}
           </div>

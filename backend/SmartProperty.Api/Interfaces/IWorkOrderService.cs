@@ -21,4 +21,10 @@ public interface IWorkOrderService
         UpdateWorkOrderStatusDto dto,
         int currentUserId,
         string currentUserRole);
+
+    Task<WorkOrderResponseDto> UpdateWorkOrderScheduleAsync(
+        int id,
+        UpdateWorkOrderScheduleDto dto,
+        int currentUserId,
+        string currentUserRole);
 }

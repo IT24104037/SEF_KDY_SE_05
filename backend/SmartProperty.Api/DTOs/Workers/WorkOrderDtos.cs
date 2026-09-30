@@ -37,6 +37,11 @@ public class UpdateWorkOrderStatusDto
     public string? CompletionEvidenceUrl { get; set; }
 }
 
+public class UpdateWorkOrderScheduleDto
+{
+    public string VisitTime { get; set; } = string.Empty;
+}
+
 public class WorkOrderListResponseDto
 {
     public List<WorkOrderResponseDto> WorkOrders { get; set; } = new();
