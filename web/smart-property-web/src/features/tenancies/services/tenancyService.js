@@ -37,6 +37,12 @@ const tenancyService = {
 
   endTenancy: (tenancyId, payload = {}) =>
     apiClient.put(`/api/tenancies/${tenancyId}/end`, payload).then((res) => res.data),
+
+getMyProfile: () =>
+  apiClient.get("/api/tenants/me").then((res) => res.data),
+
+updateMyProfile: (payload) =>
+  apiClient.put("/api/tenants/me", payload).then((res) => res.data),
 };
 
 export default tenancyService;
