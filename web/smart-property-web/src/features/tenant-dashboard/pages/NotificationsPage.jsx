@@ -50,14 +50,11 @@ export default function NotificationsPage() {
       return "-";
     }
 
-    return date.toLocaleDateString(
-      "en-GB",
-      {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }
-    );
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
+
+    return `${day}/${month}/${year}`;
   }
 
   function formatScheduledTime(value) {
@@ -69,13 +66,29 @@ export default function NotificationsPage() {
       return "-";
     }
 
-    return date.toLocaleTimeString(
-      [],
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+
+    return `${hours}:${minutes}`;
+  }
+
+  function formatUtcDateTime(value) {
+    if (!value) return "-";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+    const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
   }
 
   if (loading) {
@@ -229,9 +242,11 @@ export default function NotificationsPage() {
 
                 <div style={styles.timeStamp}>
                   Decision recorded:{" "}
-                  {new Date(
-                    notification.decidedAt
-                  ).toLocaleString()}
+                  {formatUtcDateTime(
+                    approved && notification.scheduledDateTime
+                      ? notification.scheduledDateTime
+                      : notification.decidedAt
+                  )}
                 </div>
               </div>
             );
