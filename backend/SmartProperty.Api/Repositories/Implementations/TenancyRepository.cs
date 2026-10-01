@@ -49,7 +49,10 @@ public class TenancyRepository : ITenancyRepository
         int ownerUserId, string? search, bool? isActive, int? propertyId, int? unitId,
         string sortBy, bool descending, int page, int pageSize)
     {
-        var query = _context.Tenants.Include(t => t.Property).Include(t => t.Unit)
+        var query = _context.Tenants
+            .AsNoTracking()
+            .Include(t => t.Property)
+            .Include(t => t.Unit)
             .Where(t => t.Property.PropertyOwner!.UserId == ownerUserId &&
                 t.Property.VerificationStatus == SmartProperty.Api.Entities.Property.PropertyVerificationStatus.Approved &&
                 !t.Property.IsArchived && !t.Unit.IsArchived && !t.Unit.IsDeleted);
@@ -136,6 +139,7 @@ public async Task<bool> MobileNumberExistsForOtherTenantAsync(
 
     public async Task<Tenancy?> GetActiveTenancyByUserIdAsync(int userId) =>
     await _context.Tenancies
+        .AsNoTracking()
         .Include(t => t.Tenant)
             .ThenInclude(tenant => tenant!.Unit)
         .FirstOrDefaultAsync(t =>
@@ -144,6 +148,7 @@ public async Task<bool> MobileNumberExistsForOtherTenantAsync(
 
     public async Task<List<Tenancy>> GetTenancyHistoryByUserIdAsync(int userId) =>
     await _context.Tenancies
+        .AsNoTracking()
         .Include(t => t.Tenant)
             .ThenInclude(tenant => tenant!.Unit)
         .Where(t => t.Tenant!.UserId == userId)
