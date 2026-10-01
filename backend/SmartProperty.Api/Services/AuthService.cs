@@ -32,12 +32,29 @@ public class AuthService : IAuthService
     {
         string identifier = request.Identifier.Trim();
 
-        var user = await _context.Users
+        var normalizedIdentifier =
+            identifier.ToLowerInvariant();
+
+        var usersQuery = _context.Users
+            .AsNoTracking()
             .Include(u => u.Role)
-            .FirstOrDefaultAsync(u =>
-                (u.Email != null &&
-                 u.Email.ToLower() == identifier.ToLower()) ||
-                u.Mobile == identifier);
+            .AsQueryable();
+
+        User? user;
+
+        if (identifier.Contains('@'))
+        {
+            user = await usersQuery
+                .FirstOrDefaultAsync(u =>
+                    u.Email != null &&
+                    u.Email.ToLower() == normalizedIdentifier);
+        }
+        else
+        {
+            user = await usersQuery
+                .FirstOrDefaultAsync(u =>
+                    u.Mobile == identifier);
+        }
 
         if (user == null || !user.IsActive)
         {

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import ProtectedRoute from "./ProtectedRoute";
@@ -7,62 +8,199 @@ import OwnerVerificationRoute from "./OwnerVerificationRoute";
 import OwnerLayout from "../layouts/OwnerLayout";
 import TenantLayout from "../layouts/TenantLayout";
 import LoginPage from "../features/auth/pages/LoginPage";
-import OwnerRegisterPage from "../features/auth/pages/OwnerRegisterPage";
 import AdminLayout from "../layouts/AdminLayout";
 
-import AdminHome from "../features/admin/pages/AdminHome";
-import UserManagementPage from "../features/admin/pages/UserManagementPage";
-import AdminOwnerVerificationPage from "../features/admin/pages/OwnerVerificationPage";
-import OwnerProfileRequestsPage from "../features/admin/pages/OwnerProfileRequestsPage";
-import PropertyVerificationPage from "../features/admin/pages/PropertyVerificationPage";
-import AiWorkflowPage from "../features/admin/pages/AiWorkflowPage";
-import AdminMaintenanceRequestsPage from "../features/admin/pages/MaintenanceRequestsPage";
-import MaintenanceCategoriesPage from "../features/admin/pages/MaintenanceCategoriesPage";
-import EmergencyRequestsPage from "../features/admin/pages/EmergencyRequestsPage";
-import MaintenanceHistoryPage from "../features/maintenance/pages/MaintenanceHistoryPage";
+const OwnerRegisterPage = lazy(() =>
+  import("../features/auth/pages/OwnerRegisterPage")
+);
 
-import WorkerRegistrationPage from "../features/workers/pages/WorkerRegistrationPage";
-import WorkerVerificationPage from "../features/workers/pages/WorkerVerificationPage";
-import WorkerDashboardPage from "../features/workers/pages/WorkerDashboardPage";
-import WorkOrdersPage from "../features/workers/pages/WorkOrdersPage";
-import WorkOrderDetailsPage from "../features/workers/pages/WorkOrderDetailsPage";
-import ExternalMaintenancePage from "../features/workers/pages/ExternalMaintenancePage";
-import WorkersPage from "../features/workers/pages/WorkersPage";
+const TenantActivationPage = lazy(() =>
+  import("../features/tenancies/pages/TenantActivationPage")
+);
 
-import OwnerDashboardPage from "../features/properties/pages/OwnerDashboardPage";
-import OwnerVerificationPage from "../features/properties/pages/OwnerVerificationPage";
-import MyPropertiesPage from "../features/properties/pages/MyPropertiesPage";
-import AddPropertyPage from "../features/properties/pages/AddPropertyPage";
-import UnitsPage from "../features/properties/pages/UnitsPage";
-import OwnerProfilePage from "../features/properties/pages/OwnerProfilePage";
+const WorkerRegistrationPage = lazy(() =>
+  import("../features/workers/pages/WorkerRegistrationPage")
+);
 
-import ApprovalPage from "../features/ai-workflow/pages/ApprovalPage";
-import WorkflowDetailsPage from "../features/ai-workflow/pages/WorkflowDetailsPage";
-import WorkflowHistoryPage from "../features/ai-workflow/pages/WorkflowHistoryPage";
-import ReportMaintenancePage from "../features/maintenance/pages/ReportMaintenancePage";
-import ReportEmergencyPage from "../features/maintenance/pages/ReportEmergencyPage";
-import MyMaintenanceRequestsPage from "../features/maintenance/pages/MyMaintenanceRequestsPage";
-import TenantMaintenanceDetailsPage from "../features/maintenance/pages/TenantMaintenanceDetailsPage";
-import OwnerMaintenanceRequestsPage from "../features/maintenance/pages/OwnerMaintenanceRequestsPage";
-import OwnerEmergencyRequestsPage from "../features/maintenance/pages/OwnerEmergencyRequestsPage";
-import MaintenanceRequestDetailsPage from "../features/maintenance/pages/MaintenanceRequestDetailsPage";
+const AdminHome = lazy(() =>
+  import("../features/admin/pages/AdminHome")
+);
 
-import TenantListPage from "../features/tenancies/pages/TenantListPage";
-import AddTenantPage from "../features/tenancies/pages/AddTenantPage";
-import TenantDetailsPage from "../features/tenancies/pages/TenantDetailsPage";
-import TenantActivationPage from "../features/tenancies/pages/TenantActivationPage";
-import CurrentTenanciesPage from "../features/tenancies/pages/CurrentTenanciesPage";
-import TenancyHistoryPage from "../features/tenancies/pages/TenancyHistoryPage";
+const UserManagementPage = lazy(() =>
+  import("../features/admin/pages/UserManagementPage")
+);
+
+const AdminOwnerVerificationPage = lazy(() =>
+  import("../features/admin/pages/OwnerVerificationPage")
+);
+
+const OwnerProfileRequestsPage = lazy(() =>
+  import("../features/admin/pages/OwnerProfileRequestsPage")
+);
+
+const PropertyVerificationPage = lazy(() =>
+  import("../features/admin/pages/PropertyVerificationPage")
+);
+
+const AiWorkflowPage = lazy(() =>
+  import("../features/admin/pages/AiWorkflowPage")
+);
+
+const AdminMaintenanceRequestsPage = lazy(() =>
+  import("../features/admin/pages/MaintenanceRequestsPage")
+);
+
+const MaintenanceCategoriesPage = lazy(() =>
+  import("../features/admin/pages/MaintenanceCategoriesPage")
+);
+
+const EmergencyRequestsPage = lazy(() =>
+  import("../features/admin/pages/EmergencyRequestsPage")
+);
+
+const MaintenanceHistoryPage = lazy(() =>
+  import("../features/maintenance/pages/MaintenanceHistoryPage")
+);
+
+const WorkerVerificationPage = lazy(() =>
+  import("../features/workers/pages/WorkerVerificationPage")
+);
+
+const WorkerDashboardPage = lazy(() =>
+  import("../features/workers/pages/WorkerDashboardPage")
+);
+
+const WorkOrdersPage = lazy(() =>
+  import("../features/workers/pages/WorkOrdersPage")
+);
+
+const WorkOrderDetailsPage = lazy(() =>
+  import("../features/workers/pages/WorkOrderDetailsPage")
+);
+
+const ExternalMaintenancePage = lazy(() =>
+  import("../features/workers/pages/ExternalMaintenancePage")
+);
+
+const WorkersPage = lazy(() =>
+  import("../features/workers/pages/WorkersPage")
+);
+
+const OwnerDashboardPage = lazy(() =>
+  import("../features/properties/pages/OwnerDashboardPage")
+);
+
+const OwnerVerificationPage = lazy(() =>
+  import("../features/properties/pages/OwnerVerificationPage")
+);
+
+const MyPropertiesPage = lazy(() =>
+  import("../features/properties/pages/MyPropertiesPage")
+);
+
+const AddPropertyPage = lazy(() =>
+  import("../features/properties/pages/AddPropertyPage")
+);
+
+const UnitsPage = lazy(() =>
+  import("../features/properties/pages/UnitsPage")
+);
+
+const OwnerProfilePage = lazy(() =>
+  import("../features/properties/pages/OwnerProfilePage")
+);
+
+const ApprovalPage = lazy(() =>
+  import("../features/ai-workflow/pages/ApprovalPage")
+);
+
+const WorkflowDetailsPage = lazy(() =>
+  import("../features/ai-workflow/pages/WorkflowDetailsPage")
+);
+
+const WorkflowHistoryPage = lazy(() =>
+  import("../features/ai-workflow/pages/WorkflowHistoryPage")
+);
+
+const ReportMaintenancePage = lazy(() =>
+  import("../features/maintenance/pages/ReportMaintenancePage")
+);
+
+const ReportEmergencyPage = lazy(() =>
+  import("../features/maintenance/pages/ReportEmergencyPage")
+);
+
+const MyMaintenanceRequestsPage = lazy(() =>
+  import("../features/maintenance/pages/MyMaintenanceRequestsPage")
+);
+
+const TenantMaintenanceDetailsPage = lazy(() =>
+  import("../features/maintenance/pages/TenantMaintenanceDetailsPage")
+);
+
+const OwnerMaintenanceRequestsPage = lazy(() =>
+  import("../features/maintenance/pages/OwnerMaintenanceRequestsPage")
+);
+
+const OwnerEmergencyRequestsPage = lazy(() =>
+  import("../features/maintenance/pages/OwnerEmergencyRequestsPage")
+);
+
+const MaintenanceRequestDetailsPage = lazy(() =>
+  import("../features/maintenance/pages/MaintenanceRequestDetailsPage")
+);
+
+const TenantListPage = lazy(() =>
+  import("../features/tenancies/pages/TenantListPage")
+);
+
+const AddTenantPage = lazy(() =>
+  import("../features/tenancies/pages/AddTenantPage")
+);
+
+const TenantDetailsPage = lazy(() =>
+  import("../features/tenancies/pages/TenantDetailsPage")
+);
+
+const CurrentTenanciesPage = lazy(() =>
+  import("../features/tenancies/pages/CurrentTenanciesPage")
+);
+
+const TenancyHistoryPage = lazy(() =>
+  import("../features/tenancies/pages/TenancyHistoryPage")
+);
+
+const MyTenancyPage = lazy(() =>
+  import("../features/tenant-dashboard/pages/MyTenancyPage")
+);
+
+const TenantTenancyHistoryPage = lazy(() =>
+  import("../features/tenant-dashboard/pages/TenantTenancyHistoryPage")
+);
+
+const ProfilePage = lazy(() =>
+  import("../features/tenant-dashboard/pages/ProfilePage")
+);
+
+const NotificationsPage = lazy(() =>
+  import("../features/tenant-dashboard/pages/NotificationsPage")
+);
+
+
 //import Agent2TextAnalysisPage from "../features/ai-workflow/pages/Agent2TextAnalysisPage";
 
-import MyTenancyPage from "../features/tenant-dashboard/pages/MyTenancyPage";
-import TenantTenancyHistoryPage from "../features/tenant-dashboard/pages/TenantTenancyHistoryPage";
-import ProfilePage from "../features/tenant-dashboard/pages/ProfilePage";
-import NotificationsPage from "../features/tenant-dashboard/pages/NotificationsPage";
+
 
 export default function AppRoutes() {
   return (
-    <Routes>
+    <Suspense
+      fallback={
+        <div style={{ padding: 24 }}>
+          Loading page...
+        </div>
+      }
+    >
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register-owner" element={<OwnerRegisterPage />} />
       <Route path="/activate-tenant" element={<TenantActivationPage />} />
@@ -157,5 +295,6 @@ export default function AppRoutes() {
         <Route path="/unauthorized" element={<p style={{ padding: 24 }}>You don't have access to this page.</p>} />
         <Route path="*" element={<p style={{ padding: 24 }}>Page not found.</p>} />
     </Routes>
+    </Suspense>
   );
 }

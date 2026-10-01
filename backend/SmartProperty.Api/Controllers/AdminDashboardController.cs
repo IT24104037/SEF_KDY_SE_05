@@ -23,18 +23,29 @@ public class AdminDashboardController : ControllerBase
         var totalUsers =
             await _context.Users.CountAsync();
 
+      var requestCounts =
+    await _context.MaintenanceRequests
+        .GroupBy(x => 1)
+        .Select(group => new
+        {
+            MaintenanceRequests =
+                group.Count(x =>
+                    x.RequestType == "NORMAL"),
+
+            EmergencyRequests =
+                group.Count(x =>
+                    x.RequestType == "EMERGENCY")
+        })
+        .FirstOrDefaultAsync();
+
         var maintenanceRequests =
-            await _context.MaintenanceRequests
-                .CountAsync(x =>
-                    x.RequestType == "NORMAL");
+            requestCounts?.MaintenanceRequests ?? 0;
 
         var emergencyRequests =
-            await _context.MaintenanceRequests
-                .CountAsync(x =>
-                    x.RequestType == "EMERGENCY");
+            requestCounts?.EmergencyRequests ?? 0;
 
-        // Agent workflow is not implemented yet.
-        var activeAiWorkflows = 0;
+                // Agent workflow is not implemented yet.
+                var activeAiWorkflows = 0;
 
         return Ok(new
         {

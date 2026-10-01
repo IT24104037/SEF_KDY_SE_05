@@ -9,6 +9,7 @@ export default function TenantListPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isActive, setIsActive] = useState(""); // "" | "true" | "false"
   const [propertyId, setPropertyId] = useState("");
   const [unitId, setUnitId] = useState("");
@@ -18,10 +19,23 @@ export default function TenantListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+
+
+useEffect(() => {
+  const timer = window.setTimeout(() => {
+    setPage(1);
+    setDebouncedSearch(search);
+  }, 350);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [search]);
+  
   useEffect(() => {
     fetchTenants();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, isActive, propertyId, unitId, sortBy, descending, page]);
+  }, [debouncedSearch, isActive, propertyId, unitId, sortBy, descending, page]);
 
   useEffect(() => {
     tenancyService.getOptions().then(setOptions).catch(() => {});
@@ -32,7 +46,7 @@ export default function TenantListPage() {
     setErrorMessage("");
     try {
       const result = await tenancyService.getTenants({
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         isActive: isActive === "" ? undefined : isActive === "true",
         propertyId: propertyId || undefined,
         unitId: unitId || undefined,
@@ -68,7 +82,6 @@ export default function TenantListPage() {
           placeholder="Search name, mobile, email..."
           value={search}
           onChange={(e) => {
-            setPage(1);
             setSearch(e.target.value);
           }}
           style={{ ...inputStyle, minWidth: 220 }}

@@ -1043,85 +1043,118 @@ public async Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
     int userId)
 {
     var owner = await _context.PropertyOwners
-        .FirstOrDefaultAsync(po => po.UserId == userId);
+        .AsNoTracking()
+        .FirstOrDefaultAsync(
+            po => po.UserId == userId);
 
     if (owner == null)
     {
         return null;
     }
 
-    if (owner.VerificationStatus != OwnerVerificationStatus.Verified)
+    if (owner.VerificationStatus !=
+        OwnerVerificationStatus.Verified)
     {
         return null;
     }
 
-    var totalProperties = await _context.Properties
-        .CountAsync(p => p.PropertyOwnerId == owner.Id);
+    // ---------------------------------------------------------
+    // PROPERTY COUNTS - ONE QUERY
+    // ---------------------------------------------------------
 
-    var activeProperties = await _context.Properties
-        .CountAsync(p =>
-            p.PropertyOwnerId == owner.Id &&
-            p.VerificationStatus == PropertyVerificationStatus.Approved &&
-            !p.IsArchived);
+    var propertyStats = await _context.Properties
+        .Where(p =>
+            p.PropertyOwnerId == owner.Id)
+        .GroupBy(p => 1)
+        .Select(group => new
+        {
+            TotalProperties =
+                group.Count(),
 
-    var archivedProperties = await _context.Properties
-        .CountAsync(p =>
-            p.PropertyOwnerId == owner.Id &&
-            p.IsArchived);
+            ActiveProperties =
+                group.Count(p =>
+                    p.VerificationStatus ==
+                        PropertyVerificationStatus.Approved &&
+                    !p.IsArchived),
 
-    var propertyIds = await _context.Properties
-        .Where(p => p.PropertyOwnerId == owner.Id &&
-            p.VerificationStatus == PropertyVerificationStatus.Approved &&
-            !p.IsArchived)
-        .Select(p => p.Id)
-        .ToListAsync();
+            ArchivedProperties =
+                group.Count(p =>
+                    p.IsArchived)
+        })
+        .FirstOrDefaultAsync();
 
-    var totalUnits = await _context.Units
-        .CountAsync(u =>
-            propertyIds.Contains(u.PropertyId) &&
-            !u.IsDeleted);
+    var totalProperties =
+        propertyStats?.TotalProperties ?? 0;
 
-    var activeUnits = await _context.Units
-        .CountAsync(u =>
-            propertyIds.Contains(u.PropertyId) &&
-            !u.IsArchived &&
-            !u.IsDeleted);
+    var activeProperties =
+        propertyStats?.ActiveProperties ?? 0;
 
-    var archivedUnits = await _context.Units
-        .CountAsync(u =>
-            propertyIds.Contains(u.PropertyId) &&
-            u.IsArchived &&
-            !u.IsDeleted);
+    var archivedProperties =
+        propertyStats?.ArchivedProperties ?? 0;
 
-    var occupiedUnitIds = await _context.Tenancies
-        .Where(t =>
-            t.Status == Entities.Tenancy.TenancyStatus.Active &&
-            _context.Units.Any(u =>
-                u.Id == t.UnitId &&
-                propertyIds.Contains(u.PropertyId) &&
-                !u.IsArchived &&
-                !u.IsDeleted))
-        .Select(t => t.UnitId)
-        .Distinct()
-        .ToListAsync();
 
-    var occupiedUnits = await _context.Units
-        .CountAsync(u =>
-            occupiedUnitIds.Contains(u.Id) &&
-            propertyIds.Contains(u.PropertyId) &&
-            !u.IsArchived &&
-            !u.IsDeleted);
+    // ---------------------------------------------------------
+    // UNIT COUNTS - ONE QUERY
+    // ---------------------------------------------------------
 
-    var vacantUnits = activeUnits - occupiedUnits;
+    var unitStats = await _context.Units
+        .Where(u =>
+            u.Property != null &&
+            u.Property.PropertyOwnerId == owner.Id &&
+            u.Property.VerificationStatus ==
+                PropertyVerificationStatus.Approved &&
+            !u.Property.IsArchived &&
+            !u.IsDeleted)
+        .GroupBy(u => 1)
+        .Select(group => new
+        {
+            TotalUnits =
+                group.Count(),
+
+            ActiveUnits =
+                group.Count(u =>
+                    !u.IsArchived),
+
+            ArchivedUnits =
+                group.Count(u =>
+                    u.IsArchived),
+
+            OccupiedUnits =
+                group.Count(u =>
+                    !u.IsArchived &&
+                    _context.Tenancies.Any(t =>
+                        t.UnitId == u.Id &&
+                        t.Status ==
+                            Entities.Tenancy
+                                .TenancyStatus.Active))
+        })
+        .FirstOrDefaultAsync();
+
+    var totalUnits =
+        unitStats?.TotalUnits ?? 0;
+
+    var activeUnits =
+        unitStats?.ActiveUnits ?? 0;
+
+    var archivedUnits =
+        unitStats?.ArchivedUnits ?? 0;
+
+    var occupiedUnits =
+        unitStats?.OccupiedUnits ?? 0;
+
+    var vacantUnits =
+        activeUnits - occupiedUnits;
 
     return new OwnerDashboardDto
     {
         TotalProperties = totalProperties,
         ActiveProperties = activeProperties,
         ArchivedProperties = archivedProperties,
+
         TotalUnits = totalUnits,
         ActiveUnits = activeUnits,
         ArchivedUnits = archivedUnits,
+
         OccupiedUnits = occupiedUnits,
         VacantUnits = vacantUnits
     };
