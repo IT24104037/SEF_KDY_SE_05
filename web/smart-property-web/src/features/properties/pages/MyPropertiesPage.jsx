@@ -254,7 +254,7 @@ function MyPropertiesPage() {
   }
 
   return (
-    <div>
+    <div style={pageStyles.page}>
       <div
         style={{
           display: "flex",
@@ -263,7 +263,7 @@ function MyPropertiesPage() {
           marginBottom: "6px",
         }}
       >
-        <h1 style={{ margin: 0, color: "#17324D", fontSize: "24px", fontWeight: "700" }}>My Properties</h1>
+        <h1 style={pageStyles.title}>My Properties</h1>
 
         <button
           type="button"
@@ -274,7 +274,7 @@ function MyPropertiesPage() {
         </button>
       </div>
 
-      <p style={{ color: "#6B7280", marginBottom: "24px", marginTop: "4px" }}>
+      <p style={pageStyles.subtitle}>
         Manage your properties and keep their information up to date.
       </p>
 
@@ -312,11 +312,11 @@ function MyPropertiesPage() {
         <section
           style={{
             border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            padding: "24px",
+            borderRadius: "12px",
+            padding: "clamp(18px, 3vw, 28px)",
             marginBottom: "30px",
             backgroundColor: "#ffffff",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
           }}
         >
           <h2>
@@ -600,17 +600,17 @@ function MyPropertiesPage() {
 
       {/* Active Properties */}
       <section>
-        <h2 style={{ color: "#17324D", fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>Property List</h2>
+        <h2 style={pageStyles.sectionTitle}>Property List</h2>
 
         {/* Search, Filter, and Sort Controls */}
         <div
           style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            padding: "16px 20px",
+            border: "1px solid #e2e7e9",
+            borderRadius: "10px",
+            padding: "18px 20px",
             marginBottom: "24px",
             backgroundColor: "#ffffff",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
           }}
         >
           <form onSubmit={handleFilterSubmit} style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "flex-end" }}>
@@ -627,8 +627,8 @@ function MyPropertiesPage() {
                   width: "100%",
                   height: "38px",
                   padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
                   boxSizing: "border-box",
                   backgroundColor: "#ffffff",
                 }}
@@ -648,8 +648,8 @@ function MyPropertiesPage() {
                   width: "100%",
                   height: "38px",
                   padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
                   boxSizing: "border-box",
                   backgroundColor: "#ffffff",
                 }}
@@ -670,8 +670,8 @@ function MyPropertiesPage() {
                   width: "100%",
                   height: "38px",
                   padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
                   boxSizing: "border-box",
                   backgroundColor: "#ffffff",
                 }}
@@ -694,8 +694,8 @@ function MyPropertiesPage() {
                   width: "100%",
                   height: "38px",
                   padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
                   boxSizing: "border-box",
                   backgroundColor: "#ffffff",
                 }}
@@ -718,8 +718,8 @@ function MyPropertiesPage() {
                   width: "100%",
                   height: "38px",
                   padding: "0 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
                   boxSizing: "border-box",
                   backgroundColor: "#ffffff",
                 }}
@@ -757,11 +757,11 @@ function MyPropertiesPage() {
               <div
                 key={property.id}
                 style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
+                  border: "1px solid #e2e7e9",
+                  borderRadius: "12px",
                   padding: "20px",
                   backgroundColor: "#ffffff",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
                 }}
               >
                 <h3>{property.name}</h3>
@@ -851,8 +851,8 @@ function MyPropertiesPage() {
               alignItems: "center",
               marginTop: "20px",
               padding: "12px 16px",
-              border: "1px solid #e5e7eb",
-              borderRadius: "8px",
+              border: "1px solid #e2e7e9",
+              borderRadius: "10px",
               backgroundColor: "#ffffff",
             }}
           >
@@ -884,7 +884,7 @@ function MyPropertiesPage() {
 
       {/* Archived Properties */}
       <section style={{ marginTop: "40px" }}>
-        <h2 style={{ color: "#17324D", fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>Archived Properties</h2>
+        <h2 style={pageStyles.sectionTitle}>Archived Properties</h2>
 
         {loading ? (
           <p>Loading archived properties...</p>
@@ -903,11 +903,11 @@ function MyPropertiesPage() {
               <div
                 key={property.id}
                 style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
+                  border: "1px solid #e2e7e9",
+                  borderRadius: "12px",
                   padding: "20px",
                   backgroundColor: "#ffffff",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
                 }}
               >
                 <h3>{property.name}</h3>
@@ -951,27 +951,53 @@ function MyPropertiesPage() {
 
 export default MyPropertiesPage;
 
+const pageStyles = {
+  page: {
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+  title: {
+    margin: 0,
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
+  },
+  subtitle: {
+    color: "#64748b",
+    margin: "4px 0 24px",
+    fontSize: "14px",
+    lineHeight: 1.6,
+  },
+  sectionTitle: {
+    color: "#172033",
+    fontSize: "18px",
+    fontWeight: 700,
+    margin: "0 0 16px",
+  },
+};
+
 function formatVerificationStatus(status) {
   return status === "UnderReview" ? "Under Review" : status;
 }
 
 const btnStyles = {
   primary: {
-    backgroundColor: "#1f8a8a",
+    backgroundColor: "#0f766e",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "8px 14px",
+    borderRadius: "8px",
+    padding: "9px 15px",
     cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "500",
+    fontSize: "13px",
+    fontWeight: 650,
+    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
   },
   primaryDisabled: {
     backgroundColor: "#a3bfbf",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "8px 14px",
+    borderRadius: "8px",
+    padding: "9px 15px",
     cursor: "not-allowed",
     fontSize: "14px",
     fontWeight: "500",
@@ -980,8 +1006,8 @@ const btnStyles = {
     backgroundColor: "transparent",
     color: "#374151",
     border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    padding: "8px 14px",
+    borderRadius: "8px",
+    padding: "9px 15px",
     cursor: "pointer",
     fontSize: "14px",
   },
@@ -989,8 +1015,8 @@ const btnStyles = {
     backgroundColor: "#f59e0b",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "8px 14px",
+    borderRadius: "8px",
+    padding: "9px 15px",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: "500",

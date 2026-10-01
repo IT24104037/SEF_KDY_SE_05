@@ -99,23 +99,23 @@ function MaintenanceRequestDetailsPage() {
   }
 
   if (loading) {
-    return <p>Loading maintenance request...</p>;
+    return <p style={styles.loading}>Loading maintenance request...</p>;
   }
 
   if (error && !request) {
-    return <p style={{ color: "red" }}>{error}</p>;
+    return <p style={styles.errorMessage}>{error}</p>;
   }
 
   if (!request) {
-    return <p>Maintenance request not found.</p>;
+    return <p style={styles.loading}>Maintenance request not found.</p>;
   }
 
   const isEmergency =
     request.requestType === "EMERGENCY";
 
   return (
-    <div>
-      <h1>
+    <div style={{ ...styles.page, "--role-accent": sessionStorage.getItem("role") === "PropertyOwner" ? "#0f766e" : "#5145cd" }}>
+      <h1 style={{ ...styles.pageTitle, color: isEmergency ? "#b91c1c" : "var(--role-accent, #5145cd)" }}>
         {isEmergency
           ? `Emergency Request #${request.id}`
           : `Maintenance Request #${request.id}`}
@@ -313,7 +313,7 @@ function MaintenanceRequestDetailsPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <h2>AI Maintenance Planning (Agent 1 - Planner & Coordinator)</h2>
           {aiWorkflow && (
-            <span style={{ backgroundColor: "#e0e7ff", color: "#3730a3", fontSize: "12px", fontWeight: "600", padding: "4px 10px", borderRadius: "6px" }}>
+            <span style={{ backgroundColor: "color-mix(in srgb, var(--role-accent, #5145cd) 10%, white)", color: "var(--role-accent, #5145cd)", fontSize: "12px", fontWeight: "600", padding: "4px 10px", borderRadius: "999px" }}>
               Status: {aiWorkflow.status}
             </span>
           )}
@@ -337,7 +337,7 @@ function MaintenanceRequestDetailsPage() {
             <div style={{ marginTop: "16px" }}>
               <button
                 type="button"
-                style={{ backgroundColor: "#4f46e5", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+                style={{ backgroundColor: "var(--role-accent, #5145cd)", color: "#ffffff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
                 onClick={() => navigate(`/owner/ai-workflow/${aiWorkflow.id}`)}
               >
                 View Full AI Planning Details →
@@ -352,7 +352,7 @@ function MaintenanceRequestDetailsPage() {
             <div style={{ marginTop: "12px" }}>
               <button
                 type="button"
-                style={{ backgroundColor: "#4f46e5", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+                style={{ backgroundColor: "var(--role-accent, #5145cd)", color: "#ffffff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
                 onClick={handleStartPlanner}
                 disabled={startingPlanner}
               >
@@ -411,27 +411,13 @@ function MaintenanceRequestDetailsPage() {
                   </th>
                 </tr>
               </thead>
-
               <tbody>
                 {history.map((item) => (
                   <tr key={item.id}>
-                    <td style={styles.td}>
-                      {item.oldStatus || "-"}
-                    </td>
-
-                    <td style={styles.td}>
-                      {item.newStatus}
-                    </td>
-
-                    <td style={styles.td}>
-                      {item.note || "-"}
-                    </td>
-
-                    <td style={styles.td}>
-                      {formatDate(
-                        item.changedAt
-                      )}
-                    </td>
+                    <td style={styles.td}>{item.oldStatus || "-"}</td>
+                    <td style={styles.td}>{item.newStatus}</td>
+                    <td style={styles.td}>{item.note || "-"}</td>
+                    <td style={styles.td}>{formatDate(item.changedAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -444,10 +430,13 @@ function MaintenanceRequestDetailsPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  pageTitle: { margin: "0 0 20px", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  loading: { color: "#64748b", padding: "12px 0" },
   grid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(300px, 1fr))",
+      "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
     gap: "20px",
     marginBottom: "20px",
   },
@@ -455,9 +444,10 @@ const styles = {
   card: {
     backgroundColor: "#ffffff",
     padding: "22px",
-    borderRadius: "10px",
+    borderRadius: "12px",
     marginBottom: "20px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #e2e7e9",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   images: {
@@ -474,7 +464,7 @@ const styles = {
   },
 
   helpText: {
-    color: "#6b7280",
+    color: "#64748b",
     lineHeight: "1.6",
   },
 
@@ -508,9 +498,9 @@ const styles = {
   cancelButton: {
     padding: "10px 22px",
     border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    borderRadius: "8px",
     backgroundColor: "#ffffff",
-    color: "#374151",
+    color: "#334155",
     cursor: "pointer",
   },
 
@@ -529,22 +519,24 @@ const styles = {
     width: "100%",
     minHeight: "110px",
     padding: "12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     resize: "vertical",
     boxSizing: "border-box",
   },
 
   approvedBox: {
     padding: "16px",
-    backgroundColor: "#dcfce7",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
     color: "#166534",
     borderRadius: "8px",
   },
 
   rejectedBox: {
     padding: "16px",
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
     borderRadius: "8px",
   },
@@ -579,29 +571,36 @@ const styles = {
 
   th: {
     textAlign: "left",
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
-    backgroundColor: "#f9fafb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #e2e7e9",
+    backgroundColor: "#f3f5f6",
+    color: "#526176",
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   td: {
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: 13,
   },
 
   successMessage: {
     padding: "12px",
-    backgroundColor: "#dcfce7",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
     color: "#166534",
-    borderRadius: "7px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 
   errorMessage: {
     padding: "12px",
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
-    borderRadius: "7px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 };

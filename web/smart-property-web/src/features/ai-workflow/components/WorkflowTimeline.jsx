@@ -4,8 +4,8 @@ import AgentStepCard from "./AgentStepCard";
 export default function WorkflowTimeline({ steps = [] }) {
   if (!steps || steps.length === 0) {
     return (
-      <div style={styles.emptyBox}>
-        <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>
+          <div style={styles.emptyBox}>
+        <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
           No workflow steps have been executed yet.
         </p>
       </div>
@@ -28,7 +28,7 @@ export default function WorkflowTimeline({ steps = [] }) {
                     step.status === "Completed"
                       ? "#10b981"
                       : step.status === "Running"
-                      ? "#3b82f6"
+                      ? "var(--role-accent, #5145cd)"
                       : step.status === "Failed"
                       ? "#ef4444"
                       : "#9ca3af",
@@ -53,17 +53,18 @@ const styles = {
   },
   title: {
     fontSize: "18px",
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: 700,
+    color: "#172033",
     marginBottom: "16px",
   },
   emptyBox: {
-    backgroundColor: "#f9fafb",
-    border: "1px border-dashed #d1d5db",
-    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+    border: "1px dashed #cbd5e1",
+    borderRadius: "10px",
     padding: "24px",
     textAlign: "center",
     marginTop: "16px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.035)",
   },
   timeline: {
     display: "flex",

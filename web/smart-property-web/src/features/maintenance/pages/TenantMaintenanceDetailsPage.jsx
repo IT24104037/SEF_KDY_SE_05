@@ -149,7 +149,7 @@ function TenantMaintenanceDetailsPage() {
 
         <div style={styles.headingRow}>
           <div>
-            <h1>
+            <h1 style={styles.title}>
               Maintenance Request #{request.id}
             </h1>
 
@@ -350,12 +350,14 @@ function TenantMaintenanceDetailsPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#f4f6f8",
-    padding: "40px 20px",
+    backgroundColor: "#f3f5f6",
+    padding: "clamp(20px, 4vw, 40px)",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   container: {
-    maxWidth: "1000px",
+    maxWidth: "1100px",
     margin: "0 auto",
   },
 
@@ -366,6 +368,7 @@ const styles = {
     padding: 0,
     marginBottom: "18px",
     fontWeight: "600",
+    color: "#0369a1",
   },
 
   headingRow: {
@@ -378,28 +381,35 @@ const styles = {
   },
 
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
+    fontSize: 14,
   },
+
+  title: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
 
   statusBox: {
     backgroundColor: "#ffffff",
     padding: "10px 18px",
-    borderRadius: "20px",
+    border: "1px solid #bfdbfe",
+    borderRadius: "999px",
     fontWeight: "600",
+    color: "#0369a1",
   },
 
   grid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(300px, 1fr))",
+      "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
     gap: "20px",
   },
 
   card: {
     backgroundColor: "#ffffff",
     padding: "22px",
-    borderRadius: "10px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
     marginBottom: "20px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   images: {
@@ -419,8 +429,8 @@ const styles = {
   cancelButton: {
     padding: "10px 16px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#b42318",
+    borderRadius: "8px",
+    backgroundColor: "#b91c1c",
     color: "#ffffff",
     cursor: "pointer",
   },
@@ -431,12 +441,12 @@ const styles = {
   },
 
   historyItem: {
-    borderBottom: "1px solid #e5e7eb",
+    borderBottom: "1px solid #edf1f3",
     paddingBottom: "12px",
   },
 
   historyDate: {
-    color: "#6b7280",
+    color: "#64748b",
     fontSize: "14px",
     marginTop: "4px",
   },
@@ -446,18 +456,20 @@ const styles = {
   },
 
   success: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
     color: "#166534",
     padding: "12px",
-    borderRadius: "7px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 
   error: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
     padding: "12px",
-    borderRadius: "7px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 };

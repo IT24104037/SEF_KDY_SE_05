@@ -297,7 +297,7 @@ function WorkerDashboardPage() {
   const isVerified = worker?.verificationStatus === "Verified";
 
   return (
-    <div style={styles.pageWrapper}>
+    <div style={{ ...styles.pageWrapper, "--role-accent": "#b45309" }}>
       {/* 1. Global Worker Portal Navbar */}
       <header style={styles.navbar}>
         <div style={styles.navBrand}>
@@ -314,8 +314,8 @@ function WorkerDashboardPage() {
             onClick={() => setActiveTab("jobs")}
             style={{
               ...styles.navLinkButton,
-              color: activeTab === "jobs" ? "#0f766e" : "#475569",
-              borderBottomColor: activeTab === "jobs" ? "#0f766e" : "transparent",
+              color: activeTab === "jobs" ? "#b45309" : "#475569",
+              borderBottomColor: activeTab === "jobs" ? "#b45309" : "transparent",
             }}
           >
             My Jobs ({activeJobCount})
@@ -325,8 +325,8 @@ function WorkerDashboardPage() {
             onClick={() => setActiveTab("schedule")}
             style={{
               ...styles.navLinkButton,
-              color: activeTab === "schedule" ? "#0f766e" : "#475569",
-              borderBottomColor: activeTab === "schedule" ? "#0f766e" : "transparent",
+              color: activeTab === "schedule" ? "#b45309" : "#475569",
+              borderBottomColor: activeTab === "schedule" ? "#b45309" : "transparent",
             }}
           >
             Weekly Schedule
@@ -336,8 +336,8 @@ function WorkerDashboardPage() {
             onClick={() => setActiveTab("profile")}
             style={{
               ...styles.navLinkButton,
-              color: activeTab === "profile" ? "#0f766e" : "#475569",
-              borderBottomColor: activeTab === "profile" ? "#0f766e" : "transparent",
+              color: activeTab === "profile" ? "#b45309" : "#475569",
+              borderBottomColor: activeTab === "profile" ? "#b45309" : "transparent",
             }}
           >
             Profile & Rates
@@ -448,7 +448,7 @@ function WorkerDashboardPage() {
         {/* 3. KPI Stat Cards */}
         <section style={styles.kpiGrid}>
           <div style={styles.kpiCard}>
-            <div style={styles.kpiIconBox("#0f766e")}>
+            <div style={styles.kpiIconBox("#b45309")}>
               <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -467,7 +467,7 @@ function WorkerDashboardPage() {
           </div>
 
           <div style={styles.kpiCard}>
-            <div style={styles.kpiIconBox("#2563eb")}>
+            <div style={styles.kpiIconBox("#b45309")}>
               <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
@@ -480,7 +480,7 @@ function WorkerDashboardPage() {
           </div>
 
           <div style={styles.kpiCard}>
-            <div style={styles.kpiIconBox("#059669")}>
+            <div style={styles.kpiIconBox("#b45309")}>
               <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -495,7 +495,7 @@ function WorkerDashboardPage() {
           </div>
 
           <div style={styles.kpiCard}>
-            <div style={styles.kpiIconBox("#7c3aed")}>
+            <div style={styles.kpiIconBox("#b45309")}>
               <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -776,7 +776,7 @@ function WorkerDashboardPage() {
                     }}
                   >
                     <div style={styles.dayHeader}>
-                      <span style={{ fontWeight: 700, color: isToday ? "#0f766e" : "#1e293b" }}>
+                      <span style={{ fontWeight: 700, color: isToday ? "var(--role-accent, #b45309)" : "#172033" }}>
                         {dayName.slice(0, 3)}
                       </span>
                       {isToday && <span style={styles.todayPill}>Today</span>}
@@ -1052,20 +1052,20 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    background: "#f8fafc",
+    background: "#f3f5f6",
   },
   spinner: {
     width: "40px",
     height: "40px",
     border: "3px solid #e2e8f0",
-    borderTopColor: "#0f766e",
+    borderTopColor: "#b45309",
     borderRadius: "50%",
     animation: "spin 0.8s linear infinite",
   },
   pageWrapper: {
     minHeight: "100vh",
-    background: "#f8fafc",
-    color: "#0f172a",
+    background: "#f3f5f6",
+    color: "#1f2933",
     fontFamily: "inherit",
   },
 
@@ -1074,14 +1074,15 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "0 40px",
-    height: "68px",
+    padding: "0 clamp(18px, 3vw, 36px)",
+    minHeight: "68px",
     background: "#ffffff",
-    borderBottom: "1px solid #e2e8f0",
+    borderBottom: "1px solid #e2e7e9",
     position: "sticky",
     top: 0,
     zIndex: 40,
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+    boxShadow: "0 2px 8px rgba(22, 34, 42, 0.035)",
+    flexWrap: "wrap",
   },
   navBrand: {
     display: "flex",
@@ -1092,7 +1093,7 @@ const styles = {
     width: "36px",
     height: "36px",
     borderRadius: "8px",
-    background: "#0f766e",
+    background: "#b45309",
     color: "#ffffff",
     display: "flex",
     alignItems: "center",
@@ -1105,14 +1106,14 @@ const styles = {
     display: "block",
     fontWeight: 800,
     fontSize: "16px",
-    color: "#0f172a",
+    color: "#172033",
     lineHeight: 1.2,
   },
   brandSubtitle: {
     display: "block",
     fontSize: "11px",
     fontWeight: 600,
-    color: "#0f766e",
+    color: "#b45309",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
@@ -1195,20 +1196,22 @@ const styles = {
   container: {
     maxWidth: "1240px",
     margin: "0 auto",
-    padding: "32px 24px 64px",
+    padding: "clamp(20px, 3vw, 34px) clamp(16px, 3vw, 30px) 56px",
   },
 
   // Hero Banner
   heroBanner: {
     display: "grid",
-    gridTemplateColumns: "1fr 360px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
     gap: "24px",
-    background: "linear-gradient(135deg, #0f766e 0%, #134e4a 100%)",
-    borderRadius: "16px",
-    padding: "32px",
-    color: "#ffffff",
+    background: "#ffffff",
+    border: "1px solid #e2e7e9",
+    borderLeft: "4px solid var(--role-accent, #b45309)",
+    borderRadius: "12px",
+    padding: "clamp(22px, 3vw, 32px)",
+    color: "#1f2933",
     marginBottom: "24px",
-    boxShadow: "0 4px 20px -2px rgba(15, 118, 110, 0.25)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
   heroLeft: {
     display: "flex",
@@ -1227,7 +1230,7 @@ const styles = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "1px",
-    color: "#99f6e4",
+    color: "var(--role-accent, #b45309)",
   },
   statusBadge: {
     padding: "3px 10px",
@@ -1241,13 +1244,13 @@ const styles = {
     fontSize: "28px",
     fontWeight: 800,
     letterSpacing: "-0.5px",
-    color: "#ffffff",
+    color: "#172033",
   },
   heroText: {
     margin: 0,
     fontSize: "14px",
     lineHeight: 1.6,
-    color: "#ccfbf1",
+    color: "#64748b",
     maxWidth: "600px",
   },
   heroRight: {
@@ -1342,12 +1345,12 @@ const styles = {
   kpiCard: {
     background: "#ffffff",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #e2e7e9",
     padding: "20px",
     display: "flex",
     alignItems: "flex-start",
     gap: "14px",
-    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
   kpiIconBox: (bg) => ({
     width: "44px",
@@ -1382,7 +1385,7 @@ const styles = {
   tabBar: {
     display: "flex",
     gap: "8px",
-    borderBottom: "1px solid #e2e8f0",
+    borderBottom: "1px solid #e2e7e9",
     marginBottom: "24px",
     paddingBottom: "4px",
   },
@@ -1401,7 +1404,7 @@ const styles = {
     transition: "all 0.15s ease",
   },
   tabButtonActive: {
-    background: "#0f766e",
+    background: "var(--role-accent, #b45309)",
     color: "#ffffff",
   },
   tabBadge: {
@@ -1429,7 +1432,7 @@ const styles = {
     margin: 0,
     fontSize: "20px",
     fontWeight: 800,
-    color: "#0f172a",
+    color: "#172033",
   },
   sectionSub: {
     margin: "4px 0 0",
@@ -1457,25 +1460,25 @@ const styles = {
   },
   filterPillActive: {
     background: "#ffffff",
-    color: "#0f766e",
+    color: "var(--role-accent, #b45309)",
     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
   },
 
   // Work Order Cards
   ordersGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))",
     gap: "16px",
   },
   orderCard: {
     background: "#ffffff",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #e2e7e9",
     padding: "20px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
     transition: "transform 0.15s ease, box-shadow 0.15s ease",
   },
   orderTopRow: {
@@ -1533,7 +1536,7 @@ const styles = {
     width: "100%",
     padding: "10px",
     borderRadius: "8px",
-    background: "#0f766e",
+    background: "var(--role-accent, #b45309)",
     color: "#ffffff",
     textDecoration: "none",
     fontWeight: 600,
@@ -1592,10 +1595,10 @@ const styles = {
   },
   presetBtn: {
     padding: "6px 12px",
-    borderRadius: "6px",
+    borderRadius: "8px",
     border: "1px solid #e2e8f0",
     background: "#ffffff",
-    color: "#0f766e",
+    color: "var(--role-accent, #b45309)",
     fontSize: "12px",
     fontWeight: 600,
     cursor: "pointer",
@@ -1615,8 +1618,8 @@ const styles = {
     flexDirection: "column",
   },
   dayColumnToday: {
-    borderColor: "#0f766e",
-    background: "#f0fdfa",
+    borderColor: "var(--role-accent, #b45309)",
+    background: "#fffaf4",
   },
   dayHeader: {
     display: "flex",
@@ -1629,7 +1632,7 @@ const styles = {
   todayPill: {
     fontSize: "10px",
     fontWeight: 800,
-    background: "#0f766e",
+    background: "var(--role-accent, #b45309)",
     color: "#ffffff",
     padding: "2px 6px",
     borderRadius: "999px",
@@ -1650,15 +1653,15 @@ const styles = {
   },
   shiftCard: {
     background: "#ffffff",
-    border: "1px solid #ccfbf1",
-    borderRadius: "6px",
+    border: "1px solid #f0dfc9",
+    borderRadius: "8px",
     padding: "8px 10px",
     boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
   },
   shiftTime: {
     fontSize: "12px",
     fontWeight: 700,
-    color: "#0f766e",
+    color: "var(--role-accent, #b45309)",
     marginBottom: "4px",
   },
   shiftMeta: {
@@ -1710,7 +1713,7 @@ const styles = {
   },
   formRow: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr)) 180px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
     gap: "14px",
     alignItems: "flex-end",
   },
@@ -1748,7 +1751,7 @@ const styles = {
     padding: "11px 16px",
     borderRadius: "8px",
     border: "none",
-    background: "#0f766e",
+    background: "var(--role-accent, #b45309)",
     color: "#ffffff",
     fontWeight: 700,
     fontSize: "13px",
@@ -1759,7 +1762,7 @@ const styles = {
   // Profile Tab Layout
   profileLayout: {
     display: "grid",
-    gridTemplateColumns: "320px 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
     gap: "24px",
     alignItems: "start",
   },
@@ -1771,7 +1774,7 @@ const styles = {
   workerIdentityCard: {
     background: "#ffffff",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #e2e7e9",
     padding: "24px",
     textAlign: "center",
   },
@@ -1850,9 +1853,9 @@ const styles = {
     gap: "6px",
     padding: "8px 12px",
     borderRadius: "6px",
-    background: "#f0fdfa",
-    color: "#0f766e",
-    border: "1px solid #ccfbf1",
+    background: "#fffaf4",
+    color: "var(--role-accent, #b45309)",
+    border: "1px solid #f0dfc9",
     fontSize: "13px",
     fontWeight: 700,
     textDecoration: "none",
@@ -1863,7 +1866,7 @@ const styles = {
   editCard: {
     background: "#ffffff",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #e2e7e9",
     padding: "28px",
   },
   cardHeaderBox: {
@@ -1954,12 +1957,12 @@ const styles = {
     padding: "12px 24px",
     borderRadius: "8px",
     border: "none",
-    background: "#0f766e",
+    background: "var(--role-accent, #b45309)",
     color: "#ffffff",
     fontWeight: 700,
     fontSize: "14px",
     cursor: "pointer",
-    boxShadow: "0 2px 4px rgba(15, 118, 110, 0.2)",
+    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
   },
 };
 

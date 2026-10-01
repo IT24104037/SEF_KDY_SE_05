@@ -253,7 +253,19 @@ const [manualSuccess, setManualSuccess] = useState("");
 
   if (error && !workflow) {
     return (
-      <div style={styles.page}>
+      <div
+        style={{
+          ...styles.page,
+          "--role-accent":
+            currentUserRole === "PropertyOwner"
+              ? "#0f766e"
+              : currentUserRole === "Tenant"
+                ? "#0369a1"
+                : currentUserRole === "MaintenanceWorker"
+                  ? "#b45309"
+                  : "#5145cd",
+        }}
+      >
         <div style={styles.errorBox}>
           <h2 style={{ margin: "0 0 8px 0" }}>Error Loading Workflow</h2>
           <p style={{ margin: "0 0 16px 0" }}>{error}</p>
@@ -434,7 +446,19 @@ const readyForApproval =
   );
 
   return (
-    <div style={styles.page}>
+    <div
+      style={{
+        ...styles.page,
+        "--role-accent":
+          currentUserRole === "PropertyOwner"
+            ? "#0f766e"
+            : currentUserRole === "Tenant"
+              ? "#0369a1"
+              : currentUserRole === "MaintenanceWorker"
+                ? "#b45309"
+                : "#4f46e5",
+      }}
+    >
       {/* HEADER NAV */}
       <div style={styles.topNav}>
         <button style={styles.buttonSecondary} onClick={() => navigate(-1)}>
@@ -614,9 +638,11 @@ const readyForApproval =
   <div
     style={{
       backgroundColor: "#ffffff",
-      border: "1px solid #d1d5db",
-      borderRadius: "10px",
-      padding: "22px",
+      border: "1px solid #e2e7e9",
+      borderTop: "3px solid var(--role-accent, #0f766e)",
+      borderRadius: "12px",
+      padding: "clamp(18px, 3vw, 24px)",
+      boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
       marginBottom: "24px",
     }}
   >
@@ -624,7 +650,7 @@ const readyForApproval =
       style={{
         margin: "0 0 8px 0",
         fontSize: "20px",
-        color: "#17324D",
+        color: "var(--role-accent, #0f766e)",
       }}
     >
       Manual Message to Tenant
@@ -632,7 +658,7 @@ const readyForApproval =
 
     <p
       style={{
-        color: "#6B7280",
+        color: "#64748b",
         marginBottom: "16px",
         lineHeight: "1.5",
       }}
@@ -669,12 +695,14 @@ const readyForApproval =
         width: "100%",
         boxSizing: "border-box",
         padding: "12px",
-        border: "1px solid #d1d5db",
-        borderRadius: "8px",
+        border: "1px solid #cbd5e1",
+        borderRadius: "10px",
         fontSize: "14px",
         lineHeight: "1.5",
         resize: "vertical",
         marginBottom: "16px",
+        fontFamily: "inherit",
+        color: "#1f2933",
       }}
     />
 
@@ -759,12 +787,12 @@ const readyForApproval =
               <span
                 style={{
                   ...styles.badgePill,
-                  backgroundColor: isCandidateApproved
-                    ? "#dcfce7"
-                    : "#e0e7ff",
-                  color: isCandidateApproved
-                    ? "#166534"
-                    : "#3730a3",
+                          backgroundColor: isCandidateApproved
+                            ? "#dcfce7"
+                            : "color-mix(in srgb, var(--role-accent, #0f766e) 10%, white)",
+                          color: isCandidateApproved
+                            ? "#166534"
+                            : "var(--role-accent, #0f766e)",
                 }}
               >
                 {isCandidateApproved ? "Approved & Dispatched" : "Ready for Owner Approval"}
@@ -1058,20 +1086,22 @@ const readyForApproval =
 
 const styles = {
   page: {
-    padding: "24px",
-    maxWidth: "1100px",
+    padding: "clamp(16px, 3vw, 32px)",
+    maxWidth: "1240px",
     margin: "0 auto",
-    fontFamily: "system-ui, -apple-system, sans-serif",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    color: "#172033",
   },
   centerContainer: {
-    padding: "60px",
+    padding: "72px 24px",
     textAlign: "center",
+    color: "#475569",
   },
   spinner: {
-    width: "36px",
-    height: "36px",
-    border: "3px solid #e5e7eb",
-    borderTop: "3px solid #4f46e5",
+    width: "40px",
+    height: "40px",
+    border: "3px solid #e2e8f0",
+    borderTop: "3px solid var(--role-accent, #4f46e5)",
     borderRadius: "50%",
     animation: "spin 1s linear infinite",
     margin: "0 auto",
@@ -1080,35 +1110,40 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "16px",
+    marginBottom: "22px",
+    flexWrap: "wrap",
+    gap: "14px",
   },
   tagGroup: {
     display: "flex",
-    gap: "10px",
+    gap: "8px",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
   },
   headerTag: {
-    backgroundColor: "#f3f4f6",
-    color: "#374151",
+    backgroundColor: "#f1f5f9",
+    color: "#475569",
     fontSize: "12px",
-    fontWeight: "600",
-    padding: "4px 10px",
-    borderRadius: "6px",
+    fontWeight: "650",
+    padding: "6px 11px",
+    borderRadius: "999px",
+    letterSpacing: "0.01em",
   },
   requestTag: {
-    backgroundColor: "#eff6ff",
-    color: "#1d4ed8",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
     fontSize: "12px",
-    fontWeight: "600",
-    padding: "4px 10px",
-    borderRadius: "6px",
+    fontWeight: "650",
+    padding: "6px 11px",
+    borderRadius: "999px",
   },
   statusCard: {
-    backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "20px 24px",
-    marginBottom: "20px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+    border: "1px solid #e2e8f0",
+    borderRadius: "18px",
+    padding: "clamp(20px, 3vw, 30px)",
+    marginBottom: "24px",
+    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.06)",
   },
   statusHeader: {
     display: "flex",
@@ -1118,14 +1153,15 @@ const styles = {
     gap: "12px",
   },
   pageTitle: {
-    fontSize: "22px",
-    fontWeight: "700",
-    color: "#111827",
-    margin: "0 0 4px 0",
+    fontSize: "clamp(22px, 3vw, 29px)",
+    fontWeight: "750",
+    color: "#172033",
+    letterSpacing: "-0.035em",
+    margin: "0 0 7px 0",
   },
   statusSub: {
     fontSize: "14px",
-    color: "#4b5563",
+    color: "#64748b",
     margin: 0,
   },
   statusBadgeGroup: {
@@ -1133,29 +1169,31 @@ const styles = {
     alignItems: "center",
   },
   statusPill: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "var(--role-accent, #4f46e5)",
     color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: "600",
-    padding: "4px 12px",
+    fontSize: "12px",
+    fontWeight: "700",
+    padding: "7px 13px",
     borderRadius: "20px",
+    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
   },
   metaRow: {
     display: "flex",
-    gap: "24px",
-    marginTop: "16px",
-    paddingTop: "12px",
-    borderTop: "1px solid #f3f4f6",
+    gap: "12px 28px",
+    marginTop: "22px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e9eef5",
     fontSize: "13px",
-    color: "#6b7280",
+    color: "#64748b",
+    flexWrap: "wrap",
   },
   recommendationCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "10px",
-    padding: "24px",
+    border: "1px solid #e3e9f2",
+    borderRadius: "18px",
+    padding: "clamp(18px, 3vw, 28px)",
     marginBottom: "24px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.055)",
   },
   recommendationHeader: {
     display: "flex",
@@ -1166,12 +1204,12 @@ const styles = {
     gap: "12px",
   },
   agentTag: {
-    backgroundColor: "#e0e7ff",
-    color: "#3730a3",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
     fontSize: "11px",
-    fontWeight: "600",
-    padding: "2px 8px",
-    borderRadius: "4px",
+    fontWeight: "700",
+    padding: "5px 9px",
+    borderRadius: "999px",
   },
   badgePill: {
     fontSize: "12px",
@@ -1206,15 +1244,15 @@ const styles = {
   },
   recInfoBox: {
     backgroundColor: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    padding: "18px",
+    border: "1px solid #e5eaf2",
+    borderRadius: "14px",
+    padding: "20px",
   },
   safetyBox: {
-    backgroundColor: "#f0fdf4",
-    border: "1px solid #bbf7d0",
-    borderRadius: "8px",
-    padding: "18px",
+    backgroundColor: "#f2fbf6",
+    border: "1px solid #d4edde",
+    borderRadius: "14px",
+    padding: "20px",
   },
   recBoxHeader: {
     display: "flex",
@@ -1224,21 +1262,21 @@ const styles = {
     flexWrap: "wrap",
   },
   skillBadge: {
-    backgroundColor: "#e0e7ff",
-    color: "#3730a3",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
     fontSize: "11px",
     fontWeight: "700",
-    padding: "3px 8px",
-    borderRadius: "4px",
+    padding: "5px 9px",
+    borderRadius: "999px",
   },
   verifiedBadge: {
     backgroundColor: "#dcfce7",
     color: "#15803d",
     fontSize: "11px",
     fontWeight: "700",
-    padding: "3px 8px",
-    borderRadius: "4px",
-    border: "1px solid #86efac",
+    padding: "5px 9px",
+    borderRadius: "999px",
+    border: "1px solid #b8e5ca",
   },
   metaList: {
     display: "flex",
@@ -1249,20 +1287,20 @@ const styles = {
   metaItem: {
     display: "flex",
     justifyContent: "space-between",
-    borderBottom: "1px dashed #e2e8f0",
-    paddingBottom: "4px",
+    borderBottom: "1px solid #e8edf4",
+    paddingBottom: "9px",
   },
   metaLabel: {
-    color: "#6b7280",
+    color: "#64748b",
     fontWeight: "500",
   },
   metaValue: {
-    color: "#111827",
+    color: "#1e293b",
     fontWeight: "600",
   },
   safetySummaryText: {
     fontSize: "13px",
-    color: "#166534",
+    color: "#276749",
     lineHeight: "1.5",
     marginBottom: "12px",
   },
@@ -1274,7 +1312,7 @@ const styles = {
     flexDirection: "column",
     gap: "6px",
     fontSize: "12px",
-    color: "#15803d",
+    color: "#28734d",
     fontWeight: "600",
   },
   approvalSection: {
@@ -1288,34 +1326,36 @@ const styles = {
     alignItems: "center",
     backgroundColor: "#f0fdf4",
     border: "1px solid #86efac",
-    borderRadius: "8px",
-    padding: "16px 20px",
+    borderRadius: "14px",
+    padding: "18px 20px",
     flexWrap: "wrap",
     gap: "14px",
   },
   approvalActionCard: {
-    backgroundColor: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    padding: "20px",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e3e9f2",
+    borderRadius: "14px",
+    padding: "22px",
   },
   approvalCardTitle: {
     fontSize: "16px",
     fontWeight: "700",
-    color: "#111827",
+    color: "#172033",
     margin: "0 0 6px 0",
   },
   decisionTextarea: {
     width: "100%",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    padding: "10px 14px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "10px",
+    padding: "12px 14px",
     fontSize: "13px",
     resize: "vertical",
     boxSizing: "border-box",
     marginBottom: "14px",
     fontFamily: "inherit",
     outline: "none",
+    backgroundColor: "#ffffff",
+    color: "#172033",
   },
   approvalBtnRow: {
     display: "flex",
@@ -1323,22 +1363,22 @@ const styles = {
     flexWrap: "wrap",
   },
   approveBtn: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#15803d",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "10px 20px",
+    borderRadius: "10px",
+    padding: "11px 18px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+    boxShadow: "0 6px 14px rgba(15, 23, 42, 0.12)",
   },
   reviseBtn: {
     backgroundColor: "#f59e0b",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "10px 16px",
+    borderRadius: "10px",
+    padding: "11px 16px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -1347,19 +1387,19 @@ const styles = {
     backgroundColor: "#dc2626",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "10px 16px",
+    borderRadius: "10px",
+    padding: "11px 16px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
   },
   plannerCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "24px",
+    border: "1px solid #e3e9f2",
+    borderRadius: "18px",
+    padding: "clamp(18px, 3vw, 28px)",
     marginBottom: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.055)",
   },
   plannerHeader: {
     display: "flex",
@@ -1372,7 +1412,7 @@ const styles = {
   sectionTitle: {
     fontSize: "18px",
     fontWeight: "600",
-    color: "#111827",
+    color: "#172033",
     margin: 0,
   },
   tradePill: {
@@ -1437,9 +1477,9 @@ const styles = {
   },
   resolutionStepCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    padding: "16px",
+    border: "1px solid #e3e9f2",
+    borderRadius: "12px",
+    padding: "18px",
   },
   resolutionStepHeader: {
     display: "flex",
@@ -1448,7 +1488,7 @@ const styles = {
     marginBottom: "8px",
   },
   stepNumBadge: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: "var(--role-accent, #4f46e5)",
     color: "#ffffff",
     fontSize: "11px",
     fontWeight: "bold",
@@ -1477,46 +1517,48 @@ const styles = {
   },
   logsCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "24px",
+    border: "1px solid #e3e9f2",
+    borderRadius: "18px",
+    padding: "clamp(18px, 3vw, 28px)",
     marginTop: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.055)",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
     fontSize: "13px",
     marginTop: "12px",
+    minWidth: "720px",
   },
   th: {
     textAlign: "left",
-    padding: "10px 12px",
-    borderBottom: "2px solid #e5e7eb",
-    color: "#4b5563",
+    padding: "13px 14px",
+    borderBottom: "1px solid #dbe3ee",
+    color: "#526176",
     fontWeight: "600",
+    backgroundColor: "#f8fafc",
   },
   td: {
-    padding: "10px 12px",
-    borderBottom: "1px solid #f3f4f6",
-    color: "#1f2937",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f6",
+    color: "#334155",
   },
   buttonSecondary: {
     backgroundColor: "#ffffff",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    padding: "8px 14px",
+    border: "1px solid #d8e0eb",
+    borderRadius: "10px",
+    padding: "9px 15px",
     fontSize: "13px",
     fontWeight: "500",
-    color: "#374151",
+    color: "#334155",
     cursor: "pointer",
   },
   buttonPrimary: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "var(--role-accent, #4f46e5)",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "9px 18px",
+    borderRadius: "10px",
+    padding: "10px 17px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -1528,23 +1570,25 @@ const styles = {
     backgroundColor: "#fef2f2",
     border: "1px solid #fecaca",
     color: "#991b1b",
-    padding: "24px",
-    borderRadius: "8px",
+    padding: "28px",
+    borderRadius: "16px",
     textAlign: "center",
+    boxShadow: "0 12px 30px rgba(127, 29, 29, 0.06)",
   },
   emptyBox: {
-    backgroundColor: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    padding: "32px",
-    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #e3e9f2",
+    padding: "36px",
+    borderRadius: "16px",
     textAlign: "center",
+    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.055)",
   },
 
   noWorkerBox: {
   backgroundColor: "#fffbeb",
-  border: "1px solid #fcd34d",
-  borderRadius: "8px",
-  padding: "20px",
-  color: "#92400e",
+  border: "1px solid #f2d28b",
+  borderRadius: "14px",
+  padding: "22px",
+  color: "#854d0e",
 },
 };

@@ -25,6 +25,15 @@ function WorkerVerificationPage() {
 	);
 }
 
-const styles = { page: { minHeight: "100vh", padding: "48px 24px", background: "#f5f7fa", color: "#25313c" }, card: { maxWidth: "560px", margin: "0 auto", padding: "36px", background: "#fff", border: "1px solid #dde3e9", borderRadius: "8px" }, eyebrow: { color: "#1f8a8a", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }, title: { color: "#17324d" }, status: { display: "inline-block", padding: "8px 12px", borderRadius: "999px", background: "#fff7e6", color: "#b56b00", fontWeight: 700 }, muted: { color: "#6b7280", lineHeight: 1.6 }, error: { padding: "12px", color: "#b42318", background: "#fff1f1", borderRadius: "6px" }, link: { color: "#1f8a8a", fontWeight: 700 } };
+const styles = {
+	page: { minHeight: "100vh", padding: "clamp(20px, 4vw, 44px)", background: "#f3f5f6", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+	card: { maxWidth: "600px", margin: "0 auto", padding: "clamp(22px, 4vw, 34px)", background: "#fff", border: "1px solid #e2e7e9", borderTop: "3px solid #b45309", borderRadius: "12px", boxShadow: "0 10px 30px rgba(22, 34, 42, 0.05)" },
+	eyebrow: { color: "#b45309", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" },
+	title: { color: "#172033", fontSize: "clamp(23px, 3vw, 30px)" },
+	status: { display: "inline-block", padding: "8px 12px", borderRadius: "999px", background: "#fef3c7", color: "#92400e", fontWeight: 700 },
+	muted: { color: "#64748b", lineHeight: 1.6 },
+	error: { padding: "12px 14px", color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px" },
+	link: { color: "#b45309", fontWeight: 700 },
+};
 
 export default WorkerVerificationPage;

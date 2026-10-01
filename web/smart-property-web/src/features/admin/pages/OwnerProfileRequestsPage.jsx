@@ -69,7 +69,7 @@ export default function OwnerProfileRequestsPage() {
   }
 
   return (
-    <div>
+    <div style={styles.page}>
       <h1 style={styles.pageTitle}>Owner Profile Change Requests</h1>
       <p style={styles.pageSubtitle}>
         Review and approve or reject profile update requests submitted by verified property owners.
@@ -197,29 +197,30 @@ export default function OwnerProfileRequestsPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   pageTitle: {
     marginTop: 0,
-    color: "#17324D",
-    fontSize: "24px",
-    fontWeight: "700",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
   pageSubtitle: {
-    color: "#6B7280",
+    color: "#64748b",
     marginBottom: "24px",
     marginTop: "4px",
   },
   card: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "clamp(18px, 3vw, 26px)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
     marginBottom: "20px",
   },
   emptyCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
     padding: "24px",
     textAlign: "center",
   },
@@ -232,12 +233,12 @@ const styles = {
   cardTitle: {
     fontSize: "16px",
     fontWeight: "600",
-    color: "#17324D",
+    color: "#172033",
     margin: 0,
   },
   badge: {
-    backgroundColor: "#fef9c3",
-    color: "#854d0e",
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
     padding: "3px 10px",
     borderRadius: "12px",
     fontSize: "12px",
@@ -251,14 +252,14 @@ const styles = {
   },
   column: {
     backgroundColor: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    borderRadius: "6px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "10px",
     padding: "14px",
   },
   columnHighlight: {
-    backgroundColor: "#eff6ff",
-    border: "1px solid #bfdbfe",
-    borderRadius: "6px",
+    backgroundColor: "#f4f3ff",
+    border: "1px solid #dedcff",
+    borderRadius: "10px",
     padding: "14px",
   },
   columnHeader: {
@@ -273,7 +274,7 @@ const styles = {
     marginBottom: "10px",
     fontSize: "14px",
     fontWeight: "600",
-    color: "#1e40af",
+    color: "#5145cd",
   },
   detailRow: {
     display: "flex",
@@ -282,10 +283,10 @@ const styles = {
     padding: "4px 0",
   },
   label: {
-    color: "#6b7280",
+    color: "#64748b",
   },
   changedText: {
-    color: "#1d4ed8",
+    color: "#5145cd",
   },
   timestamp: {
     fontSize: "12px",
@@ -297,11 +298,11 @@ const styles = {
     gap: "10px",
   },
   approveButton: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#15803d",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "8px 16px",
+    borderRadius: "8px",
+    padding: "9px 16px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -310,8 +311,8 @@ const styles = {
     backgroundColor: "#ef4444",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "8px 16px",
+    borderRadius: "8px",
+    padding: "9px 16px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -320,8 +321,8 @@ const styles = {
     marginTop: "16px",
     padding: "16px",
     backgroundColor: "#fef2f2",
-    border: "1px solid #fca5a5",
-    borderRadius: "6px",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
   },
   fieldLabel: {
     display: "block",
@@ -333,8 +334,8 @@ const styles = {
   textarea: {
     width: "100%",
     padding: "8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     fontSize: "13px",
     marginTop: "4px",
     boxSizing: "border-box",
@@ -343,7 +344,7 @@ const styles = {
     backgroundColor: "#b91c1c",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "6px 14px",
     fontSize: "13px",
     fontWeight: "600",
@@ -352,8 +353,8 @@ const styles = {
   cancelButton: {
     backgroundColor: "#f3f4f6",
     color: "#374151",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    border: "1px solid #d8e0eb",
+    borderRadius: "8px",
     padding: "6px 14px",
     fontSize: "13px",
     cursor: "pointer",
@@ -361,16 +362,16 @@ const styles = {
   errorBox: {
     padding: "12px 16px",
     backgroundColor: "#fef2f2",
-    border: "1px solid #fca5a5",
-    borderRadius: "6px",
-    color: "#b91c1c",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    color: "#991b1b",
     marginBottom: "20px",
   },
   successBox: {
     padding: "12px 16px",
     backgroundColor: "#f0fdf4",
     border: "1px solid #bbf7d0",
-    borderRadius: "6px",
+    borderRadius: "8px",
     color: "#166534",
     marginBottom: "20px",
   },

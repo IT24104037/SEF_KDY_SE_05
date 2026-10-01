@@ -88,17 +88,17 @@ function MaintenanceRequestsPage() {
 }
 
   return (
-    <div>
-      <h1>Maintenance Requests</h1>
+    <div style={styles.page}>
+      <h1 style={styles.title}>Maintenance Requests</h1>
 
-      <p>
+      <p style={styles.subtitle}>
         View and manage normal maintenance requests.
       </p>
 
       <div
         style={{
           display: "flex",
-          gap: 12,
+          gap: 10,
           marginBottom: 20,
           flexWrap: "wrap",
         }}
@@ -162,7 +162,7 @@ function MaintenanceRequestsPage() {
       )}
 
       {error && (
-        <p style={{ color: "#D64545" }}>
+          <p style={styles.error}>
           {error}
         </p>
       )}
@@ -250,6 +250,7 @@ function MaintenanceRequestsPage() {
 
                     <td style={styles.td}>
                       <button
+                      style={styles.viewButton}
                       type="button"
                       onClick={() =>
                         navigate(`/admin/maintenance/${request.id}`)
@@ -261,15 +262,7 @@ function MaintenanceRequestsPage() {
                           <button
                             type="button"
                             onClick={() => handleArchive(request.id)}
-                            style={{
-                              marginLeft: "8px",
-                              background: "#D64545",
-                              color: "#fff",
-                              border: "none",
-                              padding: "7px 12px",
-                              borderRadius: "5px",
-                              cursor: "pointer",
-                            }}
+                              style={styles.removeButton}
                           >
                             Remove
                           </button>
@@ -286,26 +279,35 @@ function MaintenanceRequestsPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  title: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  subtitle: { margin: "0 0 20px", color: "#64748b", fontSize: 14 },
+  error: { color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px" },
   select: {
-    padding: "9px 12px",
-    border: "1px solid #DDE3E9",
-    borderRadius: 6,
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: 8,
+    color: "#1f2933",
+    background: "#fff",
+    fontFamily: "inherit",
   },
 
   refreshButton: {
-    background: "#1F8A8A",
+    background: "#5145cd",
     color: "#fff",
     border: "none",
-    borderRadius: 6,
+    borderRadius: 8,
     padding: "9px 14px",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   tableWrapper: {
     overflowX: "auto",
     background: "#fff",
-    borderRadius: 8,
-    border: "1px solid #DDE3E9",
+    borderRadius: 10,
+    border: "1px solid #e2e7e9",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   table: {
@@ -315,25 +317,31 @@ const styles = {
 
   th: {
     textAlign: "left",
-    padding: 12,
+    padding: "13px 14px",
     background: "#F5F7FA",
-    borderBottom: "1px solid #DDE3E9",
+    borderBottom: "1px solid #e2e7e9",
+    color: "#526176",
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   td: {
-    padding: 12,
-    borderBottom: "1px solid #DDE3E9",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: 13,
     verticalAlign: "top",
   },
 
   viewButton: {
-    background: "#17324D",
+    background: "#5145cd",
     color: "#fff",
     border: "none",
-    borderRadius: 6,
+    borderRadius: 8,
     padding: "7px 10px",
     cursor: "pointer",
   },
+  removeButton: { marginLeft: 8, background: "#b91c1c", color: "#fff", border: 0, padding: "7px 12px", borderRadius: 8, cursor: "pointer" },
 };
 
 export default MaintenanceRequestsPage;

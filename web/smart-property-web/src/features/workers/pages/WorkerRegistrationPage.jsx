@@ -133,7 +133,7 @@ function WorkerRegistrationPage() {
         </fieldset>
 
         <fieldset style={styles.fieldset}>
-          <legend style={{ fontWeight: 700, color: "#17324d", padding: "0 6px" }}>
+          <legend style={styles.legend}>
             Trade License or Proof Document (Google Drive / Cloud Link)
           </legend>
           <div style={{ display: "grid", gap: "14px", marginTop: "8px" }}>
@@ -161,7 +161,7 @@ function WorkerRegistrationPage() {
               />
             </label>
 
-            <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "6px", padding: "12px", fontSize: "13px", color: "#0369a1", lineHeight: 1.5 }}>
+            <div style={styles.infoBox}>
               💡 <strong>Google Drive Tip:</strong> Upload your certificate to Google Drive, right-click the file, click <strong>Share</strong>, set General Access to <strong>"Anyone with the link can view"</strong>, copy the link, and paste it above so the Admin can inspect it.
             </div>
 
@@ -171,7 +171,7 @@ function WorkerRegistrationPage() {
                   href={form.proofDocumentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: "#0284c7", fontSize: "13px", fontWeight: 700, textDecoration: "underline" }}
+                  style={styles.documentLink}
                 >
                   🔗 Test link in new tab before submitting
                 </a>
@@ -192,23 +192,26 @@ function WorkerRegistrationPage() {
 }
 
 const styles = {
-  page: { minHeight: "100vh", padding: "48px 24px", background: "#f5f7fa", color: "#25313c" },
-  card: { maxWidth: "760px", margin: "0 auto", padding: "36px", background: "#fff", border: "1px solid #dde3e9", borderRadius: "8px", boxShadow: "0 16px 40px rgba(23,50,77,.08)" },
-  eyebrow: { color: "#1f8a8a", fontSize: "12px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" },
-  title: { margin: "10px 0 8px", color: "#17324d" },
-  muted: { color: "#6b7280", lineHeight: 1.6 },
+  page: { minHeight: "100vh", padding: "clamp(20px, 4vw, 40px)", background: "#f3f5f6", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  card: { maxWidth: "800px", margin: "0 auto", padding: "clamp(22px, 4vw, 34px)", background: "#fff", border: "1px solid #e2e7e9", borderTop: "3px solid #b45309", borderRadius: "12px", boxShadow: "0 12px 32px rgba(22, 34, 42, 0.06)" },
+  eyebrow: { color: "#b45309", fontSize: "12px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" },
+  title: { margin: "10px 0 8px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  muted: { color: "#64748b", lineHeight: 1.6 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "18px", marginTop: "26px" },
   field: { display: "grid", gap: "7px", fontWeight: 600, fontSize: "14px" },
-  input: { padding: "10px 12px", border: "1px solid #dde3e9", borderRadius: "6px", fontSize: "14px", width: "100%", boxSizing: "border-box" },
-  fieldset: { margin: "26px 0 20px", padding: "18px", border: "1px solid #dde3e9", borderRadius: "6px" },
+  input: { padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "14px", width: "100%", boxSizing: "border-box", color: "#1f2933", fontFamily: "inherit" },
+  fieldset: { margin: "26px 0 20px", padding: "18px", border: "1px solid #e2e7e9", borderRadius: "10px" },
   skillGrid: { display: "flex", flexWrap: "wrap", gap: "14px", marginTop: "10px" },
   checkboxLabel: { display: "flex", gap: "8px", alignItems: "center", fontWeight: 400 },
   uploadField: { display: "grid", gap: "8px", fontWeight: 600, fontSize: "14px" },
   fileName: { color: "#3478f6", fontSize: "14px" },
   actions: { display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "28px" },
-  primaryButton: { padding: "12px 18px", border: 0, borderRadius: "6px", background: "#1f8a8a", color: "#fff", cursor: "pointer", fontWeight: 700 },
-  secondaryButton: { padding: "12px 18px", border: "1px solid #1f8a8a", borderRadius: "6px", background: "#fff", color: "#1f8a8a", cursor: "pointer", fontWeight: 700 },
-  error: { padding: "12px", color: "#d64545", background: "#fff1f1", borderRadius: "6px" },
+  primaryButton: { padding: "12px 18px", border: 0, borderRadius: "8px", background: "#b45309", color: "#fff", cursor: "pointer", fontWeight: 700 },
+  secondaryButton: { padding: "12px 18px", border: "1px solid #d8e0eb", borderRadius: "8px", background: "#fff", color: "#334155", cursor: "pointer", fontWeight: 700 },
+  error: { padding: "12px 14px", color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px" },
+  legend: { fontWeight: 700, color: "#172033", padding: "0 6px" },
+  infoBox: { background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: "8px", padding: "12px", fontSize: "13px", color: "#92400e", lineHeight: 1.5 },
+  documentLink: { color: "#b45309", fontSize: "13px", fontWeight: 700, textDecoration: "underline" },
 };
 
 export default WorkerRegistrationPage;

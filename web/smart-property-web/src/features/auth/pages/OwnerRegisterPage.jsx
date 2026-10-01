@@ -346,19 +346,23 @@ function OwnerRegisterPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#f3f5f6",
     display: "flex",
     justifyContent: "center",
-    padding: "40px 20px",
+    padding: "clamp(20px, 4vw, 40px)",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    color: "#1f2933",
   },
 
   card: {
     width: "600px",
     maxWidth: "100%",
-    backgroundColor: "#FFFFFF",
-    padding: "32px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+    backgroundColor: "#ffffff",
+    padding: "clamp(22px, 4vw, 34px)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0f766e",
+    borderRadius: "12px",
+    boxShadow: "0 12px 32px rgba(22, 34, 42, 0.06)",
     display: "flex",
     flexDirection: "column",
     gap: "10px",
@@ -366,36 +370,42 @@ const styles = {
 
   title: {
     margin: 0,
-    color: "#17324D",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
 
   subtitle: {
     marginTop: 0,
-    color: "#6B7280",
+    color: "#64748b",
   },
 
   sectionTitle: {
     marginTop: "20px",
     marginBottom: "5px",
-    color: "#17324D",
+    color: "#172033",
     fontSize: "18px",
   },
 
   input: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "11px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
 
   textarea: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "11px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     resize: "vertical",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
 
   row: {
@@ -414,18 +424,19 @@ const styles = {
     marginTop: "20px",
     padding: "12px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#1F8A8A",
+    borderRadius: "8px",
+    backgroundColor: "#0f766e",
     color: "#FFFFFF",
     cursor: "pointer",
     fontSize: "15px",
+    fontWeight: 650,
   },
 
   secondaryButton: {
     padding: "10px 16px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#17324D",
+    borderRadius: "8px",
+    backgroundColor: "#334155",
     color: "#FFFFFF",
     cursor: "pointer",
   },
@@ -435,30 +446,35 @@ const styles = {
     padding: "8px",
     border: "none",
     backgroundColor: "transparent",
-    color: "#1F8A8A",
+    color: "#0f766e",
     cursor: "pointer",
   },
 
   error: {
-    color: "#D64545",
+    color: "#991b1b",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    padding: "10px 12px",
     marginBottom: 0,
   },
 
   successBox: {
     marginTop: "15px",
     padding: "15px",
-    borderRadius: "6px",
-    backgroundColor: "#EAF7F0",
+    borderRadius: "8px",
+    backgroundColor: "#fffbeb",
+    border: "1px solid #fcd34d",
   },
 
   success: {
-    color: "#18794E",
+    color: "#92400e",
     fontWeight: "bold",
     marginTop: 0,
   },
 
   successInfo: {
-    color: "#374151",
+    color: "#334155",
   },
 };
 

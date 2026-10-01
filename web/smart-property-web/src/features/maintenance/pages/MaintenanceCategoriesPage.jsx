@@ -121,8 +121,8 @@ function MaintenanceCategoriesPage() {
   }
 
   return (
-    <div>
-      <h1>Maintenance Categories</h1>
+    <div style={{ ...styles.page, "--role-accent": sessionStorage.getItem("role") === "Admin" ? "#5145cd" : "#0f766e" }}>
+      <h1 style={styles.title}>Maintenance Categories</h1>
 
       <p style={styles.subtitle}>
         Create and manage maintenance categories used by
@@ -227,9 +227,9 @@ function MaintenanceCategoriesPage() {
                     </td>
 
                     <td style={styles.td}>
-                      {category.isActive
-                        ? "Active"
-                        : "Inactive"}
+                      <span style={category.isActive ? styles.activeBadge : styles.inactiveBadge}>
+                        {category.isActive ? "Active" : "Inactive"}
+                      </span>
                     </td>
 
                     <td style={styles.td}>
@@ -267,15 +267,20 @@ function MaintenanceCategoriesPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  title: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
+    margin: "0 0 20px",
   },
 
   card: {
     backgroundColor: "#ffffff",
-    padding: "22px",
-    borderRadius: "10px",
+    padding: "clamp(18px, 3vw, 26px)",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
     marginTop: "20px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   form: {
@@ -285,17 +290,20 @@ const styles = {
   },
 
   input: {
-    padding: "10px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     minWidth: "220px",
+    color: "#1f2933",
+    background: "#ffffff",
+    fontFamily: "inherit",
   },
 
   saveButton: {
     padding: "10px 18px",
     border: "none",
     borderRadius: "6px",
-    backgroundColor: "#1f8a8a",
+    backgroundColor: "var(--role-accent, #0f766e)",
     color: "white",
     cursor: "pointer",
   },
@@ -303,7 +311,7 @@ const styles = {
   cancelButton: {
     padding: "10px 18px",
     border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    borderRadius: "8px",
     backgroundColor: "white",
     cursor: "pointer",
   },
@@ -315,25 +323,44 @@ const styles = {
 
   th: {
     textAlign: "left",
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #e2e7e9",
+    background: "#f3f5f6",
+    color: "#526176",
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   td: {
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: 13,
   },
 
   editButton: {
     marginRight: "8px",
     padding: "7px 12px",
+    border: "1px solid #d8e0eb",
+    borderRadius: 8,
+    background: "#ffffff",
+    color: "var(--role-accent, #0f766e)",
+    fontWeight: 600,
     cursor: "pointer",
   },
 
   statusButton: {
     padding: "7px 12px",
+    border: "1px solid #d8e0eb",
+    borderRadius: 8,
+    background: "#ffffff",
+    color: "var(--role-accent, #0f766e)",
+    fontWeight: 600,
     cursor: "pointer",
   },
+
+  activeBadge: { display: "inline-block", padding: "5px 10px", borderRadius: 999, background: "#dcfce7", color: "#166534", fontSize: 12, fontWeight: 700 },
+  inactiveBadge: { display: "inline-block", padding: "5px 10px", borderRadius: 999, background: "#f1f5f9", color: "#475569", fontSize: 12, fontWeight: 700 },
 
   empty: {
     textAlign: "center",
@@ -341,11 +368,19 @@ const styles = {
   },
 
   success: {
-    color: "green",
+    color: "#166534",
+    background: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    borderRadius: 8,
+    padding: "10px 12px",
   },
 
   error: {
-    color: "red",
+    color: "#991b1b",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: 8,
+    padding: "10px 12px",
   },
 };
 

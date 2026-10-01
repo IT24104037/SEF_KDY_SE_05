@@ -328,7 +328,7 @@ function ApprovalPage() {
                   </button>
                   {request.hasAvailableWorker && (
                     <button
-                      style={styles.primary}
+                      style={styles.approve}
                       onClick={() => handleDecision("Approve")}
                       disabled={submitting}
                     >
@@ -354,10 +354,10 @@ function ApprovalPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    padding: "36px 5vw",
-    background: "#f8fafc",
-    color: "#1e293b",
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    padding: "clamp(20px, 4vw, 40px)",
+    background: "#f3f5f6",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
   loadingContainer: {
     display: "flex",
@@ -401,17 +401,18 @@ const styles = {
     letterSpacing: "1px",
   },
   phaseBadge: {
-    background: "#ccfbf1",
-    color: "#115e59",
+    background: "#e6f4f1",
+    color: "#0f5e57",
     padding: "3px 8px",
-    borderRadius: "4px",
+    borderRadius: "999px",
     fontSize: "11px",
     fontWeight: 700,
   },
   title: {
-    color: "#0f172a",
+    color: "#172033",
     margin: "0 0 8px 0",
-    fontSize: "24px",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
   muted: {
     color: "#64748b",
@@ -491,10 +492,10 @@ const styles = {
   },
   card: {
     background: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "10px",
-    padding: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "clamp(18px, 3vw, 26px)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
   cardHeader: {
     display: "flex",
@@ -652,11 +653,21 @@ const styles = {
     fontWeight: 700,
     fontSize: "14px",
   },
+  approve: {
+    padding: "10px 18px",
+    border: 0,
+    borderRadius: "8px",
+    background: "#15803d",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 700,
+    fontSize: "14px",
+  },
   reject: {
     padding: "10px 16px",
     border: 0,
     borderRadius: "6px",
-    background: "#ef4444",
+    background: "#b91c1c",
     color: "#fff",
     cursor: "pointer",
     fontWeight: 600,
@@ -665,7 +676,7 @@ const styles = {
   revise: {
     padding: "10px 16px",
     border: "1px solid #f59e0b",
-    borderRadius: "6px",
+    borderRadius: "8px",
     background: "#fff",
     color: "#b45309",
     cursor: "pointer",

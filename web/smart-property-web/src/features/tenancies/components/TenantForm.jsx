@@ -70,7 +70,7 @@ export default function TenantForm({ mode = "create", initialValues = {}, isCont
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 420 }}>
+    <form onSubmit={handleSubmit} style={styles.form}>
       <Field label="Full Name" error={errors.fullName}>
         <input
           value={fullName}
@@ -148,7 +148,7 @@ export default function TenantForm({ mode = "create", initialValues = {}, isCont
               ))}
             </select>
             {!isContextAware && propertyId && availableUnits.length === 0 && (
-              <p style={{ color: "#6B7280", fontSize: 12, margin: "4px 0 0" }}>
+              <p style={styles.helpText}>
                 This property has no vacant units. <a href="/owner/properties">Manage properties and units</a>.
               </p>
             )}
@@ -166,7 +166,7 @@ export default function TenantForm({ mode = "create", initialValues = {}, isCont
       </Field>
 
       {submitError && (
-        <p style={{ color: "#D64545", fontSize: 14 }}>{submitError}</p>
+        <p style={styles.submitError}>{submitError}</p>
       )}
 
       <button type="submit" disabled={submitting} style={buttonStyle}>
@@ -178,31 +178,43 @@ export default function TenantForm({ mode = "create", initialValues = {}, isCont
 
 function Field({ label, error, children }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: "block", fontSize: 13, color: "#6B7280", marginBottom: 4 }}>
+    <div style={styles.field}>
+      <label style={styles.label}>
         {label}
       </label>
       {children}
-      {error && <p style={{ color: "#D64545", fontSize: 12, margin: "4px 0 0" }}>{error}</p>}
+      {error && <p style={styles.fieldError}>{error}</p>}
     </div>
   );
 }
 
 const inputStyle = {
   width: "100%",
-  padding: "8px 10px",
-  border: "1px solid #DDE3E9",
-  borderRadius: 6,
+  padding: "10px 12px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
   fontSize: 14,
   boxSizing: "border-box",
+  color: "#1f2933",
+  fontFamily: "inherit",
 };
 
 const buttonStyle = {
-  background: "#1F8A8A",
+  background: "#0f766e",
   color: "#fff",
   border: "none",
-  borderRadius: 6,
+  borderRadius: 8,
   padding: "10px 16px",
   cursor: "pointer",
   width: "100%",
+  fontWeight: 650,
+};
+
+const styles = {
+  form: { maxWidth: 520, display: "grid", gap: 2, padding: "clamp(18px, 3vw, 26px)", background: "#ffffff", border: "1px solid #e2e7e9", borderRadius: 12, boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" },
+  field: { marginBottom: 14 },
+  label: { display: "block", fontSize: 13, color: "#334155", fontWeight: 600, marginBottom: 5 },
+  fieldError: { color: "#991b1b", fontSize: 12, margin: "4px 0 0" },
+  submitError: { color: "#991b1b", fontSize: 14, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 12px" },
+  helpText: { color: "#64748b", fontSize: 12, margin: "4px 0 0" },
 };

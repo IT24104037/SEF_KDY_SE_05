@@ -309,8 +309,10 @@ function ProfileField({
 
 const styles = {
   page: {
-    padding: 24,
-    maxWidth: 760,
+    padding: "clamp(18px, 3vw, 30px)",
+    maxWidth: 800,
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   headerRow: {
@@ -323,15 +325,18 @@ const styles = {
 
   title: {
     margin: 0,
-    color: "#17324D",
+    color: "#172033",
+    fontSize: 22,
+    fontWeight: 700,
   },
 
   card: {
-    background: "#FFFFFF",
-    border: "1px solid #DDE3E9",
-    borderRadius: 8,
-    padding: 20,
-    maxWidth: 620,
+    background: "#ffffff",
+    border: "1px solid #e2e7e9",
+    borderRadius: 12,
+    padding: "clamp(18px, 3vw, 26px)",
+    maxWidth: 660,
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
 
   field: {
@@ -341,14 +346,14 @@ const styles = {
   label: {
     display: "block",
     fontSize: 13,
-    color: "#6B7280",
+    color: "#526176",
     marginBottom: 6,
   },
 
   readOnlyValue: {
     minHeight: 20,
     fontSize: 15,
-    color: "#17324D",
+    color: "#334155",
     padding: "8px 0",
   },
 
@@ -357,19 +362,22 @@ const styles = {
     boxSizing: "border-box",
     padding: "10px 12px",
     fontSize: 15,
-    color: "#17324D",
-    border: "1px solid #DDE3E9",
-    borderRadius: 6,
+    color: "#1f2933",
+    border: "1px solid #cbd5e1",
+    borderRadius: 8,
     outline: "none",
+    background: "#ffffff",
+    fontFamily: "inherit",
   },
 
   editButton: {
     padding: "9px 14px",
     border: "none",
-    borderRadius: 6,
-    background: "#1F8A8A",
+    borderRadius: 8,
+    background: "#0369a1",
     color: "#FFFFFF",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   actions: {
@@ -381,41 +389,42 @@ const styles = {
   updateButton: {
     padding: "10px 16px",
     border: "none",
-    borderRadius: 6,
-    background: "#1F8A8A",
+    borderRadius: 8,
+    background: "#0369a1",
     color: "#FFFFFF",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   cancelButton: {
     padding: "10px 16px",
-    border: "1px solid #DDE3E9",
-    borderRadius: 6,
+    border: "1px solid #d8e0eb",
+    borderRadius: 8,
     background: "#FFFFFF",
-    color: "#17324D",
+    color: "#334155",
     cursor: "pointer",
   },
 
   success: {
     marginBottom: 14,
     padding: "10px 12px",
-    borderRadius: 6,
-    background: "#E8F7F0",
-    color: "#16794F",
-    border: "1px solid #B7E5D0",
+    borderRadius: 8,
+    background: "#f0fdf4",
+    color: "#166534",
+    border: "1px solid #bbf7d0",
   },
 
   error: {
     marginBottom: 14,
     padding: "10px 12px",
-    borderRadius: 6,
-    background: "#FDECEC",
-    color: "#B42318",
-    border: "1px solid #F5C2C0",
+    borderRadius: 8,
+    background: "#fef2f2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
   },
 
   status: {
     padding: 24,
-    color: "#6B7280",
+    color: "#64748b",
   },
 };

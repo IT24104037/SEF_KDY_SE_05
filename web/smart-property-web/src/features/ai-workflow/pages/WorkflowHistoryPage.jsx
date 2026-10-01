@@ -39,7 +39,7 @@ export default function WorkflowHistoryPage() {
   }
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, "--role-accent": sessionStorage.getItem("role") === "PropertyOwner" ? "#0f766e" : "#5145cd" }}>
       <div style={styles.header}>
         <h1 style={styles.title}>AI Workflow Search & Inspection</h1>
         <p style={styles.subtitle}>
@@ -134,32 +134,33 @@ export default function WorkflowHistoryPage() {
 
 const styles = {
   page: {
-    padding: "24px",
-    maxWidth: "900px",
+    padding: "clamp(18px, 3vw, 30px)",
+    maxWidth: "1040px",
     margin: "0 auto",
-    fontFamily: "system-ui, -apple-system, sans-serif",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    color: "#1f2933",
   },
   header: {
     marginBottom: "24px",
   },
   title: {
-    fontSize: "22px",
-    fontWeight: "700",
-    color: "#111827",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
+    color: "#172033",
     margin: "0 0 6px 0",
   },
   subtitle: {
     fontSize: "14px",
-    color: "#6b7280",
+    color: "#64748b",
     margin: 0,
   },
   searchCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "20px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "clamp(18px, 3vw, 24px)",
     marginBottom: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
   form: {
     display: "flex",
@@ -173,24 +174,28 @@ const styles = {
   },
   select: {
     padding: "10px 12px",
-    borderRadius: "6px",
-    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    border: "1px solid #cbd5e1",
     fontSize: "14px",
     backgroundColor: "#ffffff",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
   input: {
     flexGrow: 1,
     minWidth: "200px",
     padding: "10px 14px",
-    borderRadius: "6px",
-    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    border: "1px solid #cbd5e1",
     fontSize: "14px",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
   buttonPrimary: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: "var(--role-accent, #5145cd)",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "10px 18px",
     fontSize: "14px",
     fontWeight: "600",
@@ -201,17 +206,17 @@ const styles = {
     border: "1px solid #fecaca",
     color: "#991b1b",
     padding: "12px 16px",
-    borderRadius: "6px",
+    borderRadius: "8px",
     fontSize: "13px",
     marginTop: "12px",
   },
   resultCard: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "20px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "clamp(18px, 3vw, 24px)",
     marginBottom: "20px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
   resultHeader: {
     display: "flex",
@@ -220,8 +225,8 @@ const styles = {
     marginBottom: "14px",
   },
   statusPill: {
-    backgroundColor: "#e8f0fe",
-    color: "#1a73e8",
+    backgroundColor: "color-mix(in srgb, var(--role-accent, #5145cd) 10%, white)",
+    color: "var(--role-accent, #5145cd)",
     fontSize: "12px",
     fontWeight: "600",
     padding: "4px 10px",
@@ -235,11 +240,11 @@ const styles = {
   },
   emptyBox: {
     backgroundColor: "#f9fafb",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #e2e7e9",
     padding: "24px",
     borderRadius: "8px",
     textAlign: "center",
-    color: "#6b7280",
+    color: "#64748b",
     fontSize: "14px",
   },
 };

@@ -310,10 +310,10 @@ function MaintenanceCategoriesPage() {
   // ---------------------------------------------------------
 
   return (
-    <div>
-      <h1>Maintenance Categories</h1>
+    <div style={styles.page}>
+      <h1 style={styles.pageTitle}>Maintenance Categories</h1>
 
-      <p>
+      <p style={styles.pageSubtitle}>
         Create and manage maintenance categories used by
         the maintenance system.
       </p>
@@ -598,16 +598,20 @@ function MaintenanceCategoriesPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  pageTitle: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  pageSubtitle: { margin: "0 0 22px", color: "#64748b", fontSize: 14, lineHeight: 1.6 },
   card: {
-    background: "#FFFFFF",
-    border: "1px solid #DDE3E9",
-    borderRadius: "10px",
-    padding: "20px",
+    background: "#ffffff",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "clamp(18px, 3vw, 26px)",
     marginBottom: "22px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   cardTitle: {
-    color: "#17324D",
+    color: "#172033",
     marginTop: 0,
   },
 
@@ -619,33 +623,35 @@ const styles = {
     display: "block",
     marginBottom: "6px",
     fontWeight: "600",
-    color: "#25313C",
+    color: "#334155",
   },
 
   input: {
     width: "100%",
     maxWidth: "600px",
-    padding: "10px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     boxSizing: "border-box",
+    fontFamily: "inherit",
   },
 
   textarea: {
     width: "100%",
     maxWidth: "600px",
-    padding: "10px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     resize: "vertical",
     boxSizing: "border-box",
+    fontFamily: "inherit",
   },
 
   createButton: {
-    background: "#1F8A8A",
+    background: "#5145cd",
     color: "#FFFFFF",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "10px 18px",
     cursor: "pointer",
     fontWeight: "600",
@@ -660,10 +666,10 @@ const styles = {
   },
 
   refreshButton: {
-    background: "#17324D",
+    background: "#5145cd",
     color: "#FFFFFF",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "8px 14px",
     cursor: "pointer",
   },
@@ -680,13 +686,18 @@ const styles = {
   th: {
     textAlign: "left",
     padding: "12px",
-    background: "#F5F7FA",
-    borderBottom: "1px solid #DDE3E9",
+    background: "#f3f5f6",
+    borderBottom: "1px solid #e2e7e9",
+    color: "#526176",
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   td: {
     padding: "12px",
-    borderBottom: "1px solid #DDE3E9",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: 13,
     verticalAlign: "top",
   },
 
@@ -715,7 +726,7 @@ const styles = {
   },
 
   editButton: {
-    background: "#3478F6",
+    background: "#5145cd",
     color: "#FFFFFF",
     border: "none",
     borderRadius: "6px",
@@ -724,7 +735,7 @@ const styles = {
   },
 
   saveButton: {
-    background: "#22A06B",
+    background: "#15803d",
     color: "#FFFFFF",
     border: "none",
     borderRadius: "6px",
@@ -742,7 +753,7 @@ const styles = {
   },
 
   disableButton: {
-    background: "#D64545",
+    background: "#b91c1c",
     color: "#FFFFFF",
     border: "none",
     borderRadius: "6px",
@@ -762,33 +773,35 @@ const styles = {
   editInput: {
     width: "100%",
     padding: "8px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     boxSizing: "border-box",
   },
 
   editTextarea: {
     width: "100%",
     padding: "8px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     resize: "vertical",
     boxSizing: "border-box",
   },
 
   successMessage: {
-    background: "#dcfce7",
+    background: "#f0fdf4",
+    border: "1px solid #bbf7d0",
     color: "#166534",
     padding: "12px",
-    borderRadius: "6px",
+    borderRadius: "8px",
     marginBottom: "16px",
   },
 
   errorMessage: {
-    background: "#fee2e2",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
     padding: "12px",
-    borderRadius: "6px",
+    borderRadius: "8px",
     marginBottom: "16px",
   },
 };

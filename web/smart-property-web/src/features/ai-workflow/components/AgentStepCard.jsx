@@ -3,11 +3,11 @@ import React from "react";
 function getStatusBadgeStyle(status) {
   switch (status) {
     case "Completed":
-      return { backgroundColor: "#e6f4ea", color: "#137333", border: "1px solid #ceead6" };
+      return { backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" };
     case "Running":
-      return { backgroundColor: "#e8f0fe", color: "#1a73e8", border: "1px solid #d2e3fc" };
+      return { backgroundColor: "color-mix(in srgb, var(--role-accent, #5145cd) 10%, white)", color: "var(--role-accent, #5145cd)", border: "1px solid color-mix(in srgb, var(--role-accent, #5145cd) 24%, white)" };
     case "Failed":
-      return { backgroundColor: "#fce8e6", color: "#c5221f", border: "1px solid #fad2cf" };
+      return { backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca" };
     case "Skipped":
       return { backgroundColor: "#f1f3f4", color: "#5f6368", border: "1px solid #dadce0" };
     default:
@@ -73,11 +73,11 @@ export default function AgentStepCard({ step }) {
 const styles = {
   card: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    padding: "16px 20px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "18px 20px",
     marginBottom: "16px",
-    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
   header: {
     display: "flex",
@@ -94,12 +94,12 @@ const styles = {
     flexWrap: "wrap",
   },
   stepBadge: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: "var(--role-accent, #5145cd)",
     color: "#ffffff",
     fontWeight: "bold",
     fontSize: "12px",
     padding: "2px 8px",
-    borderRadius: "12px",
+    borderRadius: "999px",
   },
   stepTitle: {
     fontSize: "16px",
@@ -108,13 +108,13 @@ const styles = {
     margin: 0,
   },
   agent1Tag: {
-    backgroundColor: "#eff6ff",
-    color: "#1d4ed8",
+    backgroundColor: "color-mix(in srgb, var(--role-accent, #5145cd) 8%, white)",
+    color: "var(--role-accent, #5145cd)",
     fontSize: "11px",
     fontWeight: "600",
     padding: "2px 8px",
     borderRadius: "4px",
-    border: "1px solid #bfdbfe",
+    border: "1px solid color-mix(in srgb, var(--role-accent, #5145cd) 22%, white)",
   },
   statusBadge: {
     fontSize: "12px",
@@ -126,7 +126,7 @@ const styles = {
     display: "flex",
     gap: "20px",
     fontSize: "13px",
-    color: "#4b5563",
+    color: "#526176",
     marginBottom: "12px",
     flexWrap: "wrap",
   },
@@ -138,17 +138,17 @@ const styles = {
   },
   sectionTitle: {
     fontSize: "12px",
-    color: "#374151",
+    color: "#526176",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
   summaryBox: {
-    backgroundColor: "#f9fafb",
-    border: "1px solid #f3f4f6",
-    borderRadius: "6px",
-    padding: "8px 12px",
+    backgroundColor: "#f5f7f8",
+    border: "1px solid #e5eaf2",
+    borderRadius: "8px",
+    padding: "10px 12px",
     fontSize: "13px",
-    color: "#1f2937",
+    color: "#334155",
     marginTop: "4px",
     fontFamily: "monospace",
     whiteSpace: "pre-wrap",
@@ -157,9 +157,9 @@ const styles = {
   errorBox: {
     backgroundColor: "#fef2f2",
     border: "1px solid #fecaca",
-    color: "#b91c1c",
+    color: "#991b1b",
     padding: "10px 14px",
-    borderRadius: "6px",
+    borderRadius: "8px",
     fontSize: "13px",
     marginTop: "10px",
   },
