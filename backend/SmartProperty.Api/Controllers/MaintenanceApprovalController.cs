@@ -78,6 +78,68 @@ public class MaintenanceApprovalController : ControllerBase
         }
     }
 
+
+
+// POST /api/maintenance-requests/{id}/manual-decision
+[HttpPost("{id:int}/manual-decision")]
+[Authorize(Roles = "PropertyOwner")]
+public async Task<IActionResult> SubmitManualDecision(
+    int id,
+    [FromBody] ManualDecisionRequestDto dto)
+{
+    var userId = GetCurrentUserId();
+    var role = GetCurrentUserRole();
+
+    try
+    {
+        var result =
+            await _recommendationService.ProcessManualDecisionAsync(
+                id,
+                dto,
+                userId,
+                role);
+
+        return Ok(result);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return NotFound(new
+        {
+            message = ex.Message
+        });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Forbid();
+    }
+    catch (ArgumentException ex)
+    {
+        return BadRequest(new
+        {
+            message = ex.Message
+        });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return BadRequest(new
+        {
+            message = ex.Message
+        });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(
+            500,
+            new
+            {
+                message = ex.Message
+            });
+    }
+}
+
+
+
+
     // GET /api/maintenance-requests/pending-approvals
     [HttpGet("pending-approvals")]
     public async Task<IActionResult> GetPendingApprovals()
@@ -114,4 +176,5 @@ public class MaintenanceApprovalController : ControllerBase
     {
         return User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
     }
+
 }

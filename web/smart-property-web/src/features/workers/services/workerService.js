@@ -256,4 +256,45 @@ export async function confirmExternalArrangement(id, payload = {}) {
     throw new Error(message);
   }
 }
+export async function submitManualDecision(
+  requestId,
+  decision,
+  message
+) {
+  try {
+    const response = await apiClient.post(
+      `/api/maintenance-requests/${requestId}/manual-decision`,
+      {
+        decision,
+        message,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to submit manual decision.";
+
+    throw new Error(message);
+  }
+}
+
+export async function getTenantMaintenanceNotifications() {
+  try {
+    const response = await apiClient.get(
+      "/api/tenant/notifications"
+    );
+
+    return response.data || [];
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to load maintenance notifications.";
+
+    throw new Error(message);
+  }
+}
 

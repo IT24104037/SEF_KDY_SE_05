@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getMaintenanceRequestById,
   getMaintenanceHistory,
-  updateMaintenanceStatus,
 } from "../services/maintenanceApi.js";
 import {
   startPlannerWorkflow,
@@ -20,9 +19,6 @@ function MaintenanceRequestDetailsPage() {
   const [aiWorkflow, setAiWorkflow] = useState(null);
   const [startingPlanner, setStartingPlanner] = useState(false);
 
-  const [rejectReason, setRejectReason] = useState("");
-  const [showRejectBox, setShowRejectBox] = useState(false);
-  const [updating, setUpdating] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -68,59 +64,6 @@ function MaintenanceRequestDetailsPage() {
     loadDetails();
   }, [id]);
 
-  async function handleApprove() {
-    try {
-      setUpdating(true);
-      setError("");
-      setMessage("");
-
-      await updateMaintenanceStatus(
-        id,
-        "Approved",
-        "Emergency request approved."
-      );
-
-      setMessage("Emergency request approved successfully.");
-
-      await loadDetails();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUpdating(false);
-    }
-  }
-
-  async function handleReject() {
-    if (!rejectReason.trim()) {
-      setError(
-        "Please enter a reason for rejecting the emergency request."
-      );
-      return;
-    }
-
-    try {
-      setUpdating(true);
-      setError("");
-      setMessage("");
-
-      await updateMaintenanceStatus(
-        id,
-        "Rejected",
-        rejectReason.trim()
-      );
-
-      setMessage("Emergency request rejected.");
-
-      setRejectReason("");
-      setShowRejectBox(false);
-
-      await loadDetails();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUpdating(false);
-    }
-  }
 
   function formatDate(value) {
     if (!value) return "-";
@@ -169,10 +112,6 @@ function MaintenanceRequestDetailsPage() {
 
   const isEmergency =
     request.requestType === "EMERGENCY";
-
-  const decisionCompleted =
-    request.status === "Approved" ||
-    request.status === "Rejected";
 
   return (
     <div>
@@ -352,118 +291,22 @@ function MaintenanceRequestDetailsPage() {
         )}
       </div>
 
-      {/* EMERGENCY APPROVE / REJECT */}
-      {isEmergency && (
-        <div style={styles.card}>
-          <h2>Emergency Request Decision</h2>
+     
 
-          {!decisionCompleted ? (
-            <>
-              <p style={styles.helpText}>
-                Review the emergency request and
-                approve or reject it.
-              </p>
+             
+                 
+                  
+               
 
-              <div style={styles.actionButtons}>
-                <button
-                  type="button"
-                  style={styles.approveButton}
-                  onClick={handleApprove}
-                  disabled={updating}
-                >
-                  {updating
-                    ? "Processing..."
-                    : "Approve"}
-                </button>
+              
+                  
+                
+                      
+                    
+          
 
-                <button
-                  type="button"
-                  style={styles.rejectButton}
-                  onClick={() => {
-                    setShowRejectBox(true);
-                    setError("");
-                  }}
-                  disabled={updating}
-                >
-                  Reject
-                </button>
-              </div>
-
-              {showRejectBox && (
-                <div style={styles.rejectBox}>
-                  <label
-                    style={styles.rejectLabel}
-                  >
-                    Reason for rejection
-                  </label>
-
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) =>
-                      setRejectReason(
-                        e.target.value
-                      )
-                    }
-                    placeholder="Explain why this emergency request is being rejected..."
-                    style={styles.textarea}
-                  />
-
-                  <div
-                    style={styles.actionButtons}
-                  >
-                    <button
-                      type="button"
-                      style={styles.rejectButton}
-                      onClick={handleReject}
-                      disabled={updating}
-                    >
-                      {updating
-                        ? "Processing..."
-                        : "Confirm Rejection"}
-                    </button>
-
-                    <button
-                      type="button"
-                      style={styles.cancelButton}
-                      onClick={() => {
-                        setShowRejectBox(false);
-                        setRejectReason("");
-                        setError("");
-                      }}
-                      disabled={updating}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : request.status ===
-            "Approved" ? (
-            <div style={styles.approvedBox}>
-              <strong>
-                Emergency request approved.
-              </strong>
-
-              <p style={styles.resultText}>
-                This decision is now recorded in
-                the request history.
-              </p>
-            </div>
-          ) : (
-            <div style={styles.rejectedBox}>
-              <strong>
-                Emergency request rejected.
-              </strong>
-
-              <p style={styles.resultText}>
-                The rejection reason is recorded
-                in the request history.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+              
+      
 
       {/* AGENT 1 PLANNING SECTION */}
       <div style={styles.card}>

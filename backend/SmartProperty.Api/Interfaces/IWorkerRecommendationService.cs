@@ -18,5 +18,12 @@ public interface IWorkerRecommendationService
     Task<List<RecommendationResponseDto>> GetPendingApprovalsForOwnerAsync(
         int currentUserId,
         string currentUserRole);
+
+
+Task<ApprovalResponseDto> ProcessManualDecisionAsync(
+    int maintenanceRequestId,
+    ManualDecisionRequestDto dto,
+    int currentUserId,
+    string currentUserRole);
 }
 
