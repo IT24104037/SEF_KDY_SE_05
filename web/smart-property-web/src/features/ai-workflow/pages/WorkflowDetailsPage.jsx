@@ -68,26 +68,44 @@ const [manualSuccess, setManualSuccess] = useState("");
       } else if (requestIdParam) {
         activeWorkflow = await loadWorkflowByRequestId(requestIdParam);
       }
+      const parallelTasks = [];
 
       if (activeWorkflow && activeWorkflow.id) {
-        await loadLogs(activeWorkflow.id);
+        parallelTasks.push(
+          loadLogs(activeWorkflow.id)
+        );
       }
 
       if (
         (isPropertyOwner || isAdmin) &&
         activeWorkflow &&
         activeWorkflow.maintenanceRequestId &&
-        activeWorkflow.approvalStatus !== "EmergencyServicesRequired"
+        activeWorkflow.approvalStatus !==
+          "EmergencyServicesRequired"
       ) {
-        try {
-          setRecLoading(true);
-          const rec = await getApprovalRequest(activeWorkflow.maintenanceRequestId);
-          setRecommendation(rec);
-        } catch (err) {
-          console.warn("Could not load recommendation for workflow:", err);
-        } finally {
-          setRecLoading(false);
-        }
+        setRecLoading(true);
+
+        parallelTasks.push(
+          getApprovalRequest(
+            activeWorkflow.maintenanceRequestId
+          )
+            .then((rec) => {
+              setRecommendation(rec);
+            })
+            .catch((err) => {
+              console.warn(
+                "Could not load recommendation for workflow:",
+                err
+              );
+            })
+            .finally(() => {
+              setRecLoading(false);
+            })
+        );
+      }
+
+      if (parallelTasks.length > 0) {
+        await Promise.all(parallelTasks);
       }
     }
 

@@ -47,66 +47,100 @@ public class OwnerVerificationController : ControllerBase
     }
 
     // GET /api/owners/me/verification
-    [Authorize(Roles = "PropertyOwner")]
-    [HttpGet("me/verification")]
-    public async Task<IActionResult> GetMyVerificationStatus()
+  [Authorize(Roles = "PropertyOwner")]
+[HttpGet("me/verification")]
+public async Task<IActionResult> GetMyVerificationStatus()
+{
+    var userIdValue = User.FindFirstValue(
+        ClaimTypes.NameIdentifier);
+
+    if (!int.TryParse(userIdValue, out var userId))
     {
-        var userIdValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier);
+        return Unauthorized();
+    }
 
-        if (!int.TryParse(userIdValue, out var userId))
+    var owner = await _context.PropertyOwners
+        .AsNoTracking()
+        .Where(po => po.UserId == userId)
+        .Select(po => new
         {
-            return Unauthorized();
-        }
+            po.Id,
 
-        var owner = await _context.PropertyOwners
-            .AsNoTracking()
-            .Include(po => po.User)
-            .Include(po => po.Properties)
-                .ThenInclude(p => p.VerificationDocuments)
-            .Include(po => po.VerificationDocuments)
-            .FirstOrDefaultAsync(po => po.UserId == userId);
+            FullName = po.User!.FullName,
+            Email = po.User.Email,
+            Mobile = po.User.Mobile,
 
-        if (owner == null)
+            po.VerificationStatus,
+            po.RejectionReason,
+            po.VerifiedAt,
+
+            Property = po.Properties
+                .OrderBy(p => p.CreatedAt)
+                .Select(p => new
+                {
+                    p.Name,
+                    p.Address,
+                    p.City,
+                    p.Description,
+                    p.Latitude,
+                    p.Longitude
+                })
+                .FirstOrDefault(),
+
+            Document = po.VerificationDocuments
+                .OrderByDescending(d => d.UploadedAt)
+                .Select(d => new
+                {
+                    d.DocumentType,
+                    d.DocumentUrl
+                })
+                .FirstOrDefault()
+        })
+        .FirstOrDefaultAsync();
+
+    if (owner == null)
+    {
+        return NotFound(new
         {
-            return NotFound(new
-            {
-                message = "Property owner profile was not found."
-            });
-        }
-
-        var property = owner.Properties
-            .OrderBy(p => p.CreatedAt)
-            .FirstOrDefault();
-        var document = owner.VerificationDocuments
-            .OrderByDescending(d => d.UploadedAt)
-            .FirstOrDefault();
-
-        return Ok(new
-        {
-            ownerId = owner.Id,
-            fullName = owner.User!.FullName,
-            email = owner.User.Email,
-            mobile = owner.User.Mobile,
-            status = owner.VerificationStatus.ToString(),
-            rejectionReason = owner.RejectionReason,
-            verifiedAt = owner.VerifiedAt,
-            property = property == null ? null : new
-            {
-                name = property.Name,
-                address = property.Address,
-                city = property.City,
-                description = property.Description,
-                latitude = property.Latitude,
-                longitude = property.Longitude
-            },
-            document = document == null ? null : new
-            {
-                documentType = document.DocumentType,
-                documentUrl = document.DocumentUrl
-            }
+            message =
+                "Property owner profile was not found."
         });
     }
+
+    return Ok(new
+    {
+        ownerId = owner.Id,
+        fullName = owner.FullName,
+        email = owner.Email,
+        mobile = owner.Mobile,
+        status = owner.VerificationStatus.ToString(),
+        rejectionReason = owner.RejectionReason,
+        verifiedAt = owner.VerifiedAt,
+
+        property = owner.Property == null
+            ? null
+            : new
+            {
+                name = owner.Property.Name,
+                address = owner.Property.Address,
+                city = owner.Property.City,
+                description = owner.Property.Description,
+                latitude = owner.Property.Latitude,
+                longitude = owner.Property.Longitude
+            },
+
+        document = owner.Document == null
+            ? null
+            : new
+            {
+                documentType =
+                    owner.Document.DocumentType,
+
+                documentUrl =
+                    owner.Document.DocumentUrl
+            }
+    });
+}
 
     [Authorize(Roles = "PropertyOwner")]
     [HttpPut("me/reapply")]

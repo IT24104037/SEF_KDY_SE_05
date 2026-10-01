@@ -46,12 +46,15 @@ function UserManagementPage() {
     loadUsers();
   }, [page, role, status]);
 
-  async function handleSearch(event) {
-    event.preventDefault();
+ async function handleSearch(event) {
+  event.preventDefault();
 
+  if (page !== 1) {
     setPage(1);
+  } else {
     await loadUsers();
   }
+}
 
   async function handleSuspend(id) {
     try {
