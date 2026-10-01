@@ -243,8 +243,7 @@ function TenantMaintenanceDetailsPage() {
               <p>No photo was provided.</p>
             )}
           </div>
-
-          {(request.assignedWorkerName || request.workOrderId) && (
+        {(request.assignedWorkerName || request.workOrderId) && (
             <div style={styles.card}>
               <h2>Technician Assignment</h2>
 

@@ -275,11 +275,6 @@ var emergencyServicesRequired =
     string.Equals(
         output.EmergencyClass,
         "LIFE_SAFETY_EMERGENCY",
-        StringComparison.OrdinalIgnoreCase)
-    &&
-    string.Equals(
-        output.RequiredSkill,
-        "EMERGENCY_SERVICES",
         StringComparison.OrdinalIgnoreCase);
 
 if (emergencyServicesRequired)

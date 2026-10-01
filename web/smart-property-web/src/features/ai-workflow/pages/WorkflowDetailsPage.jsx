@@ -5,6 +5,7 @@ import WorkflowTimeline from "../components/WorkflowTimeline";
 import {
   getApprovalRequest,
   submitApprovalDecision,
+  submitManualDecision,
 } from "../../workers/services/workerService.js";
 
 function getUrgencyBadgeStyle(urgency) {
@@ -26,6 +27,18 @@ export default function WorkflowDetailsPage() {
   const requestIdParam = searchParams.get("requestId");
   const navigate = useNavigate();
 
+
+  const currentUserRole =
+  sessionStorage.getItem("role");
+
+const isAdmin =
+  currentUserRole === "Admin";
+
+const isPropertyOwner =
+  currentUserRole === "PropertyOwner";
+
+
+
   const {
     workflow,
     logs,
@@ -42,6 +55,10 @@ export default function WorkflowDetailsPage() {
   const [decisionNote, setDecisionNote] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
   const [submittingDecision, setSubmittingDecision] = useState(false);
+  const [manualMessage, setManualMessage] = useState("");
+const [manualSubmitting, setManualSubmitting] = useState(false);
+const [manualError, setManualError] = useState("");
+const [manualSuccess, setManualSuccess] = useState("");
 
   useEffect(() => {
     async function fetchData() {
@@ -57,6 +74,7 @@ export default function WorkflowDetailsPage() {
       }
 
       if (
+        (isPropertyOwner || isAdmin) &&
         activeWorkflow &&
         activeWorkflow.maintenanceRequestId &&
         activeWorkflow.approvalStatus !== "EmergencyServicesRequired"
@@ -74,9 +92,15 @@ export default function WorkflowDetailsPage() {
     }
 
     fetchData();
-  }, [workflowId, requestIdParam, loadWorkflowById, loadWorkflowByRequestId, loadLogs]);
+  }, [workflowId, requestIdParam, loadWorkflowById, loadWorkflowByRequestId, loadLogs, isPropertyOwner,isAdmin,]);
 
   async function handleDecision(decisionType) {
+        if (!isPropertyOwner) {
+      setRecError(
+        "Only the Property Owner can make an approval decision."
+      );
+      return;
+      }
     const reqId = workflow?.maintenanceRequestId;
     const workerId = recommendation?.recommendedWorkerId;
 
@@ -134,6 +158,71 @@ export default function WorkflowDetailsPage() {
       setSubmittingDecision(false);
     }
   }
+  async function handleManualDecision(decisionType) {
+  if (!isPropertyOwner) {
+    setManualError(
+      "Only the Property Owner can make this decision."
+    );
+    return;
+  }
+
+  const reqId =
+    workflow?.maintenanceRequestId;
+
+  if (!reqId) {
+    setManualError(
+      "Maintenance request ID could not be found."
+    );
+    return;
+  }
+
+  if (!manualMessage.trim()) {
+    setManualError(
+      "Please enter a message to the tenant."
+    );
+    return;
+  }
+
+  try {
+    setManualSubmitting(true);
+    setManualError("");
+    setManualSuccess("");
+
+    const result =
+      await submitManualDecision(
+        reqId,
+        decisionType,
+        manualMessage.trim()
+      );
+
+    setManualSuccess(
+      decisionType === "Approve"
+        ? "Approved and message sent to the tenant."
+        : "Rejected and message sent to the tenant."
+    );
+
+    setManualMessage("");
+
+    // Refresh workflow so ManualApproved / ManualRejected
+    // is immediately reflected in the UI.
+    if (workflowId) {
+      await loadWorkflowById(workflowId);
+    } else if (requestIdParam) {
+      await loadWorkflowByRequestId(
+        requestIdParam
+      );
+    }
+
+    return result;
+  } catch (err) {
+    setManualError(
+      err?.message ||
+        "Could not record the manual decision."
+    );
+  } finally {
+    setManualSubmitting(false);
+  }
+}
 
   if (loading) {
     return (
@@ -166,9 +255,12 @@ export default function WorkflowDetailsPage() {
           <p>
             No active or historical AI maintenance workflow was found for this reference.
           </p>
-          <button style={styles.buttonSecondary} onClick={() => navigate("/owner/maintenance")}>
-            ← Back to Maintenance Requests
-          </button>
+         <button
+          style={styles.buttonSecondary}
+          onClick={() => navigate(-1)}
+        >
+          ← Go Back
+        </button>
         </div>
       </div>
     );
@@ -274,11 +366,34 @@ const needsMoreInformation =
     workflow?.currentStep?.includes("More Information Required")
   );
 
+const manualDecisionCompleted =
+  workflow?.approvalStatus === "ManualApproved" ||
+  workflow?.approvalStatus === "ManualRejected";
+
+const genuineNoWorkerResults = [
+  "NO_WORKER_WITH_REQUIRED_SKILL",
+  "NO_WORKER_IN_LOCATION",
+  "NO_AVAILABLE_WORKER",
+  "NO_AVAILABLE_EMERGENCY_WORKER",
+];
+
 const noWorkerAvailable =
   !emergencyServicesRequired &&
   !needsMoreInformation &&
+  !manualDecisionCompleted &&
   recommendation != null &&
-  recommendation?.hasAvailableWorker === false;
+  recommendation?.hasAvailableWorker === false &&
+  genuineNoWorkerResults.includes(
+    recommendation?.validationStatus
+  );
+  const showManualDecisionBox =
+  isPropertyOwner &&
+  !needsMoreInformation &&
+  !manualDecisionCompleted &&
+  (
+    emergencyServicesRequired ||
+    noWorkerAvailable
+  );
 
 const readyForApproval =
   !emergencyServicesRequired &&
@@ -477,6 +592,144 @@ const readyForApproval =
         </div>
       </div>
     )}
+{showManualDecisionBox && (
+  <div
+    style={{
+      backgroundColor: "#ffffff",
+      border: "1px solid #d1d5db",
+      borderRadius: "10px",
+      padding: "22px",
+      marginBottom: "24px",
+    }}
+  >
+    <h2
+      style={{
+        margin: "0 0 8px 0",
+        fontSize: "20px",
+        color: "#17324D",
+      }}
+    >
+      Manual Message to Tenant
+    </h2>
+
+    <p
+      style={{
+        color: "#6B7280",
+        marginBottom: "16px",
+        lineHeight: "1.5",
+      }}
+    >
+      {emergencyServicesRequired
+        ? "Emergency services are required immediately. You may also send the tenant a manual update about any external assistance you have arranged."
+        : "No suitable platform worker is currently available. Write the complete update you want the tenant to receive."}
+    </p>
+
+    {manualError && (
+      <div
+        style={{
+          backgroundColor: "#fef2f2",
+          color: "#991b1b",
+          border: "1px solid #fecaca",
+          padding: "12px",
+          borderRadius: "8px",
+          marginBottom: "12px",
+        }}
+      >
+        ⚠️ {manualError}
+      </div>
+    )}
+
+    <textarea
+      value={manualMessage}
+      onChange={(e) =>
+        setManualMessage(e.target.value)
+      }
+      maxLength={1000}
+      rows={6}
+      placeholder="Example: I arranged an urgent external worker. He will arrive at your unit at 6:00 PM. Please be available."
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+        padding: "12px",
+        border: "1px solid #d1d5db",
+        borderRadius: "8px",
+        fontSize: "14px",
+        lineHeight: "1.5",
+        resize: "vertical",
+        marginBottom: "16px",
+      }}
+    />
+
+    <div
+      style={{
+        display: "flex",
+        gap: "12px",
+        flexWrap: "wrap",
+      }}
+    >
+      <button
+        type="button"
+        disabled={manualSubmitting}
+        onClick={() =>
+          handleManualDecision("Approve")
+        }
+        style={{
+          backgroundColor: "#16a34a",
+          color: "#ffffff",
+          border: "none",
+          borderRadius: "8px",
+          padding: "11px 18px",
+          fontWeight: "700",
+          cursor: manualSubmitting
+            ? "not-allowed"
+            : "pointer",
+        }}
+      >
+        {manualSubmitting
+          ? "Sending..."
+          : "✓ Approve & Send"}
+      </button>
+
+      <button
+        type="button"
+        disabled={manualSubmitting}
+        onClick={() =>
+          handleManualDecision("Reject")
+        }
+        style={{
+          backgroundColor: "#dc2626",
+          color: "#ffffff",
+          border: "none",
+          borderRadius: "8px",
+          padding: "11px 18px",
+          fontWeight: "700",
+          cursor: manualSubmitting
+            ? "not-allowed"
+            : "pointer",
+        }}
+      >
+        Reject
+      </button>
+    </div>
+  </div>
+)}
+
+{manualSuccess && (
+  <div
+    style={{
+      backgroundColor: "#f0fdf4",
+      color: "#166534",
+      border: "1px solid #bbf7d0",
+      borderRadius: "8px",
+      padding: "14px",
+      marginBottom: "24px",
+      fontWeight: "600",
+    }}
+  >
+    ✅ {manualSuccess}
+  </div>
+)}
+    
       {showApprovalSection && (
         <div style={styles.recommendationCard}>
           <div style={styles.recommendationHeader}>
@@ -600,8 +853,9 @@ const readyForApproval =
             </div>
           </div>
 
-          {/* OWNER APPROVAL ACTION PANEL */}
-          <div style={styles.approvalSection}>
+        {/* OWNER APPROVAL ACTION PANEL */}
+      {isPropertyOwner && (
+        <div style={styles.approvalSection}>
             {isCandidateApproved ? (
               <div style={styles.alreadyApprovedBox}>
                 <div>
@@ -662,6 +916,7 @@ const readyForApproval =
               </div>
             )}
           </div>
+      )}
         </div>
       )}
 

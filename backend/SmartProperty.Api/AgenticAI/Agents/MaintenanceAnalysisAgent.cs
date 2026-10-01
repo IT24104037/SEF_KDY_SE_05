@@ -49,6 +49,13 @@ public class MaintenanceAnalysisAgent
                 StringComparison.OrdinalIgnoreCase)
             || !string.IsNullOrWhiteSpace(input.EmergencyType);
 
+            string ResolvePriority(string normalPriority)
+            {
+                return isEmergencyRequest
+                    ? "CRITICAL"
+                    : normalPriority;
+            }
+
         string emergencyText =
             $"{input.EmergencyType ?? string.Empty} {description}"
                 .ToLowerInvariant();
@@ -94,15 +101,15 @@ if (ContainsAny(
     return new AnalysisOutput
     {
         DetectedProblem = "Potential life-safety electrical hazard",
-        Category = "SAFETY",
-        Priority = "CRITICAL",
-        RequiredSkill = "Electrical",
-        Responsibility = "PROPERTY_RESPONSIBILITY",
-        SafetyConcern =
-            "Move away from the affected area and avoid touching electrical components. Contact emergency services if there is immediate danger.",
-        Confidence = 0.95m,
-        NeedsMoreInformation = false,
-        EmergencyClass = "LIFE_SAFETY_EMERGENCY"
+Category = "SAFETY",
+Priority = "CRITICAL",
+RequiredSkill = "EMERGENCY_SERVICES",
+Responsibility = "EMERGENCY_SERVICES_REQUIRED",
+SafetyConcern =
+    "Move to a safe location immediately, avoid touching electrical components, and contact 119 Emergency Services. Do not wait for a maintenance worker.",
+Confidence = 0.95m,
+NeedsMoreInformation = false,
+EmergencyClass = "LIFE_SAFETY_EMERGENCY"
     };
 }
 
@@ -122,7 +129,7 @@ if (ContainsAny(
     {
         DetectedProblem = "Electrical sparking problem",
         Category = "ELECTRICAL",
-        Priority = "HIGH",
+       Priority = ResolvePriority("HIGH"),
         RequiredSkill = "Electrical",
 
         Responsibility = GetResponsibility(
@@ -153,7 +160,7 @@ if (ContainsAny(
             {
                 DetectedProblem = "Significant water leakage",
                 Category = "PLUMBING",
-                Priority = "HIGH",
+                Priority = ResolvePriority("HIGH"),
                 RequiredSkill = "Plumbing",
                 Responsibility = GetResponsibility(
                         input,
@@ -200,7 +207,7 @@ if (ContainsAny(
             {
                 DetectedProblem = "Electrical system problem",
                 Category = "ELECTRICAL",
-                Priority = "MEDIUM",
+               Priority = ResolvePriority("MEDIUM"),
                 RequiredSkill = "Electrical",
                 Responsibility = GetResponsibility(
                     input,
@@ -245,8 +252,7 @@ if (ContainsAny(
         Category =
             "DRAINAGE_WATER_DAMAGE",
 
-        Priority =
-            "MEDIUM",
+       Priority = ResolvePriority("MEDIUM"),
 
         RequiredSkill =
             "Drainage / Water Damage",
@@ -294,7 +300,7 @@ if (ContainsAny(
             {
                 DetectedProblem = "Plumbing problem",
                 Category = "PLUMBING",
-                Priority = "MEDIUM",
+                Priority = ResolvePriority("MEDIUM"),
                 RequiredSkill = "Plumbing",
               Responsibility = GetResponsibility(
                         input,
@@ -331,7 +337,7 @@ if (ContainsAny(
                 {
                     DetectedProblem = "Door, window or lock problem",
                     Category = "DOORS_WINDOWS_LOCKS",
-                    Priority = "MEDIUM",
+                    Priority = ResolvePriority("MEDIUM"),
                     RequiredSkill = "Doors / Windows / Locks",
                     Responsibility = GetResponsibility(
                         input,
@@ -366,7 +372,7 @@ if (ContainsAny(
             {
                 DetectedProblem = "Possible structural/property damage",
                 Category = "STRUCTURAL",
-                Priority = "MEDIUM",
+                Priority = ResolvePriority("MEDIUM"),
                 RequiredSkill = "Structural / Building",
                 Responsibility = GetResponsibility(
                         input,
@@ -399,7 +405,7 @@ if (ContainsAny(
             {
                 DetectedProblem = "Possible tenant-owned appliance problem",
                 Category = "APPLIANCE",
-                Priority = "LOW",
+                Priority = ResolvePriority("LOW"),
                 RequiredSkill = "Other",
                 Responsibility = GetResponsibility(
                         input,
@@ -421,7 +427,7 @@ if (ContainsAny(
             {
                 DetectedProblem = "Possible tenant-caused damage",
                 Category = "DAMAGE",
-                Priority = "MEDIUM",
+               Priority = ResolvePriority("MEDIUM"),
                 RequiredSkill = "Other",
                 Responsibility = GetResponsibility(
                         input,

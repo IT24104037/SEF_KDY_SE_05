@@ -104,8 +104,19 @@ export default function WorkflowHistoryPage() {
           <div style={{ marginTop: "16px", textAlign: "right" }}>
             <button
               style={styles.buttonPrimary}
-              onClick={() => navigate(`/owner/ai-workflow/${resultWorkflow.id}`)}
-            >
+
+              onClick={() => {
+  const role = sessionStorage.getItem("role");
+
+      const basePath =
+        role === "Admin"
+          ? "/admin/ai-workflow"
+          : "/owner/ai-workflow";
+
+      navigate(`${basePath}/${resultWorkflow.id}`);
+    }}
+                          
+            > 
               View Full Planning Details →
             </button>
           </div>
