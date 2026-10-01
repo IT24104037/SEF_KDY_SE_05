@@ -51,27 +51,23 @@ function MyPropertiesPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function loadProperties() {
+  async function loadActiveProperties() {
     try {
       setLoading(true);
       setError("");
 
-      const [activeData, archivedData] = await Promise.all([
-        getMyProperties({
-          search: searchQuery,
-          city: cityQuery,
-          status: statusFilter,
-          sortBy,
-          sortDirection,
-          page,
-          pageSize,
-        }),
-        getArchivedProperties(),
-      ]);
+      const activeData = await getMyProperties({
+        search: searchQuery,
+        city: cityQuery,
+        status: statusFilter,
+        sortBy,
+        sortDirection,
+        page,
+        pageSize,
+      });
 
       setProperties(activeData.items || []);
       setTotalCount(activeData.totalCount || 0);
-      setArchivedProperties(archivedData || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -79,8 +75,25 @@ function MyPropertiesPage() {
     }
   }
 
+  async function loadArchivedProperties() {
+    try {
+      const archivedData = await getArchivedProperties();
+      setArchivedProperties(archivedData || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function loadProperties() {
+    await Promise.all([loadActiveProperties(), loadArchivedProperties()]);
+  }
+
   useEffect(() => {
-    loadProperties();
+    loadArchivedProperties();
+  }, []);
+
+  useEffect(() => {
+    loadActiveProperties();
   }, [searchQuery, cityQuery, statusFilter, sortBy, sortDirection, page, pageSize]);
 
   function handleFilterSubmit(event) {
