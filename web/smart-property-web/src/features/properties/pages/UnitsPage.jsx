@@ -51,29 +51,22 @@ function UnitsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function loadUnits() {
+  async function loadActiveUnits() {
     try {
       setLoading(true);
       setError("");
 
-      const [propertyData, unitsData, archivedUnitsData] =
-        await Promise.all([
-          getProperty(propertyId),
-          getUnits(propertyId, {
-            search: searchQuery,
-            status: statusFilter,
-            sortBy,
-            sortDirection,
-            page,
-            pageSize,
-          }),
-          getArchivedUnits(propertyId),
-        ]);
+      const unitsData = await getUnits(propertyId, {
+        search: searchQuery,
+        status: statusFilter,
+        sortBy,
+        sortDirection,
+        page,
+        pageSize,
+      });
 
-      setProperty(propertyData);
       setUnits(unitsData.items || []);
       setTotalCount(unitsData.totalCount || 0);
-      setArchivedUnits(archivedUnitsData || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -81,8 +74,34 @@ function UnitsPage() {
     }
   }
 
+  async function loadPropertyAndArchivedUnits() {
+    try {
+      const [propertyData, archivedUnitsData] = await Promise.all([
+        getProperty(propertyId),
+        getArchivedUnits(propertyId),
+      ]);
+
+      setProperty(propertyData);
+      setArchivedUnits(archivedUnitsData || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function loadUnits() {
+    await Promise.all([loadActiveUnits(), loadPropertyAndArchivedUnits()]);
+  }
+
   useEffect(() => {
-    loadUnits();
+    if (propertyId) {
+      loadPropertyAndArchivedUnits();
+    }
+  }, [propertyId]);
+
+  useEffect(() => {
+    if (propertyId) {
+      loadActiveUnits();
+    }
   }, [propertyId, searchQuery, statusFilter, sortBy, sortDirection, page, pageSize]);
 
   function handleFilterSubmit(event) {

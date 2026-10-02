@@ -68,25 +68,13 @@ public class PropertyService : IPropertyService
     {
         query ??= new PropertyQueryParameters();
 
-        var owner = await _context.PropertyOwners
-            .FirstOrDefaultAsync(po => po.UserId == userId);
-
-        if (owner == null ||
-            owner.VerificationStatus != OwnerVerificationStatus.Verified)
-        {
-            return new PagedResult<PropertyResponseDto>
-            {
-                Items = new List<PropertyResponseDto>(),
-                TotalCount = 0,
-                Page = query.Page,
-                PageSize = query.PageSize
-            };
-        }
-
         var queryable = _context.Properties
             .AsNoTracking()
             .Include(p => p.VerificationDocuments)
-            .Where(p => p.PropertyOwnerId == owner.Id && !p.IsArchived);
+            .Where(p =>
+                p.PropertyOwner!.UserId == userId &&
+                p.PropertyOwner.VerificationStatus == OwnerVerificationStatus.Verified &&
+                !p.IsArchived);
 
         // Search against Name, Address, and City
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -532,42 +520,16 @@ public class PropertyService : IPropertyService
     {
         query ??= new UnitQueryParameters();
 
-        var owner = await _context.PropertyOwners
-            .FirstOrDefaultAsync(po => po.UserId == userId);
-
-        if (owner == null ||
-            owner.VerificationStatus != OwnerVerificationStatus.Verified)
-        {
-            return new PagedResult<UnitResponseDto>
-            {
-                Items = new List<UnitResponseDto>(),
-                TotalCount = 0,
-                Page = query.Page,
-                PageSize = query.PageSize
-            };
-        }
-
-        var propertyExists = await _context.Properties
-            .AnyAsync(p =>
-                p.Id == propertyId &&
-                p.PropertyOwnerId == owner.Id &&
-                p.VerificationStatus == PropertyVerificationStatus.Approved &&
-                !p.IsArchived);
-
-        if (!propertyExists)
-        {
-            return new PagedResult<UnitResponseDto>
-            {
-                Items = new List<UnitResponseDto>(),
-                TotalCount = 0,
-                Page = query.Page,
-                PageSize = query.PageSize
-            };
-        }
-
         var queryable = _context.Units
             .AsNoTracking()
-            .Where(u => u.PropertyId == propertyId && !u.IsArchived && !u.IsDeleted);
+            .Where(u =>
+                u.PropertyId == propertyId &&
+                u.Property.PropertyOwner!.UserId == userId &&
+                u.Property.PropertyOwner.VerificationStatus == OwnerVerificationStatus.Verified &&
+                u.Property.VerificationStatus == PropertyVerificationStatus.Approved &&
+                !u.Property.IsArchived &&
+                !u.IsArchived &&
+                !u.IsDeleted);
 
         // Search against UnitLabel and Description
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -789,30 +751,14 @@ public async Task<List<UnitResponseDto>> GetArchivedUnitsAsync(
     int userId,
     int propertyId)
 {
-    var owner = await _context.PropertyOwners
-        .FirstOrDefaultAsync(po => po.UserId == userId);
-
-    if (owner == null ||
-        owner.VerificationStatus != OwnerVerificationStatus.Verified)
-    {
-        return new List<UnitResponseDto>();
-    }
-
-    var propertyExists = await _context.Properties
-        .AnyAsync(p =>
-            p.Id == propertyId &&
-            p.PropertyOwnerId == owner.Id &&
-            p.VerificationStatus == PropertyVerificationStatus.Approved &&
-            !p.IsArchived);
-
-    if (!propertyExists)
-    {
-        return new List<UnitResponseDto>();
-    }
-
     var units = await _context.Units
+        .AsNoTracking()
         .Where(u =>
             u.PropertyId == propertyId &&
+            u.Property.PropertyOwner!.UserId == userId &&
+            u.Property.PropertyOwner.VerificationStatus == OwnerVerificationStatus.Verified &&
+            u.Property.VerificationStatus == PropertyVerificationStatus.Approved &&
+            !u.Property.IsArchived &&
             u.IsArchived &&
             !u.IsDeleted)
         .OrderBy(u => u.UnitLabel)
