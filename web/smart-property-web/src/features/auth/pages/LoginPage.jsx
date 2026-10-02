@@ -116,18 +116,23 @@ function LoginPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#f3f5f6",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    padding: "clamp(18px, 4vw, 40px)",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    color: "#1f2933",
   },
 
   card: {
-    width: "360px",
-    backgroundColor: "#FFFFFF",
-    padding: "32px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+    width: "min(400px, 100%)",
+    backgroundColor: "#ffffff",
+    padding: "clamp(22px, 4vw, 34px)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0f766e",
+    borderRadius: "12px",
+    boxShadow: "0 12px 32px rgba(22, 34, 42, 0.06)",
     display: "flex",
     flexDirection: "column",
     gap: "12px",
@@ -135,44 +140,49 @@ const styles = {
 
   title: {
     margin: 0,
-    color: "#17324D",
+    color: "#172033",
+    fontSize: "28px",
+    fontWeight: 750,
   },
 
   subtitle: {
-    color: "#6B7280",
+    color: "#64748b",
   },
 
   input: {
-    padding: "11px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
 
   button: {
     marginTop: "10px",
     padding: "12px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#1F8A8A",
+    borderRadius: "8px",
+    backgroundColor: "#0f766e",
     color: "#FFFFFF",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   registerButton: {
     padding: "10px",
-    border: "1px solid #1F8A8A",
-    borderRadius: "6px",
-    backgroundColor: "#FFFFFF",
-    color: "#1F8A8A",
+    border: "1px solid #b9d8d3",
+    borderRadius: "8px",
+    backgroundColor: "#f2f8f7",
+    color: "#0f766e",
     cursor: "pointer",
   },
 
   workerRegisterButton: {
     padding: "10px",
-    border: "1px solid #0284c7",
-    borderRadius: "6px",
-    backgroundColor: "#f0f9ff",
-    color: "#0369a1",
+    border: "1px solid #fcd34d",
+    borderRadius: "8px",
+    backgroundColor: "#fffbeb",
+    color: "#b45309",
     cursor: "pointer",
     fontWeight: "600",
   },
@@ -181,12 +191,16 @@ const styles = {
     padding: "10px",
     border: "none",
     backgroundColor: "transparent",
-    color: "#17324D",
+    color: "#0369a1",
     cursor: "pointer",
   },
 
   error: {
-    color: "#D64545",
+    color: "#991b1b",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    padding: "10px 12px",
   },
 };
 

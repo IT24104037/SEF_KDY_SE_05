@@ -134,7 +134,7 @@ export default function OwnerProfilePage() {
   }
 
   return (
-    <div>
+    <div style={styles.page}>
       <h1 style={styles.pageTitle}>Profile</h1>
       <p style={styles.pageSubtitle}>Your account information and settings</p>
 
@@ -335,23 +335,25 @@ function StatusBadge({ status }) {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   pageTitle: {
     marginTop: 0,
-    color: "#17324D",
-    fontSize: "24px",
-    fontWeight: "700",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
   pageSubtitle: {
-    color: "#6B7280",
+    color: "#64748b",
     marginBottom: "24px",
     marginTop: "4px",
   },
   card: {
     backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    padding: "24px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0f766e",
+    borderRadius: "12px",
+    padding: "clamp(18px, 3vw, 26px)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
     maxWidth: "520px",
     marginBottom: "24px",
   },
@@ -362,17 +364,17 @@ const styles = {
     marginBottom: "16px",
   },
   cardTitle: {
-    color: "#17324D",
-    fontSize: "16px",
-    fontWeight: "600",
+    color: "#172033",
+    fontSize: "17px",
+    fontWeight: 700,
     margin: 0,
   },
   editButton: {
-    backgroundColor: "#17324D",
+    backgroundColor: "#0f766e",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "6px 14px",
+    borderRadius: "8px",
+    padding: "8px 14px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -417,17 +419,18 @@ const styles = {
   },
   input: {
     width: "100%",
-    padding: "8px 12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     fontSize: "14px",
     boxSizing: "border-box",
+    fontFamily: "inherit",
   },
   inputReadOnly: {
     width: "100%",
     padding: "8px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "6px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "8px",
     fontSize: "14px",
     backgroundColor: "#f9fafb",
     color: "#6b7280",
@@ -440,11 +443,11 @@ const styles = {
     marginTop: "16px",
   },
   submitButton: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#0f766e",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    padding: "8px 16px",
+    borderRadius: "8px",
+    padding: "9px 16px",
     fontSize: "14px",
     fontWeight: "600",
     cursor: "pointer",
@@ -453,7 +456,7 @@ const styles = {
     backgroundColor: "#6ee7b7",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "8px 16px",
     fontSize: "14px",
     fontWeight: "600",
@@ -463,7 +466,7 @@ const styles = {
     backgroundColor: "#f3f4f6",
     color: "#374151",
     border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "8px 16px",
     fontSize: "14px",
     cursor: "pointer",
@@ -473,9 +476,9 @@ const styles = {
     margin: "20px 0",
   },
   pendingBanner: {
-    backgroundColor: "#fefce8",
-    border: "1px solid #fef08a",
-    color: "#854d0e",
+    backgroundColor: "#fffbeb",
+    border: "1px solid #fcd34d",
+    color: "#92400e",
     padding: "16px",
     borderRadius: "8px",
     maxWidth: "520px",
@@ -483,7 +486,7 @@ const styles = {
   },
   rejectedBanner: {
     backgroundColor: "#fef2f2",
-    border: "1px solid #fca5a5",
+    border: "1px solid #fecaca",
     color: "#991b1b",
     padding: "16px",
     borderRadius: "8px",
@@ -512,9 +515,9 @@ const styles = {
   errorBox: {
     padding: "12px 16px",
     backgroundColor: "#fef2f2",
-    border: "1px solid #fca5a5",
-    borderRadius: "6px",
-    color: "#b91c1c",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    color: "#991b1b",
     marginBottom: "20px",
     maxWidth: "520px",
   },
@@ -522,7 +525,7 @@ const styles = {
     padding: "12px 16px",
     backgroundColor: "#f0fdf4",
     border: "1px solid #bbf7d0",
-    borderRadius: "6px",
+    borderRadius: "8px",
     color: "#166534",
     marginBottom: "20px",
     maxWidth: "520px",

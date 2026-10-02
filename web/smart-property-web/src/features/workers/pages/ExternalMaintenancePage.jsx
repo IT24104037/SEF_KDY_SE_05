@@ -305,38 +305,38 @@ function ExternalMaintenancePage() {
 function statusBadgeStyle(status) {
   switch (status) {
     case "Confirmed":
-      return { padding: "4px 10px", borderRadius: "999px", background: "#dcfce7", color: "#15803d", fontSize: "12px", fontWeight: 700 };
+      return { padding: "5px 10px", borderRadius: "999px", background: "#f0fdf4", color: "#166534", fontSize: "12px", fontWeight: 700 };
     case "Completed":
-      return { padding: "4px 10px", borderRadius: "999px", background: "#e0f2fe", color: "#0369a1", fontSize: "12px", fontWeight: 700 };
+      return { padding: "5px 10px", borderRadius: "999px", background: "#f0fdf4", color: "#166534", fontSize: "12px", fontWeight: 700 };
     default:
-      return { padding: "4px 10px", borderRadius: "999px", background: "#fef3c7", color: "#92400e", fontSize: "12px", fontWeight: 700 };
+      return { padding: "5px 10px", borderRadius: "999px", background: "#fef3c7", color: "#92400e", fontSize: "12px", fontWeight: 700 };
   }
 }
 
 const styles = {
-  page: { minHeight: "100vh", padding: "36px 5vw", background: "#f8fafc", color: "#1e293b", fontFamily: "system-ui, -apple-system, sans-serif" },
+  page: { minHeight: "100vh", padding: "clamp(20px, 4vw, 40px)", background: "#f3f5f6", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   back: { color: "#0f766e", fontWeight: 600, fontSize: "14px", textDecoration: "none" },
   header: { display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start", margin: "16px 0 24px", flexWrap: "wrap" },
   eyebrow: { color: "#0f766e", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: 0 },
-  phaseBadge: { background: "#ccfbf1", color: "#115e59", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 },
-  title: { color: "#0f172a", margin: "4px 0", fontSize: "24px" },
+  phaseBadge: { background: "#e6f4f1", color: "#0f5e57", padding: "5px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700 },
+  title: { color: "#172033", margin: "4px 0", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
   muted: { color: "#64748b", margin: 0, fontSize: "14px", maxWidth: "650px" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "24px" },
-  card: { padding: "24px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: "20px" },
+  card: { padding: "clamp(18px, 3vw, 26px)", background: "#fff", border: "1px solid #e2e7e9", borderRadius: "12px", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)" },
   form: { display: "grid", gap: "14px" },
   row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" },
   field: { display: "grid", gap: "6px", fontWeight: 600, fontSize: "13px", color: "#334155" },
-  input: { padding: "9px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px" },
-  textarea: { padding: "9px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", resize: "vertical" },
-  primaryBtn: { padding: "10px 18px", border: 0, borderRadius: "6px", background: "#0f766e", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "14px" },
-  confirmBtn: { padding: "7px 14px", border: 0, borderRadius: "6px", background: "#16a34a", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "12px" },
-  refreshBtn: { padding: "5px 10px", border: "1px solid #cbd5e1", borderRadius: "4px", background: "#fff", color: "#475569", cursor: "pointer", fontSize: "12px" },
-  emptyBox: { padding: "30px", background: "#f8fafc", borderRadius: "6px", textAlign: "center", color: "#64748b" },
-  arrangementItem: { padding: "16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px" },
-  emergencyBadge: { fontSize: "11px", fontWeight: 700, color: "#dc2626", background: "#fee2e2", padding: "2px 6px", borderRadius: "4px" },
-  normalBadge: { fontSize: "11px", fontWeight: 700, color: "#4338ca", background: "#e0e7ff", padding: "2px 6px", borderRadius: "4px" },
-  error: { padding: "12px", background: "#fee2e2", color: "#991b1b", borderRadius: "6px", marginBottom: "16px" },
-  success: { padding: "12px", background: "#dcfce7", color: "#166534", borderRadius: "6px", marginBottom: "16px" },
+  input: { padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "13px", color: "#1f2933", fontFamily: "inherit" },
+  textarea: { padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "13px", resize: "vertical", fontFamily: "inherit" },
+  primaryBtn: { padding: "10px 18px", border: 0, borderRadius: "8px", background: "#0f766e", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "14px" },
+  confirmBtn: { padding: "8px 14px", border: 0, borderRadius: "8px", background: "#15803d", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "12px" },
+  refreshBtn: { padding: "7px 11px", border: "1px solid #d8e0eb", borderRadius: "8px", background: "#fff", color: "#334155", cursor: "pointer", fontSize: "12px" },
+  emptyBox: { padding: "30px", background: "#ffffff", border: "1px dashed #cbd5e1", borderRadius: "10px", textAlign: "center", color: "#64748b" },
+  arrangementItem: { padding: "16px", background: "#f8fafb", border: "1px solid #e2e7e9", borderRadius: "10px" },
+  emergencyBadge: { fontSize: "11px", fontWeight: 700, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", padding: "4px 8px", borderRadius: "999px" },
+  normalBadge: { fontSize: "11px", fontWeight: 700, color: "#0f766e", background: "#e6f4f1", padding: "4px 8px", borderRadius: "999px" },
+  error: { padding: "12px 14px", background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: "8px", marginBottom: "16px" },
+  success: { padding: "12px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: "8px", marginBottom: "16px" },
 };
 
 export default ExternalMaintenancePage;

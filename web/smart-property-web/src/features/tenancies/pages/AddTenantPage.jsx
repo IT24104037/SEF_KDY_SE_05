@@ -20,18 +20,12 @@ export default function AddTenantPage() {
   // ---- Success view: show the one-time PIN clearly ----
   if (created) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={styles.page}>
         <div
-          style={{
-            background: "#fff",
-            border: "1px solid #DDE3E9",
-            borderRadius: 8,
-            padding: 24,
-            maxWidth: 420,
-          }}
+          style={styles.successCard}
         >
-          <h2 style={{ color: "#22A06B" }}>Tenant Added Successfully</h2>
-          <p style={{ color: "#25313C" }}>
+          <h2 style={styles.successTitle}>Tenant Added Successfully</h2>
+          <p style={styles.successText}>
             Share this one-time Activation PIN with <strong>{created.fullName}</strong>{" "}
             outside the app (SMS, call, or in person). It will not be shown again.
           </p>
@@ -43,24 +37,25 @@ export default function AddTenantPage() {
               letterSpacing: 4,
               textAlign: "center",
               padding: "16px 0",
-              color: "#17324D",
-              background: "#F5F7FA",
-              borderRadius: 6,
+              color: "#172033",
+              background: "#f3f5f6",
+              border: "1px solid #e2e7e9",
+              borderRadius: 8,
               margin: "16px 0",
             }}
           >
             {created.activationPin}
           </div>
 
-          <p style={{ color: "#6B7280", fontSize: 13 }}>
+          <p style={styles.expires}>
             Expires: {new Date(created.pinExpiresAt).toLocaleString()}
           </p>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+          <div style={styles.actions}>
             <button onClick={() => navigate(`/owner/tenants/${created.id}`)} style={buttonStyle}>
               View Tenant
             </button>
-            <button onClick={() => setCreated(null)} style={{ ...buttonStyle, background: "#6B7280" }}>
+            <button onClick={() => setCreated(null)} style={secondaryButtonStyle}>
               Add Another
             </button>
           </div>
@@ -71,24 +66,45 @@ export default function AddTenantPage() {
 
   // ---- Form view ----
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ color: "#17324D" }}>Add Tenant</h2>
-      <TenantForm
-        mode="create"
-        initialValues={{ propertyId: initialPropertyId, unitId: initialUnitId }}
-        isContextAware={isContextAware}
-        onSubmit={handleCreate}
-        submitLabel="Add Tenant"
-      />
+    <div style={styles.page}>
+      <h2 style={styles.title}>Add Tenant</h2>
+      <div style={styles.formCard}>
+        <TenantForm
+          mode="create"
+          initialValues={{ propertyId: initialPropertyId, unitId: initialUnitId }}
+          isContextAware={isContextAware}
+          onSubmit={handleCreate}
+          submitLabel="Add Tenant"
+        />
+      </div>
     </div>
   );
 }
 
 const buttonStyle = {
-  background: "#1F8A8A",
+  background: "#0f766e",
   color: "#fff",
   border: "none",
-  borderRadius: 6,
+  borderRadius: 8,
   padding: "10px 16px",
   cursor: "pointer",
+  fontWeight: 650,
+};
+
+const secondaryButtonStyle = {
+  ...buttonStyle,
+  background: "#ffffff",
+  border: "1px solid #d8e0eb",
+  color: "#334155",
+};
+
+const styles = {
+  page: { padding: "clamp(18px, 3vw, 30px)", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  title: { margin: "0 0 18px", color: "#172033", fontSize: 22, fontWeight: 700 },
+  successCard: { background: "#ffffff", border: "1px solid #bbf7d0", borderTop: "3px solid #15803d", borderRadius: 12, padding: "clamp(20px, 3vw, 28px)", maxWidth: 520, boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)" },
+  formCard: { maxWidth: 580, padding: "4px", background: "#ffffff", border: "1px solid #e2e7e9", borderTop: "3px solid #0f766e", borderRadius: 12, boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" },
+  successTitle: { color: "#166534", margin: "0 0 8px", fontSize: 20 },
+  successText: { color: "#334155", lineHeight: 1.6 },
+  expires: { color: "#64748b", fontSize: 13 },
+  actions: { display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" },
 };

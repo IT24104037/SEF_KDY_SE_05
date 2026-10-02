@@ -217,7 +217,12 @@ function WorkOrderDetailsPage() {
   }
 
   return (
-    <main style={styles.page}>
+    <main
+      style={{
+        ...styles.page,
+        "--role-accent": isWorker ? "#b45309" : "#0f766e",
+      }}
+    >
      <div
   style={{
     display: "flex",
@@ -329,7 +334,7 @@ function WorkOrderDetailsPage() {
             </div>
             <div>
               <span style={styles.detailLabel}>Priority:</span>
-              <strong style={styles.detailVal}>
+              <strong style={workOrder.isEmergency ? styles.emergencyValue : styles.detailVal}>
                 {workOrder.isEmergency ? "EMERGENCY" : workOrder.priority}
               </strong>
             </div>
@@ -454,7 +459,7 @@ function WorkOrderDetailsPage() {
                       href={workOrder.completionEvidenceUrl}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ color: "#0f766e", fontSize: "13px", fontWeight: 600 }}
+                      style={{ color: "var(--role-accent, #b45309)", fontSize: "13px", fontWeight: 600 }}
                     >
                       View Evidence Attachment ↗
                     </a>
@@ -580,7 +585,7 @@ function statusStyle(status) {
     case "Completed":
       return { padding: "8px 14px", borderRadius: "999px", background: "#dcfce7", color: "#15803d", fontSize: "12px", fontWeight: 700 };
     case "InProgress":
-      return { padding: "8px 14px", borderRadius: "999px", background: "#e0f2fe", color: "#0369a1", fontSize: "12px", fontWeight: 700 };
+      return { padding: "8px 14px", borderRadius: "999px", background: "color-mix(in srgb, var(--role-accent, #b45309) 10%, white)", color: "var(--role-accent, #b45309)", fontSize: "12px", fontWeight: 700 };
     case "Cancelled":
       return { padding: "8px 14px", borderRadius: "999px", background: "#fee2e2", color: "#b91c1c", fontSize: "12px", fontWeight: 700 };
     default:
@@ -589,34 +594,35 @@ function statusStyle(status) {
 }
 
 const styles = {
-  page: { minHeight: "100vh", padding: "36px 5vw", background: "#f8fafc", color: "#1e293b", fontFamily: "system-ui, -apple-system, sans-serif" },
-  back: { color: "#0f766e", fontWeight: 600, fontSize: "14px", textDecoration: "none" },
+  page: { minHeight: "100vh", padding: "clamp(20px, 4vw, 40px)", background: "#f3f5f6", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  back: { color: "var(--role-accent, #b45309)", fontWeight: 600, fontSize: "14px", textDecoration: "none" },
   header: { display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start", margin: "18px 0 24px", flexWrap: "wrap" },
-  eyebrow: { color: "#0f766e", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: 0 },
-  phaseBadge: { background: "#ccfbf1", color: "#115e59", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 },
-  title: { color: "#0f172a", margin: "4px 0", fontSize: "24px" },
+  eyebrow: { color: "var(--role-accent, #b45309)", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: 0 },
+  phaseBadge: { background: "color-mix(in srgb, var(--role-accent) 10%, white)", color: "var(--role-accent)", border: "1px solid color-mix(in srgb, var(--role-accent) 24%, white)", padding: "5px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700 },
+  title: { color: "#172033", margin: "4px 0", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
   muted: { color: "#64748b", margin: 0, fontSize: "14px" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", marginBottom: "20px" },
-  card: { padding: "24px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: "20px", marginBottom: "20px" },
+  card: { padding: "clamp(18px, 3vw, 26px)", background: "#fff", border: "1px solid #e2e7e9", borderRadius: "12px", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)" },
   label: { color: "#64748b", fontSize: "11px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", margin: "0 0 12px" },
   detailsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" },
   detailLabel: { display: "block", fontSize: "11px", color: "#64748b" },
   detailVal: { display: "block", fontSize: "14px", color: "#0f172a", marginTop: "2px" },
+  emergencyValue: { display: "block", fontSize: "14px", color: "#b91c1c", marginTop: "2px", fontWeight: 700 },
   actions: { display: "flex", gap: "10px", marginTop: "16px", flexWrap: "wrap" },
-  primary: { padding: "10px 18px", border: 0, borderRadius: "6px", background: "#0f766e", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
-  completeBtn: { padding: "10px 18px", border: 0, borderRadius: "6px", background: "#16a34a", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
-  cancelBtn: { padding: "10px 14px", border: "1px solid #f87171", borderRadius: "6px", background: "#fff", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
-  secondary: { padding: "9px 16px", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", color: "#334155", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
-  completedBadge: { padding: "10px 14px", background: "#dcfce7", color: "#15803d", borderRadius: "6px", fontWeight: 600, fontSize: "13px" },
-  evidenceBox: { marginTop: "16px", padding: "14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px" },
-  error: { padding: "12px", background: "#fee2e2", color: "#991b1b", borderRadius: "6px", marginBottom: "16px" },
-  success: { padding: "12px", background: "#dcfce7", color: "#166534", borderRadius: "6px", marginBottom: "16px" },
+  primary: { padding: "10px 18px", border: 0, borderRadius: "8px", background: "var(--role-accent, #b45309)", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
+  completeBtn: { padding: "10px 18px", border: 0, borderRadius: "8px", background: "#15803d", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
+  cancelBtn: { padding: "10px 14px", border: "1px solid #f87171", borderRadius: "8px", background: "#fff", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
+  secondary: { padding: "9px 16px", border: "1px solid #d8e0eb", borderRadius: "8px", background: "#fff", color: "#334155", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
+  completedBadge: { padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: "8px", fontWeight: 600, fontSize: "13px" },
+  evidenceBox: { marginTop: "16px", padding: "16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" },
+  error: { padding: "12px 14px", background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: "8px", marginBottom: "16px" },
+  success: { padding: "12px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: "8px", marginBottom: "16px" },
   form: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", marginTop: "14px", alignItems: "end" },
   field: { display: "grid", gap: "6px", fontWeight: 600, fontSize: "13px", color: "#334155" },
-  input: { padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px" },
-  textarea: { padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", resize: "vertical" },
+  input: { padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "13px", fontFamily: "inherit" },
+  textarea: { padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "13px", resize: "vertical", fontFamily: "inherit" },
   modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" },
-  modal: { background: "#fff", borderRadius: "10px", padding: "28px", maxWidth: "520px", width: "100%", boxShadow: "0 10px 25px rgba(0,0,0,0.15)" },
+  modal: { background: "#fff", border: "1px solid #e2e7e9", borderRadius: "12px", padding: "clamp(20px, 4vw, 28px)", maxWidth: "520px", width: "100%", boxShadow: "0 18px 48px rgba(15, 23, 42, 0.18)" },
   modalField: { display: "grid", gap: "6px", fontWeight: 600, fontSize: "13px", color: "#334155", marginBottom: "14px" },
 };
 

@@ -213,6 +213,7 @@ function MyMaintenanceRequestsPage() {
 
             <div style={styles.pagination}>
               <button
+                style={styles.paginationButton}
                 disabled={page <= 1}
                 onClick={() =>
                   setPage(
@@ -230,6 +231,7 @@ function MyMaintenanceRequestsPage() {
               </span>
 
               <button
+                style={styles.paginationButton}
                 disabled={
                   totalPages === 0 ||
                   page >= totalPages
@@ -254,12 +256,14 @@ function MyMaintenanceRequestsPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#f4f6f8",
-    padding: "40px 20px",
+    backgroundColor: "#f3f5f6",
+    padding: "clamp(20px, 4vw, 40px)",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   container: {
-    maxWidth: "1000px",
+    maxWidth: "1100px",
     margin: "0 auto",
   },
 
@@ -272,18 +276,25 @@ const styles = {
   },
 
   title: {
-    marginBottom: "6px",
+    margin: "0 0 6px",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
 
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
+    fontSize: "14px",
+    lineHeight: 1.6,
   },
 
   totalBox: {
     backgroundColor: "#ffffff",
     padding: "12px 18px",
-    borderRadius: "8px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "10px",
     fontWeight: "600",
+    boxShadow: "0 4px 14px rgba(22, 34, 42, 0.035)",
   },
 
   actions: {
@@ -297,19 +308,21 @@ const styles = {
   normalButton: {
     padding: "10px 16px",
     border: "none",
-    borderRadius: "7px",
-    backgroundColor: "#1f8a8a",
+    borderRadius: "8px",
+    backgroundColor: "#0369a1",
     color: "#ffffff",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   emergencyButton: {
     padding: "10px 16px",
     border: "none",
-    borderRadius: "7px",
-    backgroundColor: "#b42318",
+    borderRadius: "8px",
+    backgroundColor: "#b91c1c",
     color: "#ffffff",
     cursor: "pointer",
+    fontWeight: 700,
   },
 
   filters: {
@@ -320,9 +333,12 @@ const styles = {
   },
 
   input: {
-    padding: "10px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    backgroundColor: "#ffffff",
+    fontFamily: "inherit",
   },
 
   requestList: {
@@ -332,8 +348,10 @@ const styles = {
 
   card: {
     backgroundColor: "#ffffff",
-    padding: "20px",
-    borderRadius: "10px",
+    padding: "22px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
 
   cardTop: {
@@ -358,17 +376,20 @@ const styles = {
   viewButton: {
     padding: "8px 14px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#17324d",
+    borderRadius: "8px",
+    backgroundColor: "#0369a1",
     color: "#ffffff",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   emptyCard: {
     backgroundColor: "#ffffff",
     padding: "35px",
-    borderRadius: "10px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
     textAlign: "center",
+    color: "#64748b",
   },
 
   pagination: {
@@ -379,11 +400,22 @@ const styles = {
     marginTop: "20px",
   },
 
+  paginationButton: {
+    padding: "8px 13px",
+    border: "1px solid #d8e0eb",
+    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+    color: "#334155",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+
   error: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
-    padding: "12px",
-    borderRadius: "7px",
+    padding: "12px 16px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 };

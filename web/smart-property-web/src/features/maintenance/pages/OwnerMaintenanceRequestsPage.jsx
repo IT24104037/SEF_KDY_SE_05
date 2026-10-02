@@ -76,7 +76,7 @@ function OwnerMaintenanceRequestsPage() {
       <div style={styles.container}>
         <div style={styles.heading}>
           <div>
-            <h1>Maintenance Requests</h1>
+            <h1 style={styles.title}>Maintenance Requests</h1>
 
             <p style={styles.subtitle}>
               View maintenance requests from tenants in your properties.
@@ -267,8 +267,10 @@ function OwnerMaintenanceRequestsPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#f4f6f8",
-    padding: "40px 20px",
+    backgroundColor: "#f3f5f6",
+    padding: "clamp(20px, 4vw, 40px)",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   container: {
@@ -284,15 +286,20 @@ const styles = {
     gap: "20px",
   },
 
+  title: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
+    fontSize: "14px",
   },
 
   total: {
     backgroundColor: "#ffffff",
     padding: "12px 18px",
-    borderRadius: "8px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "10px",
     fontWeight: "600",
+    boxShadow: "0 4px 14px rgba(22, 34, 42, 0.035)",
   },
 
   filters: {
@@ -304,32 +311,38 @@ const styles = {
   },
 
   input: {
-    padding: "10px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    background: "#fff",
+    fontFamily: "inherit",
   },
 
   searchButton: {
     padding: "10px 18px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#1f8a8a",
+    borderRadius: "8px",
+    backgroundColor: "#0f766e",
     color: "#ffffff",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   clearButton: {
     padding: "10px 18px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    border: "1px solid #d8e0eb",
+    borderRadius: "8px",
     backgroundColor: "#ffffff",
     cursor: "pointer",
   },
 
   tableContainer: {
     backgroundColor: "#ffffff",
+    border: "1px solid #e2e7e9",
     borderRadius: "10px",
     overflowX: "auto",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   table: {
@@ -338,22 +351,27 @@ const styles = {
   },
 
   th: {
-    padding: "13px",
+    padding: "13px 14px",
     textAlign: "left",
-    borderBottom: "1px solid #e5e7eb",
-    backgroundColor: "#f9fafb",
+    borderBottom: "1px solid #e2e7e9",
+    backgroundColor: "#f3f5f6",
+    color: "#526176",
+    fontSize: "12px",
+    fontWeight: 700,
   },
 
   td: {
-    padding: "13px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: "13px",
   },
 
   viewButton: {
     padding: "7px 12px",
     border: "none",
     borderRadius: "5px",
-    backgroundColor: "#17324d",
+    backgroundColor: "#0f766e",
     color: "#ffffff",
     cursor: "pointer",
   },
@@ -374,10 +392,11 @@ const styles = {
   },
 
   error: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
-    padding: "12px",
-    borderRadius: "7px",
+    padding: "12px 16px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 };

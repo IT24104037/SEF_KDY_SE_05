@@ -29,12 +29,19 @@ export default function TenancyHistoryPage() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ color: "#17324D" }}>Tenancy History</h2>
+    <div style={styles.page}>
+      <h2 style={styles.title}>Tenancy History</h2>
 
-      {loading && <p style={{ color: "#6B7280" }}>Loading...</p>}
-      {!loading && errorMessage && <p style={{ color: "#D64545" }}>{errorMessage}</p>}
+      {loading && <p style={styles.loading}>Loading...</p>}
+      {!loading && errorMessage && <p style={styles.error}>{errorMessage}</p>}
       {!loading && !errorMessage && <TenancyTable tenancies={tenancies} showEndAction={false} />}
     </div>
   );
 }
+
+const styles = {
+  page: { padding: "clamp(18px, 3vw, 30px)", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  title: { margin: "0 0 18px", color: "#172033", fontSize: 22, fontWeight: 700 },
+  loading: { color: "#64748b", padding: "12px 0" },
+  error: { color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px" },
+};

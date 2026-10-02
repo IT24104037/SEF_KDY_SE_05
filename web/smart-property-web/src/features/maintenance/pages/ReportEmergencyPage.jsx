@@ -308,32 +308,43 @@ setMessage(
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#f4f6f8",
-    padding: "40px 20px",
+    backgroundColor: "#f3f5f6",
+    padding: "clamp(20px, 4vw, 40px)",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   card: {
     maxWidth: "700px",
     margin: "0 auto",
     backgroundColor: "#ffffff",
-    padding: "30px",
+    padding: "clamp(20px, 4vw, 34px)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #b91c1c",
     borderRadius: "12px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
   },
 
   title: {
     marginTop: 0,
     marginBottom: "8px",
+    color: "#172033",
+    fontSize: "clamp(22px, 3vw, 28px)",
+    fontWeight: 700,
   },
 
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
     marginBottom: "20px",
+    lineHeight: 1.6,
   },
 
   warning: {
-    backgroundColor: "#fff3cd",
-    padding: "12px",
-    borderRadius: "7px",
+    backgroundColor: "#fffbeb",
+    border: "1px solid #fcd34d",
+    color: "#92400e",
+    padding: "12px 14px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 
@@ -343,38 +354,46 @@ const styles = {
 
   label: {
     display: "block",
-    fontWeight: "600",
+    fontWeight: 650,
     marginBottom: "8px",
+    color: "#334155",
   },
 
   input: {
     width: "100%",
     padding: "11px",
-    border: "1px solid #d1d5db",
-    borderRadius: "7px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     boxSizing: "border-box",
+    color: "#1f2933",
+    fontSize: "14px",
+    fontFamily: "inherit",
   },
 
   textarea: {
     width: "100%",
     minHeight: "140px",
     padding: "12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "7px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     resize: "vertical",
     boxSizing: "border-box",
+    color: "#1f2933",
+    fontSize: "14px",
+    lineHeight: 1.5,
+    fontFamily: "inherit",
   },
 
   counter: {
     display: "block",
     textAlign: "right",
-    color: "#6b7280",
+    color: "#64748b",
     marginTop: "5px",
   },
 
   help: {
     display: "block",
-    color: "#6b7280",
+    color: "#64748b",
     marginTop: "7px",
   },
 
@@ -387,31 +406,35 @@ const styles = {
     maxWidth: "350px",
     maxHeight: "280px",
     objectFit: "cover",
-    borderRadius: "8px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "10px",
   },
 
   button: {
     padding: "12px 20px",
     border: "none",
-    borderRadius: "7px",
-    backgroundColor: "#b42318",
+    borderRadius: "8px",
+    backgroundColor: "#b91c1c",
     color: "#ffffff",
-    fontWeight: "600",
+    fontWeight: 700,
+    boxShadow: "0 4px 12px rgba(153, 27, 27, 0.16)",
   },
 
   success: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: "#f0fdf4",
+    border: "1px solid #bbf7d0",
     color: "#166534",
-    padding: "12px",
-    borderRadius: "7px",
+    padding: "12px 14px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 
   error: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
-    padding: "12px",
-    borderRadius: "7px",
+    padding: "12px 14px",
+    borderRadius: "8px",
     marginBottom: "20px",
   },
 };

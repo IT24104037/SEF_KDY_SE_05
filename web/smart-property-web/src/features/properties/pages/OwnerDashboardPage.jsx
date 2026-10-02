@@ -23,7 +23,7 @@ function OwnerDashboardPage() {
   }, []);
 
   if (loading) {
-    return <p style={{ color: "#6b7280" }}>Loading dashboard...</p>;
+    return <p style={styles.loading}>Loading dashboard...</p>;
   }
 
   if (error) {
@@ -36,7 +36,7 @@ function OwnerDashboardPage() {
   }
 
   return (
-    <div>
+    <div style={styles.page}>
       <h1 style={styles.title}>Dashboard</h1>
       <p style={styles.subtitle}>Overview of your properties and units</p>
 
@@ -70,23 +70,34 @@ function StatCard({ title, value }) {
 }
 
 const styles = {
+  page: {
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+  loading: {
+    color: "#64748b",
+    padding: "16px 0",
+    fontSize: "14px",
+  },
   title: {
-    marginTop: 0,
-    color: "#17324D",
-    fontSize: "24px",
-    fontWeight: "700",
+    margin: "0 0 6px",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
 
   subtitle: {
-    color: "#6B7280",
-    marginBottom: "30px",
-    marginTop: "4px",
+    color: "#64748b",
+    margin: 0,
+    lineHeight: 1.6,
+    fontSize: "14px",
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "20px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
+    gap: "16px",
+    marginTop: "24px",
     marginBottom: "10px",
   },
 
@@ -95,42 +106,48 @@ const styles = {
   },
 
   sectionTitle: {
-    color: "#17324D",
-    marginBottom: "18px",
+    color: "#172033",
+    marginBottom: "16px",
     fontSize: "18px",
-    fontWeight: "600",
+    fontWeight: 700,
   },
 
   occupancyGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "20px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+    gap: "16px",
   },
 
   statCard: {
-    backgroundColor: "#FFFFFF",
-    padding: "24px",
-    borderRadius: "8px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-    border: "1px solid #e5e7eb",
-    textAlign: "center",
+    backgroundColor: "#ffffff",
+    padding: "22px",
+    borderRadius: "10px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0f766e",
+    textAlign: "left",
   },
 
   statTitle: {
-    color: "#6B7280",
+    color: "#64748b",
     margin: 0,
-    fontSize: "14px",
+    fontSize: "12px",
+    fontWeight: 650,
   },
 
   statValue: {
-    fontSize: "32px",
-    fontWeight: "bold",
-    color: "#17324D",
-    margin: "12px 0 0",
+    fontSize: "30px",
+    fontWeight: 750,
+    color: "#172033",
+    margin: "10px 0 0",
   },
 
   error: {
-    color: "#D64545",
+    color: "#991b1b",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    padding: "12px 16px",
   },
 };
 

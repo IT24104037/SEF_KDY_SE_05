@@ -34,7 +34,12 @@ const dashboardPath = isMaintenanceWorker
   }
 
   return (
-    <main style={styles.page}>
+    <main
+      style={{
+        ...styles.page,
+        "--role-accent": isMaintenanceWorker ? "#b45309" : "#0f766e",
+      }}
+    >
       <header style={styles.header}>
         <div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
@@ -117,7 +122,7 @@ const dashboardPath = isMaintenanceWorker
             >
               <div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <span style={styles.priority}>
+                  <span style={workOrder.isEmergency ? styles.emergencyPriority : styles.priority}>
                     {workOrder.isEmergency ? "EMERGENCY" : workOrder.priority || "NORMAL"}
                   </span>
                   <span style={{ fontSize: "12px", color: "#64748b" }}>
@@ -160,7 +165,7 @@ function statusStyle(status) {
     case "Completed":
       return { padding: "6px 12px", borderRadius: "999px", background: "#dcfce7", color: "#15803d", fontSize: "12px", fontWeight: 700 };
     case "InProgress":
-      return { padding: "6px 12px", borderRadius: "999px", background: "#e0f2fe", color: "#0369a1", fontSize: "12px", fontWeight: 700 };
+      return { padding: "6px 12px", borderRadius: "999px", background: "color-mix(in srgb, var(--role-accent, #b45309) 10%, white)", color: "var(--role-accent, #b45309)", fontSize: "12px", fontWeight: 700 };
     case "Cancelled":
       return { padding: "6px 12px", borderRadius: "999px", background: "#fee2e2", color: "#b91c1c", fontSize: "12px", fontWeight: 700 };
     default:
@@ -169,17 +174,17 @@ function statusStyle(status) {
 }
 
 const styles = {
-  page: { minHeight: "100vh", padding: "36px 5vw", background: "#f8fafc", color: "#1e293b", fontFamily: "system-ui, -apple-system, sans-serif" },
+  page: { minHeight: "100vh", padding: "clamp(20px, 4vw, 40px)", background: "#f3f5f6", color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   header: { display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start", flexWrap: "wrap", marginBottom: "24px" },
-  eyebrow: { color: "#0f766e", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: 0 },
-  phaseBadge: { background: "#ccfbf1", color: "#115e59", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 },
-  title: { color: "#0f172a", margin: "4px 0 6px", fontSize: "24px" },
+  eyebrow: { color: "var(--role-accent, #b45309)", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: 0 },
+  phaseBadge: { background: "color-mix(in srgb, var(--role-accent) 10%, white)", color: "var(--role-accent)", border: "1px solid color-mix(in srgb, var(--role-accent) 24%, white)", padding: "5px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700 },
+  title: { color: "#172033", margin: "4px 0 6px", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
   muted: { color: "#64748b", margin: 0, fontSize: "14px" },
-  primary: { padding: "9px 16px", borderRadius: "6px", background: "#0f766e", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: "14px" },
-  secondary: { padding: "9px 16px", borderRadius: "6px", background: "#fff", color: "#475569", border: "1px solid #cbd5e1", textDecoration: "none", fontWeight: 600, fontSize: "14px" },
+  primary: { padding: "10px 16px", borderRadius: "8px", background: "var(--role-accent, #b45309)", color: "#fff", textDecoration: "none", fontWeight: 650, fontSize: "13px", boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)" },
+  secondary: { padding: "10px 16px", borderRadius: "8px", background: "#fff", color: "#334155", border: "1px solid #d8e0eb", textDecoration: "none", fontWeight: 600, fontSize: "13px" },
   secondaryButton: {
     padding: "9px 16px",
-    borderRadius: "6px",
+    borderRadius: "8px",
     background: "#fff",
     color: "#475569",
     border: "1px solid #cbd5e1",
@@ -189,15 +194,16 @@ const styles = {
   },
   error: { padding: "12px", background: "#fee2e2", color: "#991b1b", borderRadius: "6px", marginBottom: "16px" },
   filters: { display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap" },
-  filter: { padding: "8px 14px", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", color: "#475569", cursor: "pointer", fontWeight: 500, fontSize: "13px" },
-  activeFilter: { padding: "8px 14px", border: "1px solid #0f766e", borderRadius: "6px", background: "#ccfbf1", color: "#115e59", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
+  filter: { padding: "8px 14px", border: "1px solid #d8e0eb", borderRadius: "8px", background: "#fff", color: "#475569", cursor: "pointer", fontWeight: 500, fontSize: "13px" },
+  activeFilter: { padding: "8px 14px", border: "1px solid var(--role-accent, #b45309)", borderRadius: "8px", background: "color-mix(in srgb, var(--role-accent, #b45309) 10%, white)", color: "var(--role-accent, #b45309)", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
   list: { display: "grid", gap: "14px" },
-  card: { display: "flex", justifyContent: "space-between", gap: "24px", alignItems: "center", padding: "20px 24px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", color: "inherit", textDecoration: "none", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
-  cardTitle: { margin: "6px 0", color: "#0f172a", fontSize: "17px" },
-  priority: { color: "#7c3aed", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" },
+  card: { display: "flex", justifyContent: "space-between", gap: "24px", alignItems: "center", flexWrap: "wrap", padding: "20px 24px", background: "#fff", border: "1px solid #e2e7e9", borderRadius: "12px", color: "inherit", textDecoration: "none", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)" },
+  cardTitle: { margin: "6px 0", color: "#172033", fontSize: "17px" },
+  priority: { color: "var(--role-accent, #b45309)", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" },
+  emergencyPriority: { color: "#b91c1c", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" },
   meta: { display: "grid", gap: "8px", justifyItems: "end", flexShrink: 0 },
   evidenceBadge: { fontSize: "11px", color: "#15803d", fontWeight: 600 },
-  empty: { padding: "40px", background: "#fff", borderRadius: "8px", border: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" },
+  empty: { padding: "40px", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", textAlign: "center", color: "#64748b", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" },
 };
 
 export default WorkOrdersPage;

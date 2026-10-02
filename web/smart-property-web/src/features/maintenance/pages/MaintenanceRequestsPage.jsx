@@ -86,10 +86,10 @@ function MaintenanceRequestsPage() {
   }
 
   return (
-    <div>
+    <div style={styles.page}>
       <div style={styles.headingRow}>
         <div>
-          <h1 style={{ marginBottom: "5px" }}>
+          <h1 style={styles.title}>
             Maintenance Requests
           </h1>
 
@@ -283,6 +283,7 @@ function MaintenanceRequestsPage() {
 
           <div style={styles.pagination}>
             <button
+              style={styles.paginationButton}
               disabled={page <= 1}
               onClick={() =>
                 setPage((current) => current - 1)
@@ -296,6 +297,7 @@ function MaintenanceRequestsPage() {
             </span>
 
             <button
+              style={styles.paginationButton}
               disabled={
                 totalPages === 0 ||
                 page >= totalPages
@@ -322,54 +324,75 @@ const styles = {
     flexWrap: "wrap",
   },
 
+  page: {
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+
+  title: {
+    margin: "0 0 6px",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
+  },
+
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
     marginTop: 0,
   },
 
   totalBox: {
     backgroundColor: "#ffffff",
     padding: "12px 18px",
-    borderRadius: "8px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "10px",
     fontWeight: "600",
+    boxShadow: "0 4px 14px rgba(22, 34, 42, 0.035)",
   },
 
   filters: {
     display: "flex",
     flexWrap: "wrap",
     gap: "10px",
-    marginTop: "25px",
+    marginTop: "22px",
     marginBottom: "20px",
   },
 
   input: {
-    padding: "10px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     minWidth: "150px",
+    color: "#1f2933",
+    background: "#ffffff",
+    fontSize: "13px",
+    fontFamily: "inherit",
   },
 
   searchButton: {
     padding: "10px 18px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#1f8a8a",
+    borderRadius: "8px",
+    backgroundColor: "#5145cd",
     color: "#ffffff",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   clearButton: {
     padding: "10px 18px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    border: "1px solid #d8e0eb",
+    borderRadius: "8px",
     backgroundColor: "#ffffff",
     cursor: "pointer",
   },
 
   tableContainer: {
     backgroundColor: "#ffffff",
+    border: "1px solid #e2e7e9",
     borderRadius: "10px",
     overflowX: "auto",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   table: {
@@ -378,15 +401,21 @@ const styles = {
   },
 
   th: {
-    padding: "14px",
+    padding: "13px 14px",
     textAlign: "left",
-    backgroundColor: "#f9fafb",
-    borderBottom: "1px solid #e5e7eb",
+    backgroundColor: "#f3f5f6",
+    borderBottom: "1px solid #e2e7e9",
+    color: "#526176",
+    fontSize: "12px",
+    fontWeight: 700,
+    whiteSpace: "nowrap",
   },
 
   td: {
-    padding: "14px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: "13px",
   },
 
   empty: {
@@ -399,7 +428,7 @@ const styles = {
     padding: "7px 12px",
     border: "none",
     borderRadius: "5px",
-    backgroundColor: "#17324d",
+    backgroundColor: "#5145cd",
     color: "#ffffff",
     cursor: "pointer",
   },
@@ -412,11 +441,22 @@ const styles = {
     marginTop: "20px",
   },
 
+  paginationButton: {
+    padding: "8px 13px",
+    border: "1px solid #d8e0eb",
+    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+    color: "#334155",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+
   error: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
     color: "#991b1b",
-    padding: "12px",
-    borderRadius: "6px",
+    padding: "12px 16px",
+    borderRadius: "8px",
     marginBottom: "15px",
   },
 };

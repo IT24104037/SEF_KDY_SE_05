@@ -62,7 +62,7 @@ export default function OwnerVerificationPage() {
   });
 
   return (
-    <div>
+    <div style={styles.page}>
       <div style={styles.header}>
         <div>
           <p style={styles.eyebrow}>Admin workspace</p>
@@ -241,43 +241,44 @@ function statusStyle(status) {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   header: { display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start", marginBottom: "24px" },
-  eyebrow: { margin: 0, color: "#1f8a8a", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px" },
-  title: { margin: "8px 0", color: "#17324d" },
-  modalTitle: { margin: "0 0 4px", color: "#17324d" },
-  muted: { color: "#6b7280" },
-  filters: { display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "22px" },
-  input: { minWidth: "220px", padding: "11px", border: "1px solid #dde3e9", borderRadius: "6px" },
-  primaryButton: { padding: "11px 16px", border: 0, borderRadius: "6px", background: "#1f8a8a", color: "#fff", cursor: "pointer", fontWeight: 700 },
-  secondaryButton: { padding: "7px 12px", border: "1px solid #1f8a8a", borderRadius: "6px", background: "#fff", color: "#1f8a8a", cursor: "pointer", fontWeight: 700 },
-  rejectButton: { padding: "11px 16px", border: 0, borderRadius: "6px", background: "#d64545", color: "#fff", cursor: "pointer", fontWeight: 700 },
-  viewDocButton: { padding: "5px 10px", border: "1px solid #0284c7", borderRadius: "6px", background: "#e0f2fe", color: "#0369a1", textDecoration: "none", fontWeight: 700, fontSize: "12px" },
-  docBox: { margin: "16px 0", padding: "14px", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "8px" },
+  eyebrow: { margin: 0, color: "#5145cd", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px" },
+  title: { margin: "8px 0", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  modalTitle: { margin: "0 0 4px", color: "#172033" },
+  muted: { color: "#64748b", fontSize: "14px", lineHeight: 1.5 },
+  filters: { display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "22px" },
+  input: { minWidth: "220px", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", color: "#1f2933", background: "#fff", fontFamily: "inherit", fontSize: "13px" },
+  primaryButton: { padding: "11px 16px", border: 0, borderRadius: "8px", background: "#15803d", color: "#fff", cursor: "pointer", fontWeight: 700 },
+  secondaryButton: { padding: "8px 13px", border: "1px solid #5145cd", borderRadius: "8px", background: "#f4f3ff", color: "#5145cd", cursor: "pointer", fontWeight: 700 },
+  rejectButton: { padding: "11px 16px", border: 0, borderRadius: "8px", background: "#b91c1c", color: "#fff", cursor: "pointer", fontWeight: 700 },
+  viewDocButton: { padding: "6px 10px", border: "1px solid #c7c3ff", borderRadius: "8px", background: "#f4f3ff", color: "#5145cd", textDecoration: "none", fontWeight: 700, fontSize: "12px" },
+  docBox: { margin: "16px 0", padding: "14px", background: "#f7f7ff", border: "1px solid #dedcff", borderRadius: "10px" },
   cardList: { display: "flex", flexDirection: "column", gap: "12px" },
   cardItem: {
     background: "#fff",
-    border: "1px solid #dde3e9",
-    borderRadius: "8px",
-    padding: "16px 20px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "12px",
+    padding: "18px 20px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "16px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
   cardMain: { display: "flex", alignItems: "center", gap: "24px", flex: 1, flexWrap: "wrap" },
-  cardTitle: { fontSize: "15px", color: "#17324d" },
-  cardSub: { margin: "3px 0 0", color: "#6b7280", fontSize: "13px" },
+  cardTitle: { fontSize: "15px", color: "#172033" },
+  cardSub: { margin: "3px 0 0", color: "#64748b", fontSize: "13px" },
   cardMeta: { minWidth: "130px" },
   cardRight: { display: "flex", alignItems: "center", gap: "14px" },
   empty: { padding: "24px", color: "#6b7280" },
-  success: { color: "#16804a", background: "#e8f7ef", padding: "12px", borderRadius: "6px" },
-  error: { color: "#b42318", background: "#fff1f1", padding: "12px", borderRadius: "6px" },
-  rejectionNote: { marginTop: "12px", padding: "12px", background: "#fff1f1", color: "#b42318", borderRadius: "6px", fontSize: "14px" },
+  success: { color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "12px 14px", borderRadius: "8px" },
+  error: { color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", padding: "12px 14px", borderRadius: "8px" },
+  rejectionNote: { marginTop: "12px", padding: "12px", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: "8px", fontSize: "14px" },
   infoGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", margin: "14px 0", fontSize: "14px" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(23,50,77,.42)", display: "grid", placeItems: "center", padding: "24px", zIndex: 100 },
-  modal: { position: "relative", width: "min(600px, 100%)", maxHeight: "90vh", overflowY: "auto", padding: "30px", background: "#fff", borderRadius: "8px", boxShadow: "0 24px 80px rgba(0,0,0,.2)" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(24, 30, 45, .48)", display: "grid", placeItems: "center", padding: "24px", zIndex: 100 },
+  modal: { position: "relative", width: "min(600px, 100%)", maxHeight: "90vh", overflowY: "auto", padding: "clamp(22px, 4vw, 30px)", background: "#fff", border: "1px solid #e2e7e9", borderRadius: "12px", boxShadow: "0 24px 80px rgba(15, 23, 42, .22)" },
   close: { position: "absolute", top: "18px", right: "18px", border: 0, background: "transparent", color: "#6b7280", cursor: "pointer", fontSize: "18px", fontWeight: "bold" },
-  field: { display: "grid", gap: "8px", marginTop: "16px", fontWeight: 700 },
+  field: { display: "grid", gap: "8px", marginTop: "16px", fontWeight: 700, color: "#334155" },
   actions: { display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" },
 };

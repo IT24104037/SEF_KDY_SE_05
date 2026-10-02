@@ -322,13 +322,7 @@ function UnitsPage() {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: "30px 20px",
-      }}
-    >
+    <div style={styles.page}>
       <div
         style={{
           display: "flex",
@@ -337,55 +331,35 @@ function UnitsPage() {
           marginBottom: "10px",
         }}
       >
-        <h1>Unit Management</h1>
+        <h1 style={styles.title}>Unit Management</h1>
 
         <button
           type="button"
           onClick={() => navigate("/owner/properties")}
+          style={styles.secondaryButton}
         >
           Back to Properties
         </button>
       </div>
 
-      <p>
+      <p style={styles.subtitle}>
         Manage the units belonging to property{" "}
         {property ? property.name : `#${propertyId}`}.
       </p>
 
       {error && (
-        <div
-          style={{
-            padding: "12px",
-            marginBottom: "20px",
-            border: "1px solid #dc2626",
-            borderRadius: "6px",
-          }}
-        >
+        <div style={styles.error}>
           {error}
         </div>
       )}
 
       {success && (
-        <div
-          style={{
-            padding: "12px",
-            marginBottom: "20px",
-            border: "1px solid #16a34a",
-            borderRadius: "6px",
-          }}
-        >
+        <div style={styles.success}>
           {success}
         </div>
       )}
 
-      <section
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
+      <section style={styles.panel}>
         <h2>{editingId ? "Edit Unit" : "Add Unit"}</h2>
 
         <form onSubmit={handleSubmit}>
@@ -425,7 +399,7 @@ function UnitsPage() {
             </label>
           </div>
 
-          <button type="submit" disabled={saving}>
+          <button type="submit" disabled={saving} style={styles.primaryButton}>
             {saving
               ? "Saving..."
               : editingId
@@ -437,7 +411,7 @@ function UnitsPage() {
             <button
               type="button"
               onClick={resetForm}
-              style={{ marginLeft: "10px" }}
+              style={styles.secondaryButton}
             >
               Cancel
             </button>
@@ -445,14 +419,7 @@ function UnitsPage() {
         </form>
       </section>
 
-      <section
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
+      <section style={styles.panel}>
         <h2>Bulk Create Units</h2>
 
         <p>
@@ -497,7 +464,7 @@ function UnitsPage() {
             </label>
           </div>
 
-          <button type="submit" disabled={bulkSaving}>
+          <button type="submit" disabled={bulkSaving} style={styles.primaryButton}>
             {bulkSaving ? "Creating..." : "Create Units"}
           </button>
         </form>
@@ -548,7 +515,7 @@ function UnitsPage() {
               style={{
                 padding: "8px 16px",
                 backgroundColor: selectedHistoryUnitId
-                  ? "#1F8A8A"
+                  ? "#0f766e"
                   : "#9ca3af",
                 color: "#ffffff",
                 border: "none",
@@ -673,7 +640,7 @@ function UnitsPage() {
                 style={{
                   height: "38px",
                   padding: "0 16px",
-                  backgroundColor: "#17324D",
+                  backgroundColor: "#0f766e",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: "6px",
@@ -719,14 +686,7 @@ function UnitsPage() {
             }}
           >
             {units.map((unit) => (
-              <div
-                key={unit.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: "8px",
-                  padding: "20px",
-                }}
-              >
+              <div key={unit.id} style={styles.unitCard}>
                 <h3>{unit.unitLabel}</h3>
 
                 {unit.description && (
@@ -894,13 +854,9 @@ function UnitsPage() {
             }}
           >
             {archivedUnits.map((unit) => (
-              <div
+                <div
                 key={unit.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: "8px",
-                  padding: "20px",
-                }}
+                  style={styles.unitCard}
               >
                 <h3>{unit.unitLabel}</h3>
 
@@ -939,3 +895,22 @@ function UnitsPage() {
 }
 
 export default UnitsPage;
+
+const styles = {
+  page: {
+    maxWidth: "1180px",
+    margin: "0 auto",
+    padding: "clamp(18px, 3vw, 34px)",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+  title: { margin: 0, color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  subtitle: { margin: "4px 0 22px", color: "#64748b", fontSize: "14px", lineHeight: 1.6 },
+  panel: { border: "1px solid #e2e7e9", borderRadius: "12px", padding: "clamp(18px, 3vw, 26px)", marginBottom: "24px", background: "#fff", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" },
+  unitCard: { border: "1px solid #e2e7e9", borderRadius: "12px", padding: "20px", background: "#fff", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" },
+  input: { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#fff", color: "#1f2933", fontFamily: "inherit", fontSize: "14px" },
+  primaryButton: { padding: "9px 15px", border: 0, borderRadius: "8px", background: "#0f766e", color: "#fff", cursor: "pointer", fontWeight: 650 },
+  secondaryButton: { marginLeft: "10px", padding: "9px 15px", border: "1px solid #d8e0eb", borderRadius: "8px", background: "#fff", color: "#334155", cursor: "pointer", fontWeight: 600 },
+  error: { padding: "12px 16px", marginBottom: "20px", border: "1px solid #fecaca", borderRadius: "8px", background: "#fef2f2", color: "#991b1b" },
+  success: { padding: "12px 16px", marginBottom: "20px", border: "1px solid #bbf7d0", borderRadius: "8px", background: "#f0fdf4", color: "#166534" },
+};

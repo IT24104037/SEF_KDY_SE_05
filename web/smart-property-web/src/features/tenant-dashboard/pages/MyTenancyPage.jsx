@@ -28,24 +28,24 @@ export default function MyTenancyPage() {
     }
   };
 
-  if (loading) return <p style={{ padding: 24, color: "#6B7280" }}>Loading...</p>;
-  if (errorMessage) return <p style={{ padding: 24, color: "#D64545" }}>{errorMessage}</p>;
+  if (loading) return <p style={styles.loading}>Loading...</p>;
+  if (errorMessage) return <p style={styles.error}>{errorMessage}</p>;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ color: "#17324D" }}>My Home</h2>
+    <div style={styles.page}>
+      <h2 style={styles.title}>My Home</h2>
 
       {!tenancy ? (
-        <p style={{ color: "#6B7280" }}>You don't have an active tenancy right now.</p>
+        <p style={styles.empty}>You don't have an active tenancy right now.</p>
       ) : (
-        <div style={{ background: "#fff", border: "1px solid #DDE3E9", borderRadius: 8, padding: 20, maxWidth: 420 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#17324D" }}>
+        <div style={styles.card}>
+          <div style={styles.unitTitle}>
             Unit {tenancy.unitName || `#${tenancy.unitId}`}
           </div>
-          <p style={{ color: "#6B7280" }}>
+          <p style={styles.meta}>
             Move-in date: {new Date(tenancy.startDate).toLocaleDateString()}
           </p>
-          <span style={{ display: "inline-block", fontSize: 12, padding: "4px 10px", borderRadius: 12, color: "#fff", background: "#22A06B", marginTop: 8 }}>
+          <span style={styles.activeBadge}>
             Active
           </span>
         </div>
@@ -53,3 +53,64 @@ export default function MyTenancyPage() {
     </div>
   );
 }
+
+const styles = {
+  page: {
+    padding: "clamp(18px, 3vw, 30px)",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+  title: {
+    margin: "0 0 18px",
+    color: "#172033",
+    fontSize: "22px",
+    fontWeight: 700,
+  },
+  card: {
+    maxWidth: 520,
+    background: "#ffffff",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0369a1",
+    borderRadius: 12,
+    padding: "22px 24px",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
+  },
+  unitTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#172033",
+  },
+  meta: {
+    color: "#64748b",
+    fontSize: 14,
+    margin: "10px 0 0",
+  },
+  activeBadge: {
+    display: "inline-block",
+    fontSize: 12,
+    fontWeight: 700,
+    padding: "5px 10px",
+    borderRadius: 999,
+    color: "#166534",
+    background: "#dcfce7",
+    marginTop: 14,
+  },
+  empty: {
+    color: "#64748b",
+    padding: "18px 20px",
+    background: "#ffffff",
+    border: "1px solid #e2e7e9",
+    borderRadius: 10,
+  },
+  loading: {
+    padding: "24px",
+    color: "#64748b",
+  },
+  error: {
+    padding: "12px 16px",
+    color: "#991b1b",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: 8,
+  },
+};

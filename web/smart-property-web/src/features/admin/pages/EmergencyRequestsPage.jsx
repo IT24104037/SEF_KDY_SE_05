@@ -76,10 +76,10 @@ function EmergencyRequestsPage() {
   }
 
   return (
-    <div>
-      <h1>Emergency Requests</h1>
+    <div style={styles.page}>
+      <h1 style={styles.title}>Emergency Requests</h1>
 
-      <p>
+      <p style={styles.subtitle}>
         View emergency maintenance requests from all properties.
       </p>
 
@@ -217,6 +217,9 @@ function EmergencyRequestsPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  title: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
+  subtitle: { margin: "0 0 20px", color: "#64748b", fontSize: 14, lineHeight: 1.6 },
   filters: {
     display: "flex",
     gap: "12px",
@@ -226,24 +229,29 @@ const styles = {
 
   select: {
     padding: "9px 12px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    background: "#ffffff",
+    fontFamily: "inherit",
   },
 
   refreshButton: {
-    backgroundColor: "#1F8A8A",
+    backgroundColor: "#5145cd",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "9px 14px",
     cursor: "pointer",
+    fontWeight: 650,
   },
 
   tableWrapper: {
     overflowX: "auto",
     backgroundColor: "#ffffff",
-    borderRadius: "8px",
-    border: "1px solid #DDE3E9",
+    borderRadius: "10px",
+    border: "1px solid #e2e7e9",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   table: {
@@ -253,14 +261,19 @@ const styles = {
 
   th: {
     textAlign: "left",
-    padding: "12px",
-    backgroundColor: "#F5F7FA",
-    borderBottom: "1px solid #DDE3E9",
+    padding: "13px 14px",
+    backgroundColor: "#f3f5f6",
+    borderBottom: "1px solid #e2e7e9",
+    color: "#526176",
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   td: {
-    padding: "12px",
-    borderBottom: "1px solid #DDE3E9",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: 13,
     verticalAlign: "top",
   },
 
@@ -274,7 +287,7 @@ const styles = {
   },
 
   viewButton: {
-    backgroundColor: "#17324D",
+    backgroundColor: "#5145cd",
     color: "#ffffff",
     border: "none",
     borderRadius: "6px",
@@ -283,7 +296,11 @@ const styles = {
   },
 
   error: {
-    color: "#D64545",
+    color: "#991b1b",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: 8,
+    padding: "12px 16px",
   },
 
   empty: {
