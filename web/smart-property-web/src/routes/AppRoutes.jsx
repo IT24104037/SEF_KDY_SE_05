@@ -78,9 +78,6 @@ const WorkOrderDetailsPage = lazy(() =>
   import("../features/workers/pages/WorkOrderDetailsPage")
 );
 
-const ExternalMaintenancePage = lazy(() =>
-  import("../features/workers/pages/ExternalMaintenancePage")
-);
 
 const WorkersPage = lazy(() =>
   import("../features/workers/pages/WorkersPage")
@@ -227,7 +224,6 @@ export default function AppRoutes() {
                 <Route path="/owner/approval" element={<ApprovalPage />} />
                 <Route path="/owner/ai-workflow" element={<WorkflowHistoryPage />} />
                 <Route  path="/owner/ai-workflow/:workflowId" element={<WorkflowDetailsPage />} />  
-                <Route path="/owner/external-maintenance" element={<ExternalMaintenancePage />} />
                 <Route path="/owner/maintenance" element={<OwnerMaintenanceRequestsPage />} />
                 <Route path="/owner/maintenance/:id" element={<MaintenanceRequestDetailsPage />} />
                 <Route path="/owner/emergency" element={<OwnerEmergencyRequestsPage />} />

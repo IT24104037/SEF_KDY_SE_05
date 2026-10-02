@@ -253,14 +253,7 @@ function ApprovalPage() {
                       : "⚠️ NO SUITABLE WORKER FOUND"}
                   </p>
                   <p style={styles.noWorkerText}>{request.message}</p>
-                  {request.isEmergency ? (
-                    <Link
-                      to={`/owner/external-maintenance?requestId=${request.id}`}
-                      style={styles.externalButton}
-                    >
-                      Arrange External Emergency Maintenance
-                    </Link>
-                  ) : (
+                  {!request.isEmergency && (
                     <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
                       <button
                         onClick={() => loadData(selectedId)}
@@ -268,12 +261,6 @@ function ApprovalPage() {
                       >
                         Retry Matching
                       </button>
-                      <Link
-                        to={`/owner/external-maintenance?requestId=${request.id}`}
-                        style={styles.externalButton}
-                      >
-                        Handle Externally
-                      </Link>
                     </div>
                   )}
                 </div>

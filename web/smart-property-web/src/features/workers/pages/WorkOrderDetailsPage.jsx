@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  createExternalArrangement,
   getWorkOrder,
   updateWorkOrderStatus,
   updateWorkOrderSchedule,
@@ -69,13 +68,8 @@ function WorkOrderDetailsPage() {
   const [completionEvidenceUrl, setCompletionEvidenceUrl] = useState("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
-  // External fallback form
-  const [external, setExternal] = useState({
-    providerName: "",
-    contactPhone: "",
-    estimatedArrival: "",
-    note: "",
-  });
+ 
+
 
   useEffect(() => {
     loadOrder();
@@ -183,19 +177,7 @@ function WorkOrderDetailsPage() {
     }
   }
 
-  async function handleExternal(e) {
-    e.preventDefault();
-    try {
-      await createExternalArrangement({
-        maintenanceRequestId: workOrder.maintenanceRequestId,
-        ...external,
-      });
-      setMessage("External maintenance arrangement saved for owner follow-up.");
-      setExternal({ providerName: "", contactPhone: "", estimatedArrival: "", note: "" });
-    } catch (err) {
-      setError(err.message || "Failed to save external arrangement.");
-    }
-  }
+ 
 
   if (loading) {
     return (
@@ -526,56 +508,6 @@ function WorkOrderDetailsPage() {
           </div>
         </div>
       )}
-
-      {/* External Maintenance Arrangement preview (Phase 6 boundary) */}
-      <section style={styles.card}>
-        <p style={styles.label}>External Maintenance Arrangement (Fallback)</p>
-        <p style={styles.muted}>
-          Arrange external vendor handling if the internal technician cannot complete the work.
-        </p>
-        <form onSubmit={handleExternal} style={styles.form}>
-          <label style={styles.field}>
-            Provider Name:
-            <input
-              type="text"
-              value={external.providerName}
-              onChange={(e) => setExternal({ ...external, providerName: e.target.value })}
-              required
-              style={styles.input}
-            />
-          </label>
-          <label style={styles.field}>
-            Contact Phone:
-            <input
-              type="text"
-              value={external.contactPhone}
-              onChange={(e) => setExternal({ ...external, contactPhone: e.target.value })}
-              style={styles.input}
-            />
-          </label>
-          <label style={styles.field}>
-            Estimated Arrival / Date:
-            <input
-              type="text"
-              value={external.estimatedArrival}
-              onChange={(e) => setExternal({ ...external, estimatedArrival: e.target.value })}
-              style={styles.input}
-            />
-          </label>
-          <label style={styles.field}>
-            Notes:
-            <input
-              type="text"
-              value={external.note}
-              onChange={(e) => setExternal({ ...external, note: e.target.value })}
-              style={styles.input}
-            />
-          </label>
-          <button style={styles.secondary} type="submit">
-            Save External Arrangement
-          </button>
-        </form>
-      </section>
     </main>
   );
 }

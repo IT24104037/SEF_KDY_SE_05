@@ -218,44 +218,6 @@ export async function submitApprovalDecision(requestId, decision, note = "", sch
   }
 }
 
-export async function createExternalArrangement(payload) {
-  try {
-    const { maintenanceRequestId, ...data } = payload;
-    const response = await apiClient.post(
-      `/api/maintenance-requests/${maintenanceRequestId}/external-arrangement`,
-      data
-    );
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || error.message || "Failed to create external arrangement.";
-    throw new Error(message);
-  }
-}
-
-export async function getExternalArrangements(maintenanceRequestId) {
-  try {
-    const response = await apiClient.get(
-      `/api/maintenance-requests/${maintenanceRequestId}/external-arrangements`
-    );
-    return response.data || [];
-  } catch (error) {
-    const message = error.response?.data?.message || error.message || "Failed to load external arrangements.";
-    throw new Error(message);
-  }
-}
-
-export async function confirmExternalArrangement(id, payload = {}) {
-  try {
-    const response = await apiClient.put(
-      `/api/external-arrangements/${id}/confirm`,
-      payload
-    );
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || error.message || "Failed to confirm external arrangement.";
-    throw new Error(message);
-  }
-}
 export async function submitManualDecision(
   requestId,
   decision,
