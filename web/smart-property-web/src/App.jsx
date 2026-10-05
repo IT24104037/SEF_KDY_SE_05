@@ -1,11 +1,12 @@
+import React from "react";
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes/AppRoutes";
 
 function App() {
   return (
-    <main>
-      <h1>Smart Property Maintenance & Rental Operations System</h1>
-      <p>SE3090 Full-Stack and Agentic AI Project</p>
-      <p>React web application foundation is running.</p>
-    </main>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 

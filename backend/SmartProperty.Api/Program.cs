@@ -1,13 +1,152 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using SmartProperty.Api.Data;
+using SmartProperty.Api.Entities.Identity;
+using SmartProperty.Api.Interfaces;
+using SmartProperty.Api.Repositories;
+using SmartProperty.Api.Repositories.Implementations;
+using SmartProperty.Api.Repositories.Interfaces;
+using SmartProperty.Api.Services;
+using SmartProperty.Api.AgenticAI.Agents;
+using SmartProperty.Api.AgenticAI.Validators;
+
+
+using SmartProperty.Api.AgenticAI.Tools;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
+builder.Configuration.AddJsonFile(
+    "appsettings.Local.json",
+    optional: true,
+    reloadOnChange: true);
+
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<MaintenanceAnalysisAgent>();
+builder.Services.AddScoped<AgentOutputValidator>();
+builder.Services.AddScoped<PlannerOutputValidator>();
+builder.Services.AddScoped<Agent2MaintenanceAnalysisService>();
+builder.Services.AddScoped<MaintenanceResponsibilityTool>();
+builder.Services.AddScoped<Agent2WorkflowService>();
 
-// Swagger / OpenAPI
+
+
+// --------------------
+// PostgreSQL
+// --------------------
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+
+// --------------------
+// Services
+// --------------------
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPropertyService, PropertyService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+builder.Services.AddScoped<ITenancyRepository, TenancyRepository>();
+builder.Services.AddScoped<ITenancyService, TenancyService>();
+builder.Services.AddSingleton<IActivationPinGenerator, ActivationPinGenerator>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<
+    IMaintenanceCategoryService,
+    MaintenanceCategoryService>();
+
+builder.Services.AddScoped<
+    IMaintenanceRequestService,
+    MaintenanceRequestService>();
+
+builder.Services.AddScoped<IWorkerService, WorkerService>();
+builder.Services.AddScoped<IWorkerRecommendationService, WorkerRecommendationService>();
+builder.Services.AddScoped<IWorkOrderService, WorkOrderService>();
+builder.Services.AddScoped<IExternalMaintenanceService, ExternalMaintenanceService>();
+builder.Services.AddScoped<MaintenanceContextTool>();
+builder.Services.AddScoped<PropertyContextTool>();
+builder.Services.AddScoped<PlannerCoordinatorAgent>();
+builder.Services.AddScoped<IAgentWorkflowService, AgentWorkflowService>();
+
+
+builder.Services.AddScoped<WorkerMatchingTool>();
+builder.Services.AddScoped<TechnicianMatchingAgent>();
+builder.Services.AddScoped<Agent3WorkflowService>();
+
+builder.Services.AddScoped<ValidationSafetyAgent>();
+builder.Services.AddScoped<Agent4WorkflowService>();
+
+// --------------------
+// JWT Authentication
+// --------------------
+
+string jwtKey =
+    builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("JWT key is not configured.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            };
+    });
+
+builder.Services.AddAuthorization();
+
+// --------------------
+// Swagger
+// --------------------
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// CORS - React and Flutter will use this API
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header
+        });
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+});
+
+// --------------------
+// CORS
+// --------------------
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClients", policy =>
@@ -21,23 +160,55 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Swagger
+// --------------------
+// Database migration
+// and Admin seed
+// --------------------
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    try
+    {
+        await db.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup] Database migration check skipped or already up-to-date: {ex.Message}");
+    }
+
+    try
+    {
+        await DbSeeder.SeedAdminAsync(scope.ServiceProvider, app.Configuration);
+        await DbSeeder.SeedTestOwnerAsync(scope.ServiceProvider, app.Configuration);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup] Database seeding skipped: {ex.Message}");
+    }
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseStaticFiles();
 
 app.UseCors("AllowClients");
 
-// Authentication and Authorization will be configured later
-// when the common JWT feature is implemented.
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
-// Simple health endpoint for setup/testing/deployment
 app.MapGet("/health", () =>
 {
     return Results.Ok(new
@@ -49,5 +220,4 @@ app.MapGet("/health", () =>
 
 app.Run();
 
-// Required later for ASP.NET integration testing
 public partial class Program { }
