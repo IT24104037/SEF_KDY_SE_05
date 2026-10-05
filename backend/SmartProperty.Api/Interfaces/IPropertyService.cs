@@ -1,3 +1,4 @@
+using SmartProperty.Api.Common;
 using SmartProperty.Api.DTOs.Properties;
 
 namespace SmartProperty.Api.Interfaces;
@@ -8,8 +9,9 @@ public interface IPropertyService
         int userId,
         CreatePropertyDto request);
 
-    Task<List<PropertyResponseDto>> GetMyPropertiesAsync(
-        int userId);
+    Task<PagedResult<PropertyResponseDto>> GetMyPropertiesAsync(
+        int userId,
+        PropertyQueryParameters query);
 
     Task<List<PropertyResponseDto>> GetArchivedPropertiesAsync(
         int userId);
@@ -22,6 +24,11 @@ public interface IPropertyService
         int userId,
         int propertyId,
         UpdatePropertyDto request);
+
+    Task<PropertyResponseDto?> ResubmitRejectedPropertyAsync(
+        int userId,
+        int propertyId,
+        ResubmitPropertyDto request);
 
     Task<bool> ArchivePropertyAsync(
         int userId,
@@ -36,9 +43,10 @@ public interface IPropertyService
         int propertyId,
         CreateUnitDto request);
 
-    Task<List<UnitResponseDto>> GetUnitsAsync(
+    Task<PagedResult<UnitResponseDto>> GetUnitsAsync(
         int userId,
-        int propertyId);
+        int propertyId,
+        UnitQueryParameters query);
 
     Task<UnitResponseDto?> GetUnitByIdAsync(
         int userId,
@@ -77,4 +85,9 @@ public interface IPropertyService
 
     Task<OwnerDashboardDto?> GetOwnerDashboardAsync(
         int userId);
+
+    Task<(byte[] FileBytes, string UnitLabel)?> ExportUnitTenancyHistoryAsync(
+        int userId,
+        int propertyId,
+        int unitId);
 }

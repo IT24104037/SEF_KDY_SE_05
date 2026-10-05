@@ -23,66 +23,39 @@ function OwnerDashboardPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <p>Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <p style={styles.loading}>Loading dashboard...</p>;
   }
 
   if (error) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>Owner Dashboard</h1>
-          <p style={styles.error}>{error}</p>
-        </div>
-      </div>
+      <>
+        <h1 style={styles.title}>Dashboard</h1>
+        <p style={styles.error}>{error}</p>
+      </>
     );
   }
 
   return (
     <div style={styles.page}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>Owner Dashboard</h1>
-        <p style={styles.subtitle}>
-          Overview of your properties and units
-        </p>
+      <h1 style={styles.title}>Dashboard</h1>
+      <p style={styles.subtitle}>Overview of your properties and units</p>
 
-        <div style={styles.grid}>
-          <StatCard
-            title="Total Properties"
-            value={dashboard.totalProperties}
-          />
-
-          <StatCard
-            title="Active Properties"
-            value={dashboard.activeProperties}
-          />
-
-          <StatCard
-            title="Archived Properties"
-            value={dashboard.archivedProperties}
-          />
-
-          <StatCard
-            title="Total Units"
-            value={dashboard.totalUnits}
-          />
-
-          <StatCard
-            title="Active Units"
-            value={dashboard.activeUnits}
-          />
-
-          <StatCard
-            title="Archived Units"
-            value={dashboard.archivedUnits}
-          />
-        </div>
+      <div style={styles.grid}>
+        <StatCard title="Total Properties" value={dashboard.totalProperties} />
+        <StatCard title="Active Properties" value={dashboard.activeProperties} />
+        <StatCard title="Archived Properties" value={dashboard.archivedProperties} />
+        <StatCard title="Total Units" value={dashboard.totalUnits} />
+        <StatCard title="Active Units" value={dashboard.activeUnits} />
+        <StatCard title="Archived Units" value={dashboard.archivedUnits} />
       </div>
+
+      <section style={styles.occupancySection}>
+        <h2 style={styles.sectionTitle}>Occupancy</h2>
+        <div style={styles.occupancyGrid}>
+          <StatCard title="Occupied Units" value={dashboard.occupiedUnits} />
+          <StatCard title="Vacant Units" value={dashboard.vacantUnits} />
+        </div>
+      </section>
     </div>
   );
 }
@@ -98,63 +71,83 @@ function StatCard({ title, value }) {
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    backgroundColor: "#F5F7FA",
-    padding: "50px 20px",
+    color: "#1f2933",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
-
-  container: {
-    maxWidth: "1000px",
-    margin: "0 auto",
+  loading: {
+    color: "#64748b",
+    padding: "16px 0",
+    fontSize: "14px",
   },
-
-  card: {
-    maxWidth: "500px",
-    margin: "50px auto",
-    backgroundColor: "#FFFFFF",
-    padding: "32px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-  },
-
   title: {
-    marginTop: 0,
-    color: "#17324D",
+    margin: "0 0 6px",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
 
   subtitle: {
-    color: "#6B7280",
-    marginBottom: "30px",
+    color: "#64748b",
+    margin: 0,
+    lineHeight: 1.6,
+    fontSize: "14px",
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "20px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
+    gap: "16px",
+    marginTop: "24px",
+    marginBottom: "10px",
+  },
+
+  occupancySection: {
+    marginTop: "36px",
+  },
+
+  sectionTitle: {
+    color: "#172033",
+    marginBottom: "16px",
+    fontSize: "18px",
+    fontWeight: 700,
+  },
+
+  occupancyGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+    gap: "16px",
   },
 
   statCard: {
-    backgroundColor: "#FFFFFF",
-    padding: "25px",
+    backgroundColor: "#ffffff",
+    padding: "22px",
     borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
-    textAlign: "center",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.045)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0f766e",
+    textAlign: "left",
   },
 
   statTitle: {
-    color: "#6B7280",
+    color: "#64748b",
     margin: 0,
+    fontSize: "12px",
+    fontWeight: 650,
   },
 
   statValue: {
-    fontSize: "32px",
-    fontWeight: "bold",
-    color: "#17324D",
-    margin: "12px 0 0",
+    fontSize: "30px",
+    fontWeight: 750,
+    color: "#172033",
+    margin: "10px 0 0",
   },
 
   error: {
-    color: "#D64545",
+    color: "#991b1b",
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    padding: "12px 16px",
   },
 };
 

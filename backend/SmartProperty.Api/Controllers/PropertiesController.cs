@@ -47,10 +47,11 @@ public class PropertiesController : ControllerBase
 
     // GET /api/properties
     [HttpGet]
-    public async Task<IActionResult> GetMyProperties()
+    public async Task<IActionResult> GetMyProperties([FromQuery] PropertyQueryParameters query)
     {
         var result = await _propertyService.GetMyPropertiesAsync(
-            GetUserId());
+            GetUserId(),
+            query);
 
         return Ok(result);
     }
@@ -61,6 +62,21 @@ public class PropertiesController : ControllerBase
     {
         var result = await _propertyService.GetArchivedPropertiesAsync(
             GetUserId());
+
+        return Ok(result);
+    }
+
+    // GET /api/properties/dashboard
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetOwnerDashboard()
+    {
+        var result = await _propertyService.GetOwnerDashboardAsync(
+            GetUserId());
+
+        if (result == null)
+        {
+            return Forbid();
+        }
 
         return Ok(result);
     }
@@ -88,6 +104,25 @@ public class PropertiesController : ControllerBase
         [FromBody] UpdatePropertyDto request)
     {
         var result = await _propertyService.UpdatePropertyAsync(
+            GetUserId(),
+            id,
+            request);
+
+        if (result == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }
+
+    // PUT /api/properties/{id}/resubmit
+    [HttpPut("{id:int}/resubmit")]
+    public async Task<IActionResult> ResubmitProperty(
+        int id,
+        [FromBody] ResubmitPropertyDto request)
+    {
+        var result = await _propertyService.ResubmitRejectedPropertyAsync(
             GetUserId(),
             id,
             request);
@@ -156,11 +191,14 @@ public class PropertiesController : ControllerBase
 
     // GET /api/properties/{id}/units
     [HttpGet("{id:int}/units")]
-    public async Task<IActionResult> GetUnits(int id)
+    public async Task<IActionResult> GetUnits(
+        int id,
+        [FromQuery] UnitQueryParameters query)
     {
         var result = await _propertyService.GetUnitsAsync(
             GetUserId(),
-            id);
+            id,
+            query);
 
         return Ok(result);
     }
@@ -231,31 +269,31 @@ public async Task<IActionResult> GetArchivedUnits(int id)
 
         if (!result)
         {
-            return NotFound();
+            return BadRequest(new { message = "Cannot archive unit. The unit was not found or has an active tenancy." });
         }
 
-    return NoContent();
-}
-
-// DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
-// Soft deletes an archived unit while preserving its database record.
-[HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
-public async Task<IActionResult> SoftDeleteUnit(
-    int propertyId,
-    int unitId)
-{
-    var result = await _propertyService.SoftDeleteUnitAsync(
-        GetUserId(),
-        propertyId,
-        unitId);
-
-    if (!result)
-    {
-        return NotFound(new { message = "Archived unit was not found or cannot be deleted." });
+        return NoContent();
     }
 
-    return NoContent();
-}
+    // DELETE /api/properties/{propertyId}/units/{unitId}/soft-delete
+    // Soft deletes an archived unit while preserving its database record.
+    [HttpDelete("{propertyId:int}/units/{unitId:int}/soft-delete")]
+    public async Task<IActionResult> SoftDeleteUnit(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.SoftDeleteUnitAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (!result)
+        {
+            return BadRequest(new { message = "Cannot delete unit. The archived unit was not found or has an active tenancy." });
+        }
+
+        return NoContent();
+    }
 
 [HttpPut("{propertyId:int}/units/{unitId:int}/restore")]
 public async Task<IActionResult> RestoreUnit(
@@ -285,6 +323,30 @@ public async Task<IActionResult> RestoreUnit(
 
     return NoContent();
 }
+
+    // GET /api/properties/{propertyId}/units/{unitId}/tenancy-history/export
+    [HttpGet("{propertyId:int}/units/{unitId:int}/tenancy-history/export")]
+    public async Task<IActionResult> ExportUnitTenancyHistory(
+        int propertyId,
+        int unitId)
+    {
+        var result = await _propertyService.ExportUnitTenancyHistoryAsync(
+            GetUserId(),
+            propertyId,
+            unitId);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "Property or unit was not found, or you do not have permission to access it." });
+        }
+
+        var fileName = $"{result.Value.UnitLabel}_Tenancy_History.xlsx";
+
+        return File(
+            result.Value.FileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName);
+    }
 
     // POST /api/properties/{propertyId}/units/bulk
     [HttpPost("{propertyId:int}/units/bulk")]

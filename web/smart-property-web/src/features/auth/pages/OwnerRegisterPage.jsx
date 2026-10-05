@@ -28,6 +28,15 @@ function OwnerRegisterPage() {
   function handleChange(event) {
     const { name, value } = event.target;
 
+    if (name === "mobile") {
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((previous) => ({
+        ...previous,
+        mobile: numericValue,
+      }));
+      return;
+    }
+
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -39,11 +48,78 @@ function OwnerRegisterPage() {
 
     setError("");
     setSuccess("");
+
+    if (!formData.fullName.trim()) {
+      setError("Full name is required.");
+      return;
+    }
+
+    const emailTrimmed = formData.email.trim();
+    if (!emailTrimmed) {
+      setError("Email is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const mobileTrimmed = formData.mobile.trim();
+    if (!mobileTrimmed) {
+      setError("Mobile number is required.");
+      return;
+    }
+    if (!/^\d+$/.test(mobileTrimmed)) {
+      setError("Mobile number must contain only numerical digits.");
+      return;
+    }
+    if (mobileTrimmed.length !== 10) {
+      setError("Mobile number must contain exactly 10 digits.");
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (!formData.propertyName.trim()) {
+      setError("Property name is required.");
+      return;
+    }
+
+    if (!formData.propertyAddress.trim()) {
+      setError("Property address is required.");
+      return;
+    }
+
+    if (!formData.documentType.trim()) {
+      setError("Document type is required.");
+      return;
+    }
+
+    if (!formData.documentUrl.trim()) {
+      setError("Document URL is required.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const ownerData = {
         ...formData,
+        fullName: formData.fullName.trim(),
+        email: emailTrimmed,
+        mobile: mobileTrimmed,
+        propertyName: formData.propertyName.trim(),
+        propertyAddress: formData.propertyAddress.trim(),
+        city: formData.city ? formData.city.trim() : null,
+        propertyDescription: formData.propertyDescription
+          ? formData.propertyDescription.trim()
+          : null,
+        documentType: formData.documentType.trim(),
+        documentUrl: formData.documentUrl.trim(),
         latitude: formData.latitude
           ? Number(formData.latitude)
           : null,
@@ -98,7 +174,7 @@ function OwnerRegisterPage() {
           required
         />
 
-        <label>Email</label>
+        <label>Email *</label>
         <input
           style={styles.input}
           type="email"
@@ -106,15 +182,19 @@ function OwnerRegisterPage() {
           value={formData.email}
           onChange={handleChange}
           placeholder="Enter your email"
+          required
         />
 
-        <label>Mobile</label>
+        <label>Mobile *</label>
         <input
           style={styles.input}
+          type="tel"
           name="mobile"
           value={formData.mobile}
           onChange={handleChange}
-          placeholder="Enter your mobile number"
+          placeholder="Enter 10-digit mobile number"
+          maxLength={10}
+          required
         />
 
         <label>Password *</label>
@@ -266,19 +346,23 @@ function OwnerRegisterPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#f3f5f6",
     display: "flex",
     justifyContent: "center",
-    padding: "40px 20px",
+    padding: "clamp(20px, 4vw, 40px)",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    color: "#1f2933",
   },
 
   card: {
     width: "600px",
     maxWidth: "100%",
-    backgroundColor: "#FFFFFF",
-    padding: "32px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+    backgroundColor: "#ffffff",
+    padding: "clamp(22px, 4vw, 34px)",
+    border: "1px solid #e2e7e9",
+    borderTop: "3px solid #0f766e",
+    borderRadius: "12px",
+    boxShadow: "0 12px 32px rgba(22, 34, 42, 0.06)",
     display: "flex",
     flexDirection: "column",
     gap: "10px",
@@ -286,36 +370,42 @@ const styles = {
 
   title: {
     margin: 0,
-    color: "#17324D",
+    color: "#172033",
+    fontSize: "clamp(23px, 3vw, 30px)",
+    fontWeight: 750,
   },
 
   subtitle: {
     marginTop: 0,
-    color: "#6B7280",
+    color: "#64748b",
   },
 
   sectionTitle: {
     marginTop: "20px",
     marginBottom: "5px",
-    color: "#17324D",
+    color: "#172033",
     fontSize: "18px",
   },
 
   input: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "11px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
 
   textarea: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "11px",
-    border: "1px solid #DDE3E9",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
     resize: "vertical",
+    color: "#1f2933",
+    fontFamily: "inherit",
   },
 
   row: {
@@ -334,18 +424,19 @@ const styles = {
     marginTop: "20px",
     padding: "12px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#1F8A8A",
+    borderRadius: "8px",
+    backgroundColor: "#0f766e",
     color: "#FFFFFF",
     cursor: "pointer",
     fontSize: "15px",
+    fontWeight: 650,
   },
 
   secondaryButton: {
     padding: "10px 16px",
     border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#17324D",
+    borderRadius: "8px",
+    backgroundColor: "#334155",
     color: "#FFFFFF",
     cursor: "pointer",
   },
@@ -355,30 +446,35 @@ const styles = {
     padding: "8px",
     border: "none",
     backgroundColor: "transparent",
-    color: "#1F8A8A",
+    color: "#0f766e",
     cursor: "pointer",
   },
 
   error: {
-    color: "#D64545",
+    color: "#991b1b",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    padding: "10px 12px",
     marginBottom: 0,
   },
 
   successBox: {
     marginTop: "15px",
     padding: "15px",
-    borderRadius: "6px",
-    backgroundColor: "#EAF7F0",
+    borderRadius: "8px",
+    backgroundColor: "#fffbeb",
+    border: "1px solid #fcd34d",
   },
 
   success: {
-    color: "#18794E",
+    color: "#92400e",
     fontWeight: "bold",
     marginTop: 0,
   },
 
   successInfo: {
-    color: "#374151",
+    color: "#334155",
   },
 };
 

@@ -118,7 +118,7 @@ public class WorkerServiceTests
             Email = "rohan@example.com",
             Mobile = "+94773334455",
             Password = "Password123!",
-            Skills = new List<string> { "HVAC" },
+            Skills = new List<string> { "Electrical" },
             ServiceArea = "Galle",
             ProofDocumentName = "hvac-license.pdf"
         };
@@ -152,7 +152,7 @@ public class WorkerServiceTests
             Email = "sunil@example.com",
             Mobile = "+94774445566",
             Password = "Password123!",
-            Skills = new List<string> { "Carpentry" },
+            Skills = new List<string> { "Doors / Windows / Locks"},
             ServiceArea = "Matara",
             ProofDocumentName = "doc.png"
         };
@@ -262,7 +262,7 @@ public class WorkerServiceTests
             Email = "mahesh@example.com",
             Mobile = "+94771199334",
             Password = "Password123!",
-            Skills = new List<string> { "Masonry" },
+            Skills = new List<string> { "Structural / Building" },
             ServiceArea = "Kurunegala",
             ProofDocumentName = "proof.pdf"
         });
@@ -304,7 +304,7 @@ public class WorkerServiceTests
             Email = "dinesh@example.com",
             Mobile = "+94774433221",
             Password = "Password123!",
-            Skills = new List<string> { "HVAC" },
+            Skills = new List<string> { "Electrical" },
             ServiceArea = "Panadura",
             ProofDocumentName = "proof.pdf"
         });

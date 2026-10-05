@@ -13,6 +13,7 @@ using SmartProperty.Api.Entities.Tenancy;
 using SmartProperty.Api.Entities.Worker;
 using SmartProperty.Api.Services;
 using Xunit;
+using SmartProperty.Api.Entities.AgenticAI;
 
 namespace SmartProperty.Tests;
 
@@ -104,6 +105,43 @@ public class WorkerRecommendationTests
 
         await context.SaveChangesAsync();
 
+
+        // Agent 3 successfully matched the plumber
+        context.WorkerMatchRecommendations.Add(
+            new WorkerMatchRecommendation
+            {
+                MaintenanceRequestId = request.Id,
+                WorkerId = worker.Id,
+                Result = "MATCH_FOUND",
+                RequiredSkill = "Plumbing",
+                CategoryId = category.Id,
+                Priority = "Medium",
+                SuggestedDateTime = DateTime.UtcNow.AddDays(1),
+                ActiveJobCount = 0,
+                YearsOfExperience = 3,
+                Reason =
+                    "Verified plumbing worker matched successfully.",
+                IsEmergency = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+
+        // Agent 4 validated the SAME worker
+        context.ValidationResults.Add(
+            new ValidationResult
+            {
+                MaintenanceRequestId = request.Id,
+                WorkerId = worker.Id,
+                Status = ValidationStatus.Pass,
+                Summary =
+                    "Technician passed safety and compliance validation.",
+                ValidatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
         // Act
         var result = await recService.GetRecommendationAsync(request.Id, ownerUser.Id, "PropertyOwner");
 
@@ -113,7 +151,7 @@ public class WorkerRecommendationTests
         Assert.Equal(worker.Id, result.RecommendedWorkerId);
         Assert.Equal("Kamal Plumber", result.RecommendedWorker);
         Assert.Equal("Plumbing", result.WorkerSkill);
-        Assert.Contains("Passed", result.ValidationStatus);
+        Assert.Contains("Pass", result.ValidationStatus);
     }
 
     [Fact]
@@ -174,6 +212,35 @@ public class WorkerRecommendationTests
 
         await context.SaveChangesAsync();
 
+
+        context.WorkerMatchRecommendations.Add(
+    new WorkerMatchRecommendation
+    {
+        MaintenanceRequestId = emergencyRequest.Id,
+        WorkerId = null,
+
+        Result =
+            "NO_AVAILABLE_EMERGENCY_WORKER",
+
+        RequiredSkill = "Electrical",
+        CategoryId = category.Id,
+        Priority = "Emergency",
+
+        SuggestedDateTime = null,
+        ActiveJobCount = 0,
+        YearsOfExperience = null,
+
+        Reason =
+            "No verified worker with the required skill, service area, current availability and no active conflicting job was found.",
+
+        IsEmergency = true,
+
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+    });
+
+    await context.SaveChangesAsync();
+
         // Act
         var result = await recService.GetRecommendationAsync(emergencyRequest.Id, ownerUser.Id, "PropertyOwner");
 
@@ -182,7 +249,7 @@ public class WorkerRecommendationTests
         Assert.False(result.HasAvailableWorker);
         Assert.Equal("NO_AVAILABLE_EMERGENCY_WORKER", result.ValidationStatus);
         Assert.True(result.IsEmergency);
-        Assert.Contains("Immediate external emergency maintenance", result.Message);
+        Assert.Contains("No verified worker", result.Message);
     }
 
     [Fact]
@@ -249,6 +316,14 @@ public class WorkerRecommendationTests
         var tenancy = new Tenancy { Id = 704, TenantId = tenant.Id, UnitId = unit.Id };
 
         var workerUser = new User { Id = 133, FullName = "Sunil Carpentry", Email = "sunil@test.com", RoleId = 4, IsActive = true };
+
+        var category = new MaintenanceCategory
+        {
+            Id = 12,
+            Name = "Doors / Windows / Locks"
+        };
+
+        context.MaintenanceCategories.Add(category);
         var worker = new Worker
         {
             Id = 803,
@@ -257,6 +332,14 @@ public class WorkerRecommendationTests
             VerificationStatus = WorkerVerificationStatus.Verified,
             IsAvailable = true
         };
+        worker.Skills.Add(
+        new WorkerSkill
+        {
+            WorkerId = worker.Id,
+            SkillName = "Doors / Windows / Locks",
+            CategoryId = category.Id,
+            YearsOfExperience = 3
+        });
 
         context.Users.AddRange(ownerUser, tenantUser, workerUser);
         context.PropertyOwners.Add(owner);
@@ -269,6 +352,7 @@ public class WorkerRecommendationTests
         var request = new MaintenanceRequest
         {
             Id = 904,
+            CategoryId = category.Id,
             TenantId = tenant.Id,
             TenancyId = tenancy.Id,
             PropertyId = property.Id,
@@ -276,8 +360,58 @@ public class WorkerRecommendationTests
             Description = "Door hinge broken",
             RequestType = "NORMAL",
             Status = "Submitted"
+           
         };
         context.MaintenanceRequests.Add(request);
+        await context.SaveChangesAsync();
+
+
+        // Agent 3 selected this exact worker
+        context.WorkerMatchRecommendations.Add(
+            new WorkerMatchRecommendation
+            {
+                MaintenanceRequestId = request.Id,
+                WorkerId = worker.Id,
+                Result = "MATCH_FOUND",
+
+                RequiredSkill =
+                    "Doors / Windows / Locks",
+
+                Priority = "Medium",
+
+                SuggestedDateTime =
+                    DateTime.UtcNow.AddDays(2),
+
+                ActiveJobCount = 0,
+
+                YearsOfExperience = 3,
+
+                Reason =
+                    "Suitable technician matched by Agent 3.",
+
+                IsEmergency = false,
+
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+
+        // Agent 4 validates the SAME worker
+        context.ValidationResults.Add(
+            new ValidationResult
+            {
+                MaintenanceRequestId = request.Id,
+                WorkerId = worker.Id,
+
+                Status = ValidationStatus.Pass,
+
+                Summary =
+                    "Technician passed Agent 4 validation.",
+
+                ValidatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            });
+
         await context.SaveChangesAsync();
 
         var approvalDto = new ApprovalRequestDto
@@ -378,3 +512,4 @@ public class WorkerRecommendationTests
         Assert.Equal("Too costly, will handle via warranty.", savedDecision.Notes);
     }
 }
+

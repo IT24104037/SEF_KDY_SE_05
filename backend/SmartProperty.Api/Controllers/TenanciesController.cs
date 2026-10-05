@@ -44,6 +44,17 @@ public class TenanciesController : ControllerBase
         }
     }
 
+    // GET /api/tenancies/tenant/{tenantId} (Owner only)
+    [HttpGet("tenant/{tenantId}")]
+    [Authorize(Roles = "PropertyOwner")]
+    public async Task<IActionResult> GetTenanciesForTenant(int tenantId)
+    {
+        var tenancies = await _tenancyService.GetTenanciesForTenantAsync(tenantId, CurrentUserId);
+        return tenancies == null
+            ? NotFound(new { message = "Tenant not found." })
+            : Ok(tenancies);
+    }
+
     // GET /api/tenancies/current  (Tenant only — their own active tenancy)
     [HttpGet("current")]
     [Authorize(Roles = "Tenant")]

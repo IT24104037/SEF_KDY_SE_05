@@ -11,6 +11,11 @@ using SmartProperty.Api.Repositories;
 using SmartProperty.Api.Repositories.Implementations;
 using SmartProperty.Api.Repositories.Interfaces;
 using SmartProperty.Api.Services;
+using SmartProperty.Api.AgenticAI.Agents;
+using SmartProperty.Api.AgenticAI.Validators;
+
+
+using SmartProperty.Api.AgenticAI.Tools;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +25,15 @@ builder.Configuration.AddJsonFile(
     reloadOnChange: true);
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<MaintenanceAnalysisAgent>();
+builder.Services.AddScoped<AgentOutputValidator>();
+builder.Services.AddScoped<PlannerOutputValidator>();
+builder.Services.AddScoped<Agent2MaintenanceAnalysisService>();
+builder.Services.AddScoped<MaintenanceResponsibilityTool>();
+builder.Services.AddScoped<Agent2WorkflowService>();
+
+
 
 // --------------------
 // PostgreSQL
@@ -27,7 +41,8 @@ builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // --------------------
 // Services
@@ -38,6 +53,7 @@ builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<ITenancyRepository, TenancyRepository>();
 builder.Services.AddScoped<ITenancyService, TenancyService>();
+builder.Services.AddSingleton<IActivationPinGenerator, ActivationPinGenerator>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<
     IMaintenanceCategoryService,
@@ -49,6 +65,20 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IWorkerRecommendationService, WorkerRecommendationService>();
+builder.Services.AddScoped<IWorkOrderService, WorkOrderService>();
+builder.Services.AddScoped<IExternalMaintenanceService, ExternalMaintenanceService>();
+builder.Services.AddScoped<MaintenanceContextTool>();
+builder.Services.AddScoped<PropertyContextTool>();
+builder.Services.AddScoped<PlannerCoordinatorAgent>();
+builder.Services.AddScoped<IAgentWorkflowService, AgentWorkflowService>();
+
+
+builder.Services.AddScoped<WorkerMatchingTool>();
+builder.Services.AddScoped<TechnicianMatchingAgent>();
+builder.Services.AddScoped<Agent3WorkflowService>();
+
+builder.Services.AddScoped<ValidationSafetyAgent>();
+builder.Services.AddScoped<Agent4WorkflowService>();
 
 // --------------------
 // JWT Authentication
@@ -139,10 +169,24 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    await db.Database.MigrateAsync();
+    try
+    {
+        await db.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup] Database migration check skipped or already up-to-date: {ex.Message}");
+    }
 
-    await DbSeeder.SeedAdminAsync(scope.ServiceProvider, app.Configuration);
-    await DbSeeder.SeedTestOwnerAsync(scope.ServiceProvider, app.Configuration);
+    try
+    {
+        await DbSeeder.SeedAdminAsync(scope.ServiceProvider, app.Configuration);
+        await DbSeeder.SeedTestOwnerAsync(scope.ServiceProvider, app.Configuration);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup] Database seeding skipped: {ex.Message}");
+    }
 }
 
 if (app.Environment.IsDevelopment())
@@ -155,6 +199,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+app.UseStaticFiles();
 
 app.UseCors("AllowClients");
 

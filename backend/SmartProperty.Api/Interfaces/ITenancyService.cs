@@ -3,19 +3,71 @@ using SmartProperty.Api.DTOs.Tenancies;
 
 namespace SmartProperty.Api.Interfaces;
 
-// Covers business logic for the whole Tenancy module (Tenant, Tenancy,
-// Activation). Only Tenant Management methods are implemented so far.
+// Covers business logic for the whole Tenancy module
+// (Tenant, Tenancy, Activation, and Tenant Profile).
 public interface ITenancyService
 {
-    // ---- Tenant Management ----
-    Task<TenantResponseDto> CreateTenantAsync(CreateTenantDto dto, int ownerUserId);
-    Task<PagedResult<TenantResponseDto>> GetTenantsAsync(TenantQueryParameters query, int ownerUserId);
-    Task<TenantResponseDto?> GetTenantByIdAsync(int id, int ownerUserId);
-    Task<TenantResponseDto?> UpdateTenantAsync(int id, UpdateTenantDto dto, int ownerUserId);
+    // =========================================================
+    // Tenant Management
+    // =========================================================
 
-    // ---- Tenancy Management ----
-    Task<TenancyResponseDto> CreateTenancyAsync(CreateTenancyDto dto, int ownerUserId);
-    Task<TenancyResponseDto?> GetCurrentTenancyAsync(int currentUserId);
-    Task<List<TenancyResponseDto>> GetTenancyHistoryAsync(int currentUserId);
-    Task<bool> EndTenancyAsync(int tenancyId, EndTenancyDto dto);
+    Task<CreateTenantResponseDto> CreateTenantAsync(
+        CreateTenantDto dto,
+        int ownerUserId);
+
+    Task<PagedResult<TenantResponseDto>> GetTenantsAsync(
+        TenantQueryParameters query,
+        int ownerUserId);
+
+    Task<TenantResponseDto?> GetTenantByIdAsync(
+        int id,
+        int ownerUserId);
+
+    Task<TenantResponseDto?> UpdateTenantAsync(
+        int id,
+        UpdateTenantDto dto,
+        int ownerUserId);
+
+
+    // =========================================================
+    // Tenant Profile
+    // =========================================================
+
+    Task<TenantResponseDto?> GetMyProfileAsync(
+        int userId);
+
+    Task<TenantResponseDto?> UpdateMyProfileAsync(
+        int userId,
+        UpdateTenantProfileDto dto);
+
+
+    // =========================================================
+    // Tenancy Management
+    // =========================================================
+
+    Task<TenancyResponseDto> CreateTenancyAsync(
+        CreateTenancyDto dto,
+        int ownerUserId);
+
+    Task<List<TenancyResponseDto>?> GetTenanciesForTenantAsync(
+        int tenantId,
+        int ownerUserId);
+
+    Task<TenancyResponseDto?> GetCurrentTenancyAsync(
+        int currentUserId);
+
+    Task<List<TenancyResponseDto>> GetTenancyHistoryAsync(
+        int currentUserId);
+
+    Task<bool> EndTenancyAsync(
+        int tenancyId,
+        EndTenancyDto dto);
+
+
+    // =========================================================
+    // Activation PIN
+    // =========================================================
+
+    Task<ActivationResultDto> ActivateTenantAsync(
+        ActivateTenantDto dto);
 }

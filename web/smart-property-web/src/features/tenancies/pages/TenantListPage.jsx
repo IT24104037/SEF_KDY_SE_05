@@ -9,6 +9,7 @@ export default function TenantListPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isActive, setIsActive] = useState(""); // "" | "true" | "false"
   const [propertyId, setPropertyId] = useState("");
   const [unitId, setUnitId] = useState("");
@@ -18,10 +19,23 @@ export default function TenantListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+
+
+useEffect(() => {
+  const timer = window.setTimeout(() => {
+    setPage(1);
+    setDebouncedSearch(search);
+  }, 350);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [search]);
+  
   useEffect(() => {
     fetchTenants();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, isActive, propertyId, unitId, sortBy, descending, page]);
+  }, [debouncedSearch, isActive, propertyId, unitId, sortBy, descending, page]);
 
   useEffect(() => {
     tenancyService.getOptions().then(setOptions).catch(() => {});
@@ -32,7 +46,7 @@ export default function TenantListPage() {
     setErrorMessage("");
     try {
       const result = await tenancyService.getTenants({
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         isActive: isActive === "" ? undefined : isActive === "true",
         propertyId: propertyId || undefined,
         unitId: unitId || undefined,
@@ -53,20 +67,21 @@ export default function TenantListPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ color: "#17324D" }}>Tenants</h2>
+    <div style={pageStyle}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+        <h1 style={titleStyle}>Tenants</h1>
         <Link to="/owner/tenants/add" style={{ ...buttonStyle, textDecoration: "none" }}>
           + Add Tenant
         </Link>
       </div>
+
+      <p style={subtitleStyle}>Manage your tenants and tenancy agreements.</p>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <input
           placeholder="Search name, mobile, email..."
           value={search}
           onChange={(e) => {
-            setPage(1);
             setSearch(e.target.value);
           }}
           style={{ ...inputStyle, minWidth: 220 }}
@@ -107,17 +122,17 @@ export default function TenantListPage() {
         </button>
       </div>
 
-      {loading && <p style={{ color: "#6B7280" }}>Loading tenants...</p>}
+      {loading && <p style={mutedStyle}>Loading tenants...</p>}
 
-      {!loading && errorMessage && <p style={{ color: "#D64545" }}>{errorMessage}</p>}
+      {!loading && errorMessage && <p style={errorStyle}>{errorMessage}</p>}
 
       {!loading && !errorMessage && tenants.length === 0 && (
-        <p style={{ color: "#6B7280" }}>No tenants found. Try adjusting your search or filters.</p>
+        <p style={mutedStyle}>No tenants found. Try adjusting your search or filters.</p>
       )}
 
       {!loading && !errorMessage && tenants.length > 0 && (
         <>
-          <div style={{ background: "#fff", border: "1px solid #DDE3E9", borderRadius: 8 }}>
+          <div style={listStyle}>
             {tenants.map((t) => (
               <Link
                 key={t.id}
@@ -125,10 +140,11 @@ export default function TenantListPage() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  padding: "12px 16px",
-                  borderBottom: "1px solid #DDE3E9",
+                  padding: "16px 18px",
+                  borderBottom: "1px solid #edf1f3",
                   textDecoration: "none",
                   color: "inherit",
+                  background: "#ffffff",
                 }}
               >
                 <div>
@@ -140,10 +156,11 @@ export default function TenantListPage() {
                   style={{
                     alignSelf: "center",
                     fontSize: 12,
-                    padding: "4px 10px",
-                    borderRadius: 12,
-                    color: "#fff",
-                    background: t.isActive ? "#22A06B" : "#F59E0B",
+                    padding: "5px 10px",
+                    borderRadius: 999,
+                    color: t.isActive ? "#166534" : "#92400e",
+                    background: t.isActive ? "#dcfce7" : "#fef3c7",
+                    fontWeight: 700,
                   }}
                 >
                   {t.isActive ? "Active" : "Pending Activation"}
@@ -178,18 +195,44 @@ export default function TenantListPage() {
 }
 
 const inputStyle = {
-  padding: "8px 10px",
-  border: "1px solid #DDE3E9",
-  borderRadius: 6,
+  padding: "10px 12px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  fontSize: 13,
+  color: "#1f2933",
+  background: "#ffffff",
+  fontFamily: "inherit",
+};
+
+const pageStyle = {
+  color: "#1f2933",
+  fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+};
+
+const titleStyle = {
+  margin: 0,
+  color: "#172033",
+  fontSize: "clamp(23px, 3vw, 30px)",
+  fontWeight: 750,
+};
+
+const subtitleStyle = {
+  color: "#64748b",
+  margin: "4px 0 20px",
   fontSize: 14,
 };
 
+const mutedStyle = { color: "#64748b", fontSize: 14 };
+const errorStyle = { color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px" };
+const listStyle = { background: "#ffffff", border: "1px solid #e2e7e9", borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" };
+
 const buttonStyle = {
-  background: "#1F8A8A",
+  background: "#0f766e",
   color: "#fff",
   border: "none",
-  borderRadius: 6,
-  padding: "8px 14px",
+  borderRadius: 8,
+  padding: "9px 15px",
   cursor: "pointer",
   fontSize: 14,
+  fontWeight: 650,
 };

@@ -22,6 +22,107 @@ namespace SmartProperty.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.AgentExecutionLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AgentName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("AgentWorkflowId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ErrorSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("WorkflowStepId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentWorkflowId");
+
+                    b.HasIndex("WorkflowStepId");
+
+                    b.ToTable("AgentExecutionLogs");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.AgentWorkflow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovalStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentStep")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FinalOutcome")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("MaintenanceRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaintenanceRequestId");
+
+                    b.ToTable("AgentWorkflows");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.ApprovalDecision", b =>
                 {
                     b.Property<int>("Id")
@@ -58,6 +159,66 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("PropertyOwnerId");
 
                     b.ToTable("ApprovalDecisions");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.ToolExecution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AgentWorkflowId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ErrorSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("InputSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OutputSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("WorkflowStepId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentWorkflowId");
+
+                    b.HasIndex("WorkflowStepId");
+
+                    b.ToTable("ToolExecutions");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.ValidationResult", b =>
@@ -100,6 +261,63 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("WorkerId");
 
                     b.ToTable("ValidationResults");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.WorkflowStep", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AgentName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("AgentWorkflowId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("InputSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OutputSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("StepName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("StepOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentWorkflowId");
+
+                    b.ToTable("WorkflowSteps");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Identity.Role", b =>
@@ -191,6 +409,64 @@ namespace SmartProperty.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.MaintenanceAnalysisResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Confidence")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DetectedProblem")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmergencyClass")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MaintenanceRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("NeedsMoreInformation")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequiredSkill")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Responsibility")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SafetyConcern")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaintenanceRequestId")
+                        .IsUnique();
+
+                    b.ToTable("MaintenanceAnalysisResults");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.MaintenanceCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -259,6 +535,12 @@ namespace SmartProperty.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ArchivedByUserId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("CategoryId")
                         .HasColumnType("integer");
 
@@ -273,6 +555,9 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Property<string>("EmergencyType")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Priority")
                         .HasMaxLength(30)
@@ -358,6 +643,121 @@ namespace SmartProperty.Api.Data.Migrations
                     b.ToTable("MaintenanceStatusHistories");
                 });
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.WorkerMatchRecommendation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActiveJobCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsEmergency")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaintenanceRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RequiredSkill")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Safety")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("SuggestedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WorkerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("YearsOfExperience")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("MaintenanceRequestId");
+
+                    b.HasIndex("WorkerId");
+
+                    b.ToTable("WorkerMatchRecommendations");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerProfileChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PropertyOwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequestedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("RequestedFullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RequestedMobile")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedByAdminId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyOwnerId");
+
+                    b.HasIndex("ReviewedByAdminId");
+
+                    b.ToTable("OwnerProfileChangeRequests");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerVerificationDocument", b =>
                 {
                     b.Property<int>("Id")
@@ -424,12 +824,29 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Property<int>("PropertyOwnerId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("VerifiedByAdminId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PropertyOwnerId");
+
+                    b.HasIndex("VerifiedByAdminId");
 
                     b.ToTable("Properties");
                 });
@@ -444,6 +861,9 @@ namespace SmartProperty.Api.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -467,6 +887,35 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("VerifiedByAdminId");
 
                     b.ToTable("PropertyOwners");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyVerificationDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DocumentUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PropertyId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyId");
+
+                    b.ToTable("PropertyVerificationDocuments");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
@@ -601,6 +1050,37 @@ namespace SmartProperty.Api.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Tenants");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Tenancy.TenantActivationPin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PinHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("TenantActivationPins");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Worker.ExternalMaintenanceArrangement", b =>
@@ -920,6 +1400,35 @@ namespace SmartProperty.Api.Data.Migrations
                     b.ToTable("WorkerSkills");
                 });
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.AgentExecutionLog", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.AgenticAI.AgentWorkflow", "AgentWorkflow")
+                        .WithMany("ExecutionLogs")
+                        .HasForeignKey("AgentWorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartProperty.Api.Entities.AgenticAI.WorkflowStep", "WorkflowStep")
+                        .WithMany("ExecutionLogs")
+                        .HasForeignKey("WorkflowStepId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("AgentWorkflow");
+
+                    b.Navigation("WorkflowStep");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.AgentWorkflow", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceRequest", "MaintenanceRequest")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MaintenanceRequest");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.ApprovalDecision", b =>
                 {
                     b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceRequest", "MaintenanceRequest")
@@ -937,6 +1446,24 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("MaintenanceRequest");
 
                     b.Navigation("PropertyOwner");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.ToolExecution", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.AgenticAI.AgentWorkflow", "AgentWorkflow")
+                        .WithMany("ToolExecutions")
+                        .HasForeignKey("AgentWorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartProperty.Api.Entities.AgenticAI.WorkflowStep", "WorkflowStep")
+                        .WithMany("ToolExecutions")
+                        .HasForeignKey("WorkflowStepId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("AgentWorkflow");
+
+                    b.Navigation("WorkflowStep");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.ValidationResult", b =>
@@ -957,6 +1484,17 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("Worker");
                 });
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.WorkflowStep", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.AgenticAI.AgentWorkflow", "AgentWorkflow")
+                        .WithMany("WorkflowSteps")
+                        .HasForeignKey("AgentWorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AgentWorkflow");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.Identity.User", b =>
                 {
                     b.HasOne("SmartProperty.Api.Entities.Identity.Role", "Role")
@@ -966,6 +1504,17 @@ namespace SmartProperty.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.MaintenanceAnalysisResult", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceRequest", "MaintenanceRequest")
+                        .WithOne()
+                        .HasForeignKey("SmartProperty.Api.Entities.Maintenance.MaintenanceAnalysisResult", "MaintenanceRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MaintenanceRequest");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.MaintenanceImage", b =>
@@ -1039,6 +1588,49 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("MaintenanceRequest");
                 });
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.Maintenance.WorkerMatchRecommendation", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SmartProperty.Api.Entities.Maintenance.MaintenanceRequest", "MaintenanceRequest")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartProperty.Api.Entities.Worker.Worker", "Worker")
+                        .WithMany()
+                        .HasForeignKey("WorkerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Category");
+
+                    b.Navigation("MaintenanceRequest");
+
+                    b.Navigation("Worker");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerProfileChangeRequest", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.Property.PropertyOwner", "PropertyOwner")
+                        .WithMany()
+                        .HasForeignKey("PropertyOwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartProperty.Api.Entities.Identity.User", "ReviewedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PropertyOwner");
+
+                    b.Navigation("ReviewedByAdmin");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.OwnerVerificationDocument", b =>
                 {
                     b.HasOne("SmartProperty.Api.Entities.Property.PropertyOwner", "PropertyOwner")
@@ -1058,7 +1650,14 @@ namespace SmartProperty.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SmartProperty.Api.Entities.Identity.User", "VerifiedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("PropertyOwner");
+
+                    b.Navigation("VerifiedByAdmin");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
@@ -1077,6 +1676,17 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("User");
 
                     b.Navigation("VerifiedByAdmin");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyVerificationDocument", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.Property.Property", "Property")
+                        .WithMany("VerificationDocuments")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Unit", b =>
@@ -1125,6 +1735,17 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("Unit");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.Tenancy.TenantActivationPin", b =>
+                {
+                    b.HasOne("SmartProperty.Api.Entities.Tenancy.Tenant", "Tenant")
+                        .WithMany("ActivationPins")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Worker.ExternalMaintenanceArrangement", b =>
@@ -1226,6 +1847,22 @@ namespace SmartProperty.Api.Data.Migrations
                     b.Navigation("Worker");
                 });
 
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.AgentWorkflow", b =>
+                {
+                    b.Navigation("ExecutionLogs");
+
+                    b.Navigation("ToolExecutions");
+
+                    b.Navigation("WorkflowSteps");
+                });
+
+            modelBuilder.Entity("SmartProperty.Api.Entities.AgenticAI.WorkflowStep", b =>
+                {
+                    b.Navigation("ExecutionLogs");
+
+                    b.Navigation("ToolExecutions");
+                });
+
             modelBuilder.Entity("SmartProperty.Api.Entities.Identity.Role", b =>
                 {
                     b.Navigation("Users");
@@ -1234,6 +1871,8 @@ namespace SmartProperty.Api.Data.Migrations
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.Property", b =>
                 {
                     b.Navigation("Units");
+
+                    b.Navigation("VerificationDocuments");
                 });
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Property.PropertyOwner", b =>
@@ -1250,6 +1889,8 @@ namespace SmartProperty.Api.Data.Migrations
 
             modelBuilder.Entity("SmartProperty.Api.Entities.Tenancy.Tenant", b =>
                 {
+                    b.Navigation("ActivationPins");
+
                     b.Navigation("Tenancies");
                 });
 

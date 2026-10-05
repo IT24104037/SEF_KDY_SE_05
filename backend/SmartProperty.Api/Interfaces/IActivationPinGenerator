@@ -1,0 +1,9 @@
+namespace SmartProperty.Api.Interfaces;
+
+public interface IActivationPinGenerator
+{
+    // Returns (rawPin, pinHash). The raw PIN is shown once; only the hash is stored.
+    (string rawPin, string pinHash) GeneratePin();
+
+    bool VerifyPin(string rawPin, string pinHash);
+}

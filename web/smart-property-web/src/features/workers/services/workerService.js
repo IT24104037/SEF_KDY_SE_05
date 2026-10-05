@@ -1,5 +1,19 @@
 import apiClient from "../../../api/apiClient.js";
 
+export async function uploadWorkerProof(file) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post("/api/workers/upload-proof", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to upload document.";
+    throw new Error(message);
+  }
+}
+
 export async function registerWorker(payload) {
   try {
     const response = await apiClient.post("/api/workers/register", {
@@ -100,52 +114,54 @@ export async function updateMyAvailability(slots) {
 
 
 
-const initialWorkOrders = [
-  {
-    id: 5001,
-    requestId: 9001,
-    title: "Major kitchen water leak",
-    property: "Lakeview Apartments",
-    unit: "A2",
-    worker: "Nimal Silva",
-    status: "Assigned",
-    priority: "Emergency",
-    scheduledAt: "2026-09-18T10:30:00Z",
-    description: "Inspect and stop the leak under the kitchen sink.",
-  },
-  {
-    id: 5002,
-    requestId: 9002,
-    title: "Air conditioner not cooling",
-    property: "Cedar Court",
-    unit: "F3",
-    worker: "Amal Perera",
-    status: "InProgress",
-    priority: "Normal",
-    scheduledAt: "2026-09-17T14:00:00Z",
-    description: "Check the indoor unit and restore cooling.",
-  },
-];
+export async function getWorkOrders({ status = "", page = 1, pageSize = 50 } = {}) {
+  try {
+    const params = {};
+    if (status) params.status = status;
+    if (page) params.page = page;
+    if (pageSize) params.pageSize = pageSize;
 
-export async function getWorkOrders() {
-  const stored = localStorage.getItem("smart-property.mock-work-orders");
-  const workOrders = stored ? JSON.parse(stored) : initialWorkOrders;
-  if (!stored) localStorage.setItem("smart-property.mock-work-orders", JSON.stringify(workOrders));
-  return workOrders;
+    const response = await apiClient.get("/api/work-orders", { params });
+    return response.data?.workOrders || [];
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to load work orders.";
+    throw new Error(message);
+  }
 }
 
 export async function getWorkOrder(id) {
-  const workOrders = await getWorkOrders();
-  return workOrders.find((workOrder) => workOrder.id === Number(id));
+  try {
+    const response = await apiClient.get(`/api/work-orders/${id}`);
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to load work order details.";
+    throw new Error(message);
+  }
 }
 
-export async function updateWorkOrderStatus(id, status) {
-  const workOrders = await getWorkOrders();
-  const updated = workOrders.map((workOrder) => (
-    workOrder.id === Number(id) ? { ...workOrder, status } : workOrder
-  ));
-  localStorage.setItem("smart-property.mock-work-orders", JSON.stringify(updated));
-  return updated.find((workOrder) => workOrder.id === Number(id));
+export async function updateWorkOrderStatus(id, status, completionNotes = "", completionEvidenceUrl = "", notes = "") {
+  try {
+    const response = await apiClient.put(`/api/work-orders/${id}/status`, {
+      status,
+      notes,
+      completionNotes,
+      completionEvidenceUrl,
+    });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to update work order status.";
+    throw new Error(message);
+  }
+}
+
+export async function updateWorkOrderSchedule(id, visitTime) {
+  try {
+    const response = await apiClient.put(`/api/work-orders/${id}/schedule`, { visitTime });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to update visit time.";
+    throw new Error(message);
+  }
 }
 
 export async function getPendingApprovals() {
@@ -202,6 +218,45 @@ export async function submitApprovalDecision(requestId, decision, note = "", sch
   }
 }
 
-export async function createExternalArrangement(payload) {
-  return { id: Date.now(), ...payload, status: "ExternalMaintenanceScheduled" };
+export async function submitManualDecision(
+  requestId,
+  decision,
+  message
+) {
+  try {
+    const response = await apiClient.post(
+      `/api/maintenance-requests/${requestId}/manual-decision`,
+      {
+        decision,
+        message,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to submit manual decision.";
+
+    throw new Error(message);
+  }
 }
+
+export async function getTenantMaintenanceNotifications() {
+  try {
+    const response = await apiClient.get(
+      "/api/tenant/notifications"
+    );
+
+    return response.data || [];
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to load maintenance notifications.";
+
+    throw new Error(message);
+  }
+}
+

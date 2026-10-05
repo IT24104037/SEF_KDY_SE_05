@@ -5,11 +5,11 @@ import React from "react";
 // not on TenancyHistoryPage).
 export default function TenancyTable({ tenancies = [], showEndAction = false, onEnd, endingId }) {
   if (tenancies.length === 0) {
-    return <p style={{ color: "#6B7280" }}>No tenancies to show.</p>;
+    return <p style={styles.empty}>No tenancies to show.</p>;
   }
 
   return (
-    <div style={{ background: "#fff", border: "1px solid #DDE3E9", borderRadius: 8 }}>
+    <div style={styles.table}>
       {tenancies.map((t) => (
         <div
           key={t.id}
@@ -17,13 +17,14 @@ export default function TenancyTable({ tenancies = [], showEndAction = false, on
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "12px 16px",
-            borderBottom: "1px solid #DDE3E9",
+            padding: "15px 18px",
+            borderBottom: "1px solid #edf1f3",
           }}
         >
           <div>
-            <div style={{ fontWeight: 600 }}>Unit #{t.unitId}</div>
-            <div style={{ color: "#6B7280", fontSize: 13 }}>
+            <div style={{ fontWeight: 650, color: "#172033" }}> Unit {t.unitName || `#${t.unitId}`}           
+            </div>
+            <div style={styles.meta}>
               {new Date(t.startDate).toLocaleDateString()} —{" "}
               {t.endDate ? new Date(t.endDate).toLocaleDateString() : "Present"}
             </div>
@@ -33,10 +34,11 @@ export default function TenancyTable({ tenancies = [], showEndAction = false, on
             <span
               style={{
                 fontSize: 12,
-                padding: "4px 10px",
-                borderRadius: 12,
-                color: "#fff",
-                background: t.status === "Active" ? "#22A06B" : "#6B7280",
+                padding: "5px 10px",
+                borderRadius: 999,
+                fontWeight: 700,
+                color: t.status === "Active" ? "#166534" : "#475569",
+                background: t.status === "Active" ? "#dcfce7" : "#f1f5f9",
               }}
             >
               {t.status}
@@ -47,10 +49,10 @@ export default function TenancyTable({ tenancies = [], showEndAction = false, on
                 onClick={() => onEnd(t.id)}
                 disabled={endingId === t.id}
                 style={{
-                  background: "#D64545",
+                  background: "#b91c1c",
                   color: "#fff",
                   border: "none",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   padding: "6px 10px",
                   fontSize: 13,
                   cursor: endingId === t.id ? "not-allowed" : "pointer",
@@ -65,3 +67,9 @@ export default function TenancyTable({ tenancies = [], showEndAction = false, on
     </div>
   );
 }
+
+const styles = {
+  table: { background: "#ffffff", border: "1px solid #e2e7e9", borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)" },
+  meta: { color: "#64748b", fontSize: 13 },
+  empty: { color: "#64748b", padding: "12px 0", fontSize: 14 },
+};

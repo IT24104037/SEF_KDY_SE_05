@@ -42,4 +42,20 @@ public interface IMaintenanceRequestService
         int id,
         int currentUserId,
         string currentUserRole);
+
+
+        Task<bool> ArchiveCompletedRequestAsync(
+            int id,
+            int currentUserId,
+            string currentUserRole);
+
+
+            Task<PagedMaintenanceRequestsDto> GetHistoryRequestsAsync(
+                int currentUserId,
+                string currentUserRole,
+                string? search,
+                string? status,
+                string? requestType,
+                int page,
+                int pageSize);
 }

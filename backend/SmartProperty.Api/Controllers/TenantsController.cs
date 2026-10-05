@@ -25,13 +25,13 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> GetOptions()
     {
         var properties = await _context.Properties
-            .Where(p => p.PropertyOwner.UserId == OwnerUserId)
+            .Where(p => p.PropertyOwner.UserId == OwnerUserId && !p.IsArchived)
             .Select(p => new
             {
                 p.Id,
                 p.Name,
                 Units = p.Units
-                    .Where(u => !u.IsDeleted &&
+                    .Where(u => !u.IsArchived && !u.IsDeleted &&
                         !_context.Tenancies.Any(t =>
                             t.UnitId == u.Id && t.Status == Entities.Tenancy.TenancyStatus.Active))
                     .Select(u => new { u.Id, u.UnitLabel })

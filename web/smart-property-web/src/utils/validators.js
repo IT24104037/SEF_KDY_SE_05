@@ -1,5 +1,5 @@
 export function isValidMobileNumber(value) {
-  return /^\d{7,15}$/.test((value || "").trim());
+  return /^\d{10}$/.test((value || "").trim());
 }
 
 export function isValidEmail(value) {

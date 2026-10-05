@@ -11,8 +11,8 @@ public class CreateTenantDto
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Mobile number is required.")]
-    [MaxLength(20)]
-    [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Mobile number must be 7-15 digits.")]
+    [MaxLength(10)]
+    [RegularExpression(@"^\d{10}$", ErrorMessage = "Mobile number must be exactly 10 digits.")]
     public string MobileNumber { get; set; } = string.Empty;
 
     [MaxLength(150)]

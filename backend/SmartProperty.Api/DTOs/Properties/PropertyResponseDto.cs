@@ -6,6 +6,10 @@ public class PropertyResponseDto
 
     public int PropertyOwnerId { get; set; }
 
+    public string? OwnerName { get; set; }
+
+    public string? OwnerEmail { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string Address { get; set; } = string.Empty;
@@ -23,4 +27,14 @@ public class PropertyResponseDto
     public DateTime UpdatedAt { get; set; }
 
     public bool IsArchived { get; set; }
+
+    public string VerificationStatus { get; set; } = string.Empty;
+
+    public string? RejectionReason { get; set; }
+
+    public DateTime? SubmittedAt { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
+    public List<PropertyVerificationDocumentDto> Documents { get; set; } = new();
 }

@@ -12,7 +12,16 @@ public class WorkerService : IWorkerService
 {
     private readonly AppDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
-
+    private static readonly HashSet<string> AllowedSkills =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                "Plumbing",
+                "Electrical",
+                "Structural / Building",
+                "Doors / Windows / Locks",
+                "Drainage / Water Damage",
+                "Other"
+            };  
     public WorkerService(AppDbContext context, IPasswordHasher<User> passwordHasher)
     {
         _context = context;
@@ -74,8 +83,14 @@ public class WorkerService : IWorkerService
         if (dto.Skills != null && dto.Skills.Count > 0)
         {
             foreach (var skillName in dto.Skills.Distinct(StringComparer.OrdinalIgnoreCase))
-            {
+                            {
                 var skillTrimmed = skillName.Trim();
+
+                if (!AllowedSkills.Contains(skillTrimmed))
+                {
+                    throw new ArgumentException(
+                        $"Invalid worker skill: '{skillTrimmed}'.");
+                }
                 if (!string.IsNullOrEmpty(skillTrimmed))
                 {
                     var matchingCategory = await _context.MaintenanceCategories
@@ -126,35 +141,34 @@ public class WorkerService : IWorkerService
 
     public async Task<WorkerListResponseDto> GetWorkersAsync(string? search = null, string? status = null, int page = 1, int pageSize = 50)
     {
-        var query = _context.Workers
-            .Include(w => w.User)
-            .Include(w => w.Skills)
-            .Include(w => w.ServiceAreas)
-            .Include(w => w.Documents)
-            .AsNoTracking()
-            .AsQueryable();
+        var baseQuery = _context.Workers.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(status))
         {
             if (Enum.TryParse<WorkerVerificationStatus>(status, true, out var parsedStatus))
             {
-                query = query.Where(w => w.VerificationStatus == parsedStatus);
+                baseQuery = baseQuery.Where(w => w.VerificationStatus == parsedStatus);
             }
         }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(w =>
+            baseQuery = baseQuery.Where(w =>
                 (w.User != null && w.User.FullName.ToLower().Contains(s)) ||
                 (w.User != null && w.User.Email != null && w.User.Email.ToLower().Contains(s)) ||
                 (w.User != null && w.User.Mobile != null && w.User.Mobile.Contains(s)) ||
                 w.Skills.Any(sk => sk.SkillName.ToLower().Contains(s)));
         }
 
-        var total = await query.CountAsync();
+        var total = await baseQuery.CountAsync();
 
-        var workers = await query
+        var workers = await baseQuery
+            .Include(w => w.User)
+            .Include(w => w.Skills)
+            .Include(w => w.ServiceAreas)
+            .Include(w => w.Documents)
+            .AsSplitQuery()
             .OrderByDescending(w => w.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

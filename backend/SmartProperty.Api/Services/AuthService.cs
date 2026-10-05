@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using SmartProperty.Api.Data;
 using SmartProperty.Api.DTOs.Auth;
 using SmartProperty.Api.Entities.Identity;
+using SmartProperty.Api.Entities.Property;
 using SmartProperty.Api.Interfaces;
 
 namespace SmartProperty.Api.Services;
@@ -31,12 +32,29 @@ public class AuthService : IAuthService
     {
         string identifier = request.Identifier.Trim();
 
-        var user = await _context.Users
+        var normalizedIdentifier =
+            identifier.ToLowerInvariant();
+
+        var usersQuery = _context.Users
+            .AsNoTracking()
             .Include(u => u.Role)
-            .FirstOrDefaultAsync(u =>
-                (u.Email != null &&
-                 u.Email.ToLower() == identifier.ToLower()) ||
-                u.Mobile == identifier);
+            .AsQueryable();
+
+        User? user;
+
+        if (identifier.Contains('@'))
+        {
+            user = await usersQuery
+                .FirstOrDefaultAsync(u =>
+                    u.Email != null &&
+                    u.Email.ToLower() == normalizedIdentifier);
+        }
+        else
+        {
+            user = await usersQuery
+                .FirstOrDefaultAsync(u =>
+                    u.Mobile == identifier);
+        }
 
         if (user == null || !user.IsActive)
         {
@@ -100,9 +118,19 @@ public class AuthService : IAuthService
             .WriteToken(token);
     }
     public async Task<bool> RegisterOwnerAsync(RegisterOwnerDto request)
-{
-    var email = request.Email?.Trim();
-    var mobile = request.Mobile?.Trim();
+    {
+        var email = request.Email?.Trim();
+        var mobile = request.Mobile?.Trim();
+
+        if (string.IsNullOrWhiteSpace(email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(mobile) || mobile.Length != 10 || !mobile.All(char.IsDigit))
+        {
+            return false;
+        }
 
     // Check whether the email or mobile is already registered.
     var existingUser = await _context.Users
@@ -158,7 +186,9 @@ public class AuthService : IAuthService
         City = request.City?.Trim(),
         Description = request.PropertyDescription?.Trim(),
         Latitude = request.Latitude,
-        Longitude = request.Longitude
+        Longitude = request.Longitude,
+        VerificationStatus = PropertyVerificationStatus.UnderReview,
+        SubmittedAt = DateTime.UtcNow
     };
 
     // Save the ownership/management proof.
@@ -170,10 +200,19 @@ public class AuthService : IAuthService
             DocumentUrl = request.DocumentUrl.Trim()
         };
 
+    var propertyDocument =
+        new SmartProperty.Api.Entities.Property.PropertyVerificationDocument
+        {
+            Property = property,
+            DocumentType = request.DocumentType.Trim(),
+            DocumentUrl = request.DocumentUrl.Trim()
+        };
+
     _context.Users.Add(user);
     _context.PropertyOwners.Add(propertyOwner);
     _context.Properties.Add(property);
     _context.OwnerVerificationDocuments.Add(document);
+    _context.PropertyVerificationDocuments.Add(propertyDocument);
 
     await _context.SaveChangesAsync();
 

@@ -20,13 +20,17 @@ async function request(path, options = {}) {
   return data;
 }
 
+export function getAllOwners() {
+  return request("/api/admin/owners");
+}
+
 export function getPendingOwners() {
   return request("/api/admin/owners/pending");
 }
 
-export function updateOwnerVerification(ownerId, status) {
+export function updateOwnerVerification(ownerId, status, rejectionReason) {
   return request(`/api/admin/owners/${ownerId}/verification`, {
     method: "PUT",
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, rejectionReason }),
   });
 }

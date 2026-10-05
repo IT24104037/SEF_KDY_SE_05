@@ -14,6 +14,8 @@ namespace SmartProperty.Api.Entities.Tenancy;
 public class Tenant
 {
     public ICollection<Tenancy> Tenancies { get; set; } = new List<Tenancy>();
+
+    public ICollection<TenantActivationPin> ActivationPins { get; set; } = new List<TenantActivationPin>();
     public int Id { get; set; }
 
     // Nullable: no linked login account exists until PIN activation.

@@ -30,3 +30,4 @@ public class RecommendationResponseDto
     public string? ValidationSummary { get; set; }
     public string? Message { get; set; }
 }
+

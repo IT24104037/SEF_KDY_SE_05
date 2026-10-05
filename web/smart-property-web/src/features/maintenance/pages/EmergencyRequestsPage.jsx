@@ -51,10 +51,10 @@ function EmergencyRequestsPage() {
   }
 
   return (
-    <div>
+    <div style={styles.page}>
       <div style={styles.heading}>
         <div>
-          <h1>Emergency Requests</h1>
+          <h1 style={styles.title}>Emergency Requests</h1>
 
           <p style={styles.subtitle}>
             View and monitor emergency maintenance requests.
@@ -144,7 +144,7 @@ function EmergencyRequestsPage() {
                       </td>
 
                       <td style={styles.td}>
-                        {request.priority || "Critical"}
+                        <span style={styles.criticalBadge}>{request.priority || "Critical"}</span>
                       </td>
 
                       <td style={styles.td}>
@@ -176,6 +176,7 @@ function EmergencyRequestsPage() {
 
           <div style={styles.pagination}>
             <button
+              style={styles.pageButton}
               disabled={page <= 1}
               onClick={() =>
                 setPage((current) => current - 1)
@@ -189,6 +190,7 @@ function EmergencyRequestsPage() {
             </span>
 
             <button
+              style={styles.pageButton}
               disabled={
                 totalPages === 0 ||
                 page >= totalPages
@@ -207,6 +209,8 @@ function EmergencyRequestsPage() {
 }
 
 const styles = {
+  page: { color: "#1f2933", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  title: { margin: "0 0 6px", color: "#172033", fontSize: "clamp(23px, 3vw, 30px)", fontWeight: 750 },
   heading: {
     display: "flex",
     justifyContent: "space-between",
@@ -216,14 +220,17 @@ const styles = {
   },
 
   subtitle: {
-    color: "#6b7280",
+    color: "#64748b",
+    fontSize: 14,
   },
 
   total: {
     backgroundColor: "#ffffff",
     padding: "12px 18px",
-    borderRadius: "8px",
+    border: "1px solid #e2e7e9",
+    borderRadius: "10px",
     fontWeight: "600",
+    boxShadow: "0 4px 14px rgba(22, 34, 42, 0.035)",
   },
 
   filters: {
@@ -232,15 +239,20 @@ const styles = {
   },
 
   input: {
-    padding: "10px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    color: "#1f2933",
+    background: "#ffffff",
+    fontFamily: "inherit",
   },
 
   tableContainer: {
     backgroundColor: "#ffffff",
+    border: "1px solid #e2e7e9",
     borderRadius: "10px",
     overflowX: "auto",
+    boxShadow: "0 8px 24px rgba(22, 34, 42, 0.04)",
   },
 
   table: {
@@ -249,15 +261,20 @@ const styles = {
   },
 
   th: {
-    padding: "14px",
+    padding: "13px 14px",
     textAlign: "left",
-    backgroundColor: "#f9fafb",
-    borderBottom: "1px solid #e5e7eb",
+    backgroundColor: "#f3f5f6",
+    borderBottom: "1px solid #e2e7e9",
+    color: "#526176",
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   td: {
-    padding: "14px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "13px 14px",
+    borderBottom: "1px solid #edf1f3",
+    color: "#334155",
+    fontSize: 13,
   },
 
   empty: {
@@ -268,10 +285,31 @@ const styles = {
   button: {
     padding: "7px 12px",
     border: "none",
-    borderRadius: "5px",
-    backgroundColor: "#17324d",
+    borderRadius: "8px",
+    backgroundColor: "#5145cd",
     color: "#ffffff",
     cursor: "pointer",
+  },
+
+  criticalBadge: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: 999,
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    color: "#991b1b",
+    fontSize: 11,
+    fontWeight: 700,
+  },
+
+  pageButton: {
+    padding: "8px 13px",
+    border: "1px solid #d8e0eb",
+    borderRadius: 8,
+    background: "#ffffff",
+    color: "#334155",
+    cursor: "pointer",
+    fontWeight: 600,
   },
 
   pagination: {
@@ -283,7 +321,11 @@ const styles = {
   },
 
   error: {
-    color: "red",
+    color: "#991b1b",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: 8,
+    padding: "12px 16px",
   },
 };
 
