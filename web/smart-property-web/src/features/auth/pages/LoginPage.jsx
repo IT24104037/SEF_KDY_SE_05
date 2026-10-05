@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import { login } from "../../../api/authApi.js";
 import { saveSession } from "../../../utils/auth.js";
@@ -44,6 +44,8 @@ function LoginPage() {
   return (
     <div style={styles.page}>
       <form style={styles.card} onSubmit={handleSubmit}>
+        <Link to="/" style={styles.backLink}>← Back to Home</Link>
+
         <h1 style={styles.title}>Smart Property</h1>
 
         <p style={styles.subtitle}>
@@ -114,6 +116,15 @@ function LoginPage() {
 }
 
 const styles = {
+  backLink: {
+    display: "inline-block",
+    marginBottom: "16px",
+    fontSize: "13px",
+    color: "#0f766e",
+    textDecoration: "none",
+    opacity: 0.85,
+  },
+
   page: {
     minHeight: "100vh",
     backgroundColor: "#f3f5f6",

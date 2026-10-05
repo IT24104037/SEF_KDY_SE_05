@@ -10,6 +10,10 @@ import TenantLayout from "../layouts/TenantLayout";
 import LoginPage from "../features/auth/pages/LoginPage";
 import AdminLayout from "../layouts/AdminLayout";
 
+const LandingPage = lazy(() =>
+  import("../features/landing/pages/LandingPage")
+);
+
 const OwnerRegisterPage = lazy(() =>
   import("../features/auth/pages/OwnerRegisterPage")
 );
@@ -198,11 +202,11 @@ export default function AppRoutes() {
       }
     >
       <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register-owner" element={<OwnerRegisterPage />} />
-      <Route path="/activate-tenant" element={<TenantActivationPage />} />
-      <Route path="/" element={<Navigate to="/owner/tenants" replace />} />
-      <Route  path="/register-worker" element={<WorkerRegistrationPage />}/>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register-owner" element={<OwnerRegisterPage />} />
+        <Route path="/activate-tenant" element={<TenantActivationPage />} />
+        <Route path="/register-worker" element={<WorkerRegistrationPage />} />
 
         <Route path="/owner" element={<Navigate to="/owner/dashboard" replace />} />
 
