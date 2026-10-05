@@ -9,26 +9,20 @@ import '../services/maintenance_service.dart';
 class ReportMaintenanceScreen extends StatefulWidget {
   final String token;
 
-  const ReportMaintenanceScreen({
-    super.key,
-    required this.token,
-  });
+  const ReportMaintenanceScreen({super.key, required this.token});
 
   @override
   State<ReportMaintenanceScreen> createState() =>
       _ReportMaintenanceScreenState();
 }
 
-class _ReportMaintenanceScreenState
-    extends State<ReportMaintenanceScreen> {
+class _ReportMaintenanceScreenState extends State<ReportMaintenanceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
 
-  final MaintenanceService _maintenanceService =
-      MaintenanceService();
+  final MaintenanceService _maintenanceService = MaintenanceService();
 
-  final ImagePickerService _imagePickerService =
-      ImagePickerService();
+  final ImagePickerService _imagePickerService = ImagePickerService();
 
   XFile? _selectedImage;
 
@@ -43,8 +37,7 @@ class _ReportMaintenanceScreenState
   }
 
   Future<void> _pickFromGallery() async {
-    final image =
-        await _imagePickerService.pickFromGallery();
+    final image = await _imagePickerService.pickFromGallery();
 
     if (image != null) {
       setState(() {
@@ -55,8 +48,7 @@ class _ReportMaintenanceScreenState
   }
 
   Future<void> _takePhoto() async {
-    final image =
-        await _imagePickerService.takePhoto();
+    final image = await _imagePickerService.takePhoto();
 
     if (image != null) {
       setState(() {
@@ -73,8 +65,7 @@ class _ReportMaintenanceScreenState
 
     if (_selectedImage == null) {
       setState(() {
-        _errorMessage =
-            'A photo is required for a normal maintenance request.';
+        _errorMessage = 'A photo is required for a normal maintenance request.';
       });
 
       return;
@@ -88,18 +79,15 @@ class _ReportMaintenanceScreenState
       });
 
       // Step 1: Upload image.
-      final imageUrl =
-          await _maintenanceService.uploadImage(
+      final imageUrl = await _maintenanceService.uploadImage(
         file: _selectedImage!,
         token: widget.token,
       );
 
       // Step 2: Create maintenance request.
-      final result =
-          await _maintenanceService.createMaintenanceRequest(
+      final result = await _maintenanceService.createMaintenanceRequest(
         token: widget.token,
-        description:
-            _descriptionController.text.trim(),
+        description: _descriptionController.text.trim(),
         requestType: 'NORMAL',
         imageUrl: imageUrl,
       );
@@ -117,11 +105,7 @@ class _ReportMaintenanceScreenState
       if (!mounted) return;
 
       setState(() {
-        _errorMessage =
-            error.toString().replaceFirst(
-                  'Exception: ',
-                  '',
-                );
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -135,24 +119,18 @@ class _ReportMaintenanceScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Report Maintenance'),
-      ),
+      appBar: AppBar(title: const Text('Report Maintenance')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Report a Maintenance Problem',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
@@ -164,22 +142,17 @@ class _ReportMaintenanceScreenState
                 const SizedBox(height: 24),
 
                 TextFormField(
-                  controller:
-                      _descriptionController,
+                  controller: _descriptionController,
                   maxLength: 1000,
                   maxLines: 5,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Problem Description',
+                  decoration: const InputDecoration(
+                    labelText: 'Problem Description',
                     hintText:
                         'Example: Water is leaking under the kitchen sink.',
-                    border:
-                        OutlineInputBorder(),
+                    border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please describe the maintenance problem.';
                     }
 
@@ -191,10 +164,7 @@ class _ReportMaintenanceScreenState
 
                 const Text(
                   'Photo *',
-                  style: TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
@@ -203,16 +173,9 @@ class _ReportMaintenanceScreenState
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _submitting
-                                ? null
-                                : _takePhoto,
-                        icon: const Icon(
-                          Icons.camera_alt,
-                        ),
-                        label: const Text(
-                          'Camera',
-                        ),
+                        onPressed: _submitting ? null : _takePhoto,
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text('Camera'),
                       ),
                     ),
 
@@ -220,16 +183,9 @@ class _ReportMaintenanceScreenState
 
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _submitting
-                                ? null
-                                : _pickFromGallery,
-                        icon: const Icon(
-                          Icons.photo_library,
-                        ),
-                        label: const Text(
-                          'Gallery',
-                        ),
+                        onPressed: _submitting ? null : _pickFromGallery,
+                        icon: const Icon(Icons.photo_library),
+                        label: const Text('Gallery'),
                       ),
                     ),
                   ],
@@ -239,12 +195,9 @@ class _ReportMaintenanceScreenState
 
                 if (_selectedImage != null)
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10),
                     child: Image.file(
-                      File(
-                        _selectedImage!.path,
-                      ),
+                      File(_selectedImage!.path),
                       width: double.infinity,
                       height: 250,
                       fit: BoxFit.cover,
@@ -256,17 +209,10 @@ class _ReportMaintenanceScreenState
                     height: 160,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(
-                        10,
-                      ),
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      'No photo selected',
-                    ),
+                    child: const Text('No photo selected'),
                   ),
 
                 if (_errorMessage != null) ...[
@@ -274,25 +220,14 @@ class _ReportMaintenanceScreenState
 
                   Container(
                     width: double.infinity,
-                    padding:
-                        const EdgeInsets.all(
-                      12,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          Colors.red.shade50,
-                      borderRadius:
-                          BorderRadius.circular(
-                        8,
-                      ),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(
-                        color:
-                            Colors.red.shade700,
-                      ),
+                      style: TextStyle(color: Colors.red.shade700),
                     ),
                   ),
                 ],
@@ -302,25 +237,14 @@ class _ReportMaintenanceScreenState
 
                   Container(
                     width: double.infinity,
-                    padding:
-                        const EdgeInsets.all(
-                      12,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          Colors.green.shade50,
-                      borderRadius:
-                          BorderRadius.circular(
-                        8,
-                      ),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       _successMessage!,
-                      style: TextStyle(
-                        color:
-                            Colors.green.shade700,
-                      ),
+                      style: TextStyle(color: Colors.green.shade700),
                     ),
                   ),
                 ],
@@ -330,15 +254,9 @@ class _ReportMaintenanceScreenState
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed:
-                        _submitting
-                            ? null
-                            : _submit,
+                    onPressed: _submitting ? null : _submit,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.all(
-                        14,
-                      ),
+                      padding: const EdgeInsets.all(14),
                       child: Text(
                         _submitting
                             ? 'Submitting...'

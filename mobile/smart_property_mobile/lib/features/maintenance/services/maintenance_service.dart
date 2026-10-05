@@ -17,25 +17,16 @@ class MaintenanceService {
 
     request.headers['Authorization'] = 'Bearer $token';
 
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'file',
-        file.path,
-      ),
-    );
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
 
     final streamedResponse = await request.send();
 
-    final response =
-        await http.Response.fromStream(streamedResponse);
+    final response = await http.Response.fromStream(streamedResponse);
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
-      throw Exception(
-        data['message'] ?? 'Image upload failed.',
-      );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(data['message'] ?? 'Image upload failed.');
     }
 
     return data['imageUrl'];
@@ -64,11 +55,9 @@ class MaintenanceService {
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
-        data['message'] ??
-            'Failed to create maintenance request.',
+        data['message'] ?? 'Failed to create maintenance request.',
       );
     }
 
@@ -93,29 +82,23 @@ class MaintenanceService {
       params['status'] = status;
     }
 
-    if (requestType != null &&
-        requestType.isNotEmpty) {
+    if (requestType != null && requestType.isNotEmpty) {
       params['requestType'] = requestType;
     }
 
-    final uri = Uri.parse(
-      ApiConstants.maintenanceRequests,
-    ).replace(queryParameters: params);
+    final uri = Uri.parse(ApiConstants.maintenanceRequests)
+        .replace(queryParameters: params);
 
     final response = await http.get(
       uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
-        data['message'] ??
-            'Failed to load maintenance requests.',
+        data['message'] ?? 'Failed to load maintenance requests.',
       );
     }
 
@@ -127,22 +110,14 @@ class MaintenanceService {
     required int id,
   }) async {
     final response = await http.get(
-      Uri.parse(
-        '${ApiConstants.maintenanceRequests}/$id',
-      ),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('${ApiConstants.maintenanceRequests}/$id'),
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
-      throw Exception(
-        data['message'] ??
-            'Failed to load maintenance request.',
-      );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(data['message'] ?? 'Failed to load maintenance request.');
     }
 
     return Map<String, dynamic>.from(data);
@@ -153,22 +128,16 @@ class MaintenanceService {
     required int id,
   }) async {
     final response = await http.get(
-      Uri.parse(
-        '${ApiConstants.maintenanceRequests}/$id/history',
-      ),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('${ApiConstants.maintenanceRequests}/$id/history'),
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         data is Map
-            ? data['message'] ??
-                'Failed to load status history.'
+            ? data['message'] ?? 'Failed to load status history.'
             : 'Failed to load status history.',
       );
     }
@@ -176,31 +145,21 @@ class MaintenanceService {
     return List<dynamic>.from(data);
   }
 
-  Future<void> cancelRequest({
-    required String token,
-    required int id,
-  }) async {
+  Future<void> cancelRequest({required String token, required int id}) async {
     final response = await http.put(
-      Uri.parse(
-        '${ApiConstants.maintenanceRequests}/$id/status',
-      ),
+      Uri.parse('${ApiConstants.maintenanceRequests}/$id/status'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'status': 'Cancelled',
-        'note': 'Cancelled by tenant.',
-      }),
+      body: jsonEncode({'status': 'Cancelled', 'note': 'Cancelled by tenant.'}),
     );
 
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       final data = jsonDecode(response.body);
 
       throw Exception(
-        data['message'] ??
-            'Failed to cancel maintenance request.',
+        data['message'] ?? 'Failed to cancel maintenance request.',
       );
     }
   }
@@ -210,23 +169,18 @@ class MaintenanceService {
     required int requestId,
     required String status,
     String? note,
-}) async {
-  final response = await http.put(
-    Uri.parse('${ApiConstants.maintenanceRequests}/$requestId/status'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      'status': status,
-      'note': note,
-    }),
-  );
-
-  if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw Exception(
-      'Failed to update request status: ${response.body}',
+  }) async {
+    final response = await http.put(
+      Uri.parse('${ApiConstants.maintenanceRequests}/$requestId/status'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'status': status, 'note': note}),
     );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to update request status: ${response.body}');
+    }
   }
-}
 }

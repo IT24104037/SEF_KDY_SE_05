@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
+
 import 'request_details_screen.dart';
 import '../services/maintenance_service.dart';
 
 class MyRequestsScreen extends StatefulWidget {
   final String token;
 
-  const MyRequestsScreen({
-    super.key,
-    required this.token,
-  });
+  const MyRequestsScreen({super.key, required this.token});
 
   @override
-  State<MyRequestsScreen> createState() =>
-      _MyRequestsScreenState();
+  State<MyRequestsScreen> createState() => _MyRequestsScreenState();
 }
 
-class _MyRequestsScreenState
-    extends State<MyRequestsScreen> {
-  final MaintenanceService _maintenanceService =
-      MaintenanceService();
+class _MyRequestsScreenState extends State<MyRequestsScreen> {
+  final MaintenanceService _maintenanceService = MaintenanceService();
 
   List<dynamic> _requests = [];
 
@@ -45,41 +40,28 @@ class _MyRequestsScreenState
         _errorMessage = null;
       });
 
-      final result =
-          await _maintenanceService.getRequests(
+      final result = await _maintenanceService.getRequests(
         token: widget.token,
         page: _page,
         pageSize: 10,
-        status:
-            _status.isEmpty ? null : _status,
-        requestType:
-            _requestType.isEmpty
-                ? null
-                : _requestType,
+        status: _status.isEmpty ? null : _status,
+        requestType: _requestType.isEmpty ? null : _requestType,
       );
 
       if (!mounted) return;
 
       setState(() {
-        _requests =
-            result['requests'] as List<dynamic>? ??
-                [];
+        _requests = result['requests'] as List<dynamic>? ?? [];
 
-        _totalPages =
-            result['totalPages'] as int? ?? 0;
+        _totalPages = result['totalPages'] as int? ?? 0;
 
-        _totalCount =
-            result['totalCount'] as int? ?? 0;
+        _totalCount = result['totalCount'] as int? ?? 0;
       });
     } catch (error) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage =
-            error.toString().replaceFirst(
-                  'Exception: ',
-                  '',
-                );
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -95,9 +77,7 @@ class _MyRequestsScreenState
       return '-';
     }
 
-    final date = DateTime.tryParse(
-      value.toString(),
-    );
+    final date = DateTime.tryParse(value.toString());
 
     if (date == null) {
       return value.toString();
@@ -106,132 +86,101 @@ class _MyRequestsScreenState
     return date.toLocal().toString().split('.')[0];
   }
 
-  Widget _buildRequestCard(
-  Map<String, dynamic> request,
-) {
-  final requestType =
-      request['requestType']?.toString() ?? '-';
+  Widget _buildRequestCard(Map<String, dynamic> request) {
+    final requestType = request['requestType']?.toString() ?? '-';
 
-  final status =
-      request['status']?.toString() ?? '-';
+    final status = request['status']?.toString() ?? '-';
 
-  final category =
-      request['categoryName']?.toString();
+    final category = request['categoryName']?.toString();
 
-  final priority =
-      request['priority']?.toString();
+    final priority = request['priority']?.toString();
 
-  return Card(
-    margin: const EdgeInsets.only(
-      bottom: 14,
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Request #${request['id']}',
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                status,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            requestType,
-            style: TextStyle(
-              color:
-                  requestType == 'EMERGENCY'
-                      ? Colors.red
-                      : Colors.blueGrey,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            request['description']?.toString() ??
-                '-',
-          ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            'Category: ${category ?? 'Not analysed'}',
-          ),
-
-          Text(
-            'Priority: ${priority ?? 'Pending'}',
-          ),
-
-          Text(
-            'Submitted: ${_formatDate(request['createdAt'])}',
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        RequestDetailsScreen(
-                      token: widget.token,
-                      requestId:
-                          request['id'] as int,
-                    ),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Request #${request['id']}',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
                   ),
-                ).then((_) {
-                  if (mounted) {
-                    _loadRequests();
-                  }
-                });
-              },
-              child: const Text(
-                'View Details',
+                ),
+                Text(
+                  status,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              requestType,
+              style: TextStyle(
+                color: requestType == 'EMERGENCY'
+                    ? Colors.red
+                    : Colors.blueGrey,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 10),
+
+            Text(request['description']?.toString() ?? '-'),
+
+            const SizedBox(height: 12),
+
+            Text('Category: ${category ?? 'Not analysed'}'),
+
+            Text('Priority: ${priority ?? 'Pending'}'),
+
+            Text('Submitted: ${_formatDate(request['createdAt'])}'),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RequestDetailsScreen(
+                        token: widget.token,
+                        requestId: request['id'] as int,
+                      ),
+                    ),
+                  ).then((_) {
+                    if (mounted) {
+                      _loadRequests();
+                    }
+                  });
+                },
+                child: const Text('View Details'),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            const Text('My Requests'),
+        title: const Text('My Requests'),
         actions: [
           IconButton(
-            onPressed:
-                _loading
-                    ? null
-                    : _loadRequests,
-            icon:
-                const Icon(Icons.refresh),
+            onPressed: _loading ? null : _loadRequests,
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
@@ -240,20 +189,13 @@ class _MyRequestsScreenState
         child: Column(
           children: [
             Padding(
-              padding:
-                  const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Total Requests: $_totalCount',
-                    style:
-                        const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -261,80 +203,49 @@ class _MyRequestsScreenState
                   Row(
                     children: [
                       Expanded(
-                        child:
-                            DropdownButtonFormField<
-                                String>(
-                          initialValue:
-                              _status,
-                          decoration:
-                              const InputDecoration(
-                            labelText:
-                                'Status',
-                            border:
-                                OutlineInputBorder(),
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _status,
+                          decoration: const InputDecoration(
+                            labelText: 'Status',
+                            border: OutlineInputBorder(),
                           ),
                           items: const [
                             DropdownMenuItem(
                               value: '',
-                              child: Text(
-                                'All Status',
-                              ),
+                              child: Text('All Status'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Submitted',
-                              child: Text(
-                                'Submitted',
-                              ),
+                              value: 'Submitted',
+                              child: Text('Submitted'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Emergency',
-                              child: Text(
-                                'Emergency',
-                              ),
+                              value: 'Emergency',
+                              child: Text('Emergency'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Analysing',
-                              child: Text(
-                                'Analysing',
-                              ),
+                              value: 'Analysing',
+                              child: Text('Analysing'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Assigned',
-                              child: Text(
-                                'Assigned',
-                              ),
+                              value: 'Assigned',
+                              child: Text('Assigned'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'InProgress',
-                              child: Text(
-                                'In Progress',
-                              ),
+                              value: 'InProgress',
+                              child: Text('In Progress'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Completed',
-                              child: Text(
-                                'Completed',
-                              ),
+                              value: 'Completed',
+                              child: Text('Completed'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Cancelled',
-                              child: Text(
-                                'Cancelled',
-                              ),
+                              value: 'Cancelled',
+                              child: Text('Cancelled'),
                             ),
                           ],
-                          onChanged:
-                              (value) {
+                          onChanged: (value) {
                             setState(() {
-                              _status =
-                                  value ?? '';
+                              _status = value ?? '';
                               _page = 1;
                             });
 
@@ -343,52 +254,32 @@ class _MyRequestsScreenState
                         ),
                       ),
 
-                      const SizedBox(
-                        width: 10,
-                      ),
+                      const SizedBox(width: 10),
 
                       Expanded(
-                        child:
-                            DropdownButtonFormField<
-                                String>(
-                          initialValue:
-                              _requestType,
-                          decoration:
-                              const InputDecoration(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _requestType,
+                          decoration: const InputDecoration(
                             labelText: 'Type',
-                            border:
-                                OutlineInputBorder(),
+                            border: OutlineInputBorder(),
                           ),
                           items: const [
                             DropdownMenuItem(
                               value: '',
-                              child:
-                                  Text(
-                                'All Types',
-                              ),
+                              child: Text('All Types'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'NORMAL',
-                              child:
-                                  Text(
-                                'Normal',
-                              ),
+                              value: 'NORMAL',
+                              child: Text('Normal'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'EMERGENCY',
-                              child:
-                                  Text(
-                                'Emergency',
-                              ),
+                              value: 'EMERGENCY',
+                              child: Text('Emergency'),
                             ),
                           ],
-                          onChanged:
-                              (value) {
+                          onChanged: (value) {
                             setState(() {
-                              _requestType =
-                                  value ?? '';
+                              _requestType = value ?? '';
                               _page = 1;
                             });
 
@@ -404,79 +295,44 @@ class _MyRequestsScreenState
 
             if (_errorMessage != null)
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.all(
-                    12,
-                  ),
-                  color:
-                      Colors.red.shade50,
+                  padding: const EdgeInsets.all(12),
+                  color: Colors.red.shade50,
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(
-                      color:
-                          Colors.red.shade700,
-                    ),
+                    style: TextStyle(color: Colors.red.shade700),
                   ),
                 ),
               ),
 
             Expanded(
               child: _loading
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(),
-                    )
+                  ? const Center(child: CircularProgressIndicator())
                   : _requests.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No maintenance requests found.',
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh:
-                              _loadRequests,
-                          child:
-                              ListView.builder(
-                            padding:
-                                const EdgeInsets
-                                    .all(16),
-                            itemCount:
-                                _requests
-                                    .length,
-                            itemBuilder:
-                                (context,
-                                    index) {
-                              final request =
-                                  Map<String,
-                                      dynamic>.from(
-                                _requests[
-                                    index],
-                              );
+                  ? const Center(child: Text('No maintenance requests found.'))
+                  : RefreshIndicator(
+                      onRefresh: _loadRequests,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _requests.length,
+                        itemBuilder: (context, index) {
+                          final request = Map<String, dynamic>.from(
+                            _requests[index],
+                          );
 
-                              return _buildRequestCard(
-                                request,
-                              );
-                            },
-                          ),
-                        ),
+                          return _buildRequestCard(request);
+                        },
+                      ),
+                    ),
             ),
 
             if (!_loading)
               Padding(
-                padding:
-                    const EdgeInsets.all(
-                  16,
-                ),
+                padding: const EdgeInsets.all(16),
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment
-                          .spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     OutlinedButton(
                       onPressed: _page > 1
@@ -488,10 +344,7 @@ class _MyRequestsScreenState
                               _loadRequests();
                             }
                           : null,
-                      child:
-                          const Text(
-                        'Previous',
-                      ),
+                      child: const Text('Previous'),
                     ),
 
                     Text(
@@ -499,23 +352,16 @@ class _MyRequestsScreenState
                     ),
 
                     OutlinedButton(
-                      onPressed:
-                          _totalPages > 0 &&
-                                  _page <
-                                      _totalPages
-                              ? () {
-                                  setState(
-                                      () {
-                                    _page++;
-                                  });
+                      onPressed: _totalPages > 0 && _page < _totalPages
+                          ? () {
+                              setState(() {
+                                _page++;
+                              });
 
-                                  _loadRequests();
-                                }
-                              : null,
-                      child:
-                          const Text(
-                        'Next',
-                      ),
+                              _loadRequests();
+                            }
+                          : null,
+                      child: const Text('Next'),
                     ),
                   ],
                 ),
