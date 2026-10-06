@@ -1,0 +1,17 @@
+**/bin
+**/obj
+**/node_modules
+
+.git
+.vs
+.vscode
+
+**/.env
+**/.env.*
+**/appsettings*.json
+
+**/wwwroot/uploads
+
+**/TestResults
+**/*.user
+**/*.suo
