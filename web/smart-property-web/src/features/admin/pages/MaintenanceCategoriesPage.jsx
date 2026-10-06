@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5144"
+).replace(/\/+$/, "");
+
 function MaintenanceCategoriesPage() {
   const [categories, setCategories] = useState([]);
 
