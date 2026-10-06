@@ -16,8 +16,7 @@ function MaintenanceCategoriesPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  const API_URL =
-    "http://localhost:5144/api/maintenance-categories";
+ const API_URL = `${API_BASE_URL}/api/maintenance-categories`;
 
   useEffect(() => {
     loadCategories();
