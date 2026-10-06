@@ -33,7 +33,7 @@ function EmergencyRequestsPage() {
       }
 
       const response = await fetch(
-        `http://localhost:5144/api/maintenance-requests?${params.toString()}`,
+        `${API_BASE_URL}/api/maintenance-requests?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

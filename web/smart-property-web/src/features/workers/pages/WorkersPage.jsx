@@ -55,9 +55,9 @@ function WorkersPage() {
 			return encodeURI(url);
 		}
 		if (url.startsWith("/uploads/")) {
-			return encodeURI(`http://localhost:5144${url}`);
+			return encodeURI(`${API_BASE_URL}${url}`);
 		}
-		return encodeURI(`http://localhost:5144/${url.replace(/^\/+/, "")}`);
+		return encodeURI(`${API_BASE_URL}/${url.replace(/^\/+/, "")}`);
 	}
 
 	function isImageDoc(url, name) {

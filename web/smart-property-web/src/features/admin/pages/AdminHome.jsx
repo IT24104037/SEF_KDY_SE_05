@@ -27,7 +27,7 @@ function AdminHome() {
      
 
       const response = await fetch(
-        "http://localhost:5144/api/admin/dashboard/summary",
+        "`${API_BASE_URL}/api/admin/dashboard/summary`,",
         {
           headers: {
             Authorization: `Bearer ${token}`,
