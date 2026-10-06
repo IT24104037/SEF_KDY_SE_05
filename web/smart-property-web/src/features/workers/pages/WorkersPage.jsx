@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { getWorkers, updateWorkerVerification } from "../services/workerService.js";
 
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5144"
+).replace(/\/+$/, "");
+
 function WorkersPage() {
 	const [workers, setWorkers] = useState([]);
 	const [search, setSearch] = useState("");
