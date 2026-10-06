@@ -30,13 +30,13 @@ function AdminHome() {
      
 
       const response = await fetch(
-        "`${API_BASE_URL}/api/admin/dashboard/summary`,",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    `${API_BASE_URL}/api/admin/dashboard/summary`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
       if (!response.ok) {
         throw new Error(
