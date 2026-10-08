@@ -69,3 +69,4 @@ appsettings.Local.json
 .env
 .env.*
 !.env.example
+testing/postman/*.local.postman_environment.json
