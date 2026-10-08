@@ -464,4 +464,489 @@ public class Agent4Tests
         Assert.NotNull(parsedMemory.SafetyComplianceCheck);
         Assert.NotNull(parsedMemory.RateCheck);
     }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_GeographicSafety_TechnicianOutsideServiceCityAndRadius_AddsWarningAndElevatesRiskScore()
+    {
+        // Arrange: Technician is located in Kandy (115km away), property is in Colombo
+        using var context = CreateInMemoryDbContext("A4_OutsideServiceArea");
+        var (request, worker) = SeedBaseData(context, city: "Colombo");
+
+        // Update worker's service area to Kandy (~115 km from Colombo lat/lon 6.9271, 79.8612)
+        var sa = worker.ServiceAreas.First();
+        sa.City = "Kandy";
+        sa.RadiusKm = 15.0;
+        sa.Latitude = 7.2906;
+        sa.Longitude = 80.6337;
+        context.SaveChanges();
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            WorkerName = worker.User!.FullName,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(25.0, output.RiskScore);
+        Assert.Empty(output.Violations);
+        Assert.Contains(output.Warnings, w => w.Contains("does not explicitly cover property location 'Colombo'"));
+        Assert.DoesNotContain(output.PassedRules, r => r.Contains("Pillar 3"));
+
+        // Verify JSON memory in DB
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.False(parsedMemory.GeoCoverageCheck.CityMatches);
+        Assert.False(parsedMemory.GeoCoverageCheck.WithinRadiusKm);
+        Assert.True(parsedMemory.GeoCoverageCheck.CalculatedDistanceKm > 50.0);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_GeographicSafety_TechnicianInsideRadiusDifferentCity_VerifiesPillar3Passed()
+    {
+        // Arrange: Property in Colombo (6.9271, 79.8612), Service area in Sri Jayawardenepura Kotte (6.8900, 79.9000, 15km radius - dist ~5.6km)
+        using var context = CreateInMemoryDbContext("A4_InsideRadiusDifferentCity");
+        var (request, worker) = SeedBaseData(context, city: "Colombo");
+
+        var sa = worker.ServiceAreas.First();
+        sa.City = "Sri Jayawardenepura Kotte";
+        sa.RadiusKm = 15.0;
+        sa.Latitude = 6.8900;
+        sa.Longitude = 79.9000;
+        context.SaveChanges();
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(5.0, output.RiskScore);
+        Assert.Empty(output.Warnings);
+        Assert.Contains(output.PassedRules, r => r.Contains("Pillar 3"));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.False(parsedMemory.GeoCoverageCheck.CityMatches);
+        Assert.True(parsedMemory.GeoCoverageCheck.WithinRadiusKm);
+        Assert.True(parsedMemory.GeoCoverageCheck.CalculatedDistanceKm < 10.0);
+        Assert.Equal(15.0, parsedMemory.GeoCoverageCheck.MaxAllowedRadiusKm);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_GeographicSafety_TechnicianMatchingServiceCity_VerifiesPillar3Passed()
+    {
+        // Arrange: Matching city "Colombo"
+        using var context = CreateInMemoryDbContext("A4_MatchingServiceCity");
+        var (request, worker) = SeedBaseData(context, city: "Colombo");
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(5.0, output.RiskScore);
+        Assert.Empty(output.Warnings);
+        Assert.Contains(output.PassedRules, r => r.Contains("Pillar 3: Geospatial service area and city coverage verified."));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.True(parsedMemory.GeoCoverageCheck.CityMatches);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_GeographicSafety_MissingWorkerServiceAreas_AddsOutofAreaWarning()
+    {
+        // Arrange: Worker has no service area records
+        using var context = CreateInMemoryDbContext("A4_MissingWorkerServiceAreas");
+        var (request, worker) = SeedBaseData(context, city: "Colombo");
+
+        context.ServiceAreas.RemoveRange(worker.ServiceAreas);
+        worker.ServiceAreas.Clear();
+        context.SaveChanges();
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(25.0, output.RiskScore);
+        Assert.Contains(output.Warnings, w => w.Contains("does not explicitly cover property location 'Colombo'"));
+        Assert.DoesNotContain(output.PassedRules, r => r.Contains("Pillar 3"));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.False(parsedMemory.GeoCoverageCheck.CityMatches);
+        Assert.False(parsedMemory.GeoCoverageCheck.WithinRadiusKm);
+        Assert.Equal(0, parsedMemory.GeoCoverageCheck.CalculatedDistanceKm);
+        Assert.Equal(0, parsedMemory.GeoCoverageCheck.MaxAllowedRadiusKm);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_GeographicSafety_MissingPropertyLocationInfo_AddsWarningFlag()
+    {
+        // Arrange: Property has missing City and Lat/Lon
+        using var context = CreateInMemoryDbContext("A4_MissingPropertyLocation");
+        var (request, worker) = SeedBaseData(context, city: "Colombo");
+
+        request.Property!.City = null;
+        request.Property.Latitude = null;
+        request.Property.Longitude = null;
+        context.SaveChanges();
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(25.0, output.RiskScore);
+        Assert.Contains(output.Warnings, w => w.Contains("does not explicitly cover property location ''"));
+        Assert.DoesNotContain(output.PassedRules, r => r.Contains("Pillar 3"));
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_GeographicSafety_MultipleServiceAreas_EvaluatesClosestAreaCorrectly()
+    {
+        // Arrange: Worker has 2 service areas (Galle ~115km away, Dehiwala ~8.5km away)
+        using var context = CreateInMemoryDbContext("A4_MultipleServiceAreas");
+        var (request, worker) = SeedBaseData(context, city: "Colombo");
+
+        var sa1 = worker.ServiceAreas.First();
+        sa1.City = "Galle";
+        sa1.RadiusKm = 10.0;
+        sa1.Latitude = 6.0535;
+        sa1.Longitude = 80.2210;
+
+        var sa2 = new ServiceArea
+        {
+            WorkerId = worker.Id,
+            City = "Dehiwala",
+            RadiusKm = 15.0,
+            Latitude = 6.8511,
+            Longitude = 79.8653
+        };
+        worker.ServiceAreas.Add(sa2);
+        context.SaveChanges();
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(5.0, output.RiskScore);
+        Assert.Empty(output.Warnings);
+        Assert.Contains(output.PassedRules, r => r.Contains("Pillar 3"));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.False(parsedMemory.GeoCoverageCheck.CityMatches);
+        Assert.True(parsedMemory.GeoCoverageCheck.WithinRadiusKm);
+        Assert.True(parsedMemory.GeoCoverageCheck.CalculatedDistanceKm > 8.0 && parsedMemory.GeoCoverageCheck.CalculatedDistanceKm < 10.0);
+        Assert.Equal(15.0, parsedMemory.GeoCoverageCheck.MaxAllowedRadiusKm);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_InactiveWorker_ReturnsFailWithBlockingViolation()
+    {
+        // Arrange: Verified worker, but account set to IsActive = false
+        using var context = CreateInMemoryDbContext("A4_InactiveWorker");
+        var (request, worker) = SeedBaseData(context, verificationStatus: WorkerVerificationStatus.Verified);
+
+        worker.User!.IsActive = false;
+        context.SaveChanges();
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            WorkerName = worker.User.FullName,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Fail, output.Status);
+        Assert.Equal(95.0, output.RiskScore);
+        Assert.NotEmpty(output.Violations);
+        Assert.Contains(output.Violations, v => v.Contains("marked inactive", StringComparison.OrdinalIgnoreCase));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.True(parsedMemory.VerificationCheck.IsVerified);
+        Assert.False(parsedMemory.VerificationCheck.AccountIsActive);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_VerifiedAndActiveWorker_PassesAccountStatusCheck()
+    {
+        // Arrange: Verified worker with IsActive = true
+        using var context = CreateInMemoryDbContext("A4_VerifiedActiveWorker");
+        var (request, worker) = SeedBaseData(context, verificationStatus: WorkerVerificationStatus.Verified);
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            WorkerName = worker.User!.FullName,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Pass, output.Status);
+        Assert.Equal(5.0, output.RiskScore);
+        Assert.Contains(output.PassedRules, r => r.Contains("Pillar 1: Technician identity, credentials, and verification status validated."));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.True(parsedMemory.VerificationCheck.IsVerified);
+        Assert.True(parsedMemory.VerificationCheck.AccountIsActive);
+        Assert.Equal("Worker is fully verified with an active account.", parsedMemory.VerificationCheck.StatusNotes);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_UnverifiedWorker_ActiveAccount_FailsVerificationCheck()
+    {
+        // Arrange: Unverified worker with IsActive = true
+        using var context = CreateInMemoryDbContext("A4_UnverifiedActiveWorker");
+        var (request, worker) = SeedBaseData(context, verificationStatus: WorkerVerificationStatus.PendingVerification);
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = worker.Id,
+            WorkerName = worker.User!.FullName,
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Fail, output.Status);
+        Assert.Equal(95.0, output.RiskScore);
+        Assert.Contains(output.Violations, v => v.Contains("is not verified", StringComparison.OrdinalIgnoreCase));
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        var parsedMemory = JsonSerializer.Deserialize<Agent4Memory>(savedResult.DetailsJson!);
+        Assert.NotNull(parsedMemory);
+        Assert.False(parsedMemory.VerificationCheck.IsVerified);
+        Assert.True(parsedMemory.VerificationCheck.AccountIsActive);
+    }
+
+    [Fact]
+    public async Task ValidationSafetyAgent_InvalidWorkerId_ReturnsFailWithRecordNotFoundViolation()
+    {
+        // Arrange: matchResult specifies non-existent WorkerId 9999
+        using var context = CreateInMemoryDbContext("A4_InvalidWorkerId");
+        var (request, _) = SeedBaseData(context);
+
+        var agent = new ValidationSafetyAgent(context);
+
+        var matchResult = new Agent3Result
+        {
+            MaintenanceRequestId = request.Id,
+            WorkerId = 9999,
+            WorkerName = "Ghost Worker",
+            SuggestedDateTime = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc),
+            IsEmergency = false,
+            Result = "MatchFound"
+        };
+
+        var analysisOutput = new AnalysisOutput
+        {
+            Category = "PLUMBING",
+            RequiredSkill = "Plumbing",
+            Priority = "NORMAL"
+        };
+
+        // Act
+        var output = await agent.ExecuteAsync(matchResult, analysisOutput, request.Id, 1);
+
+        // Assert
+        Assert.NotNull(output);
+        Assert.Equal(ValidationStatus.Fail, output.Status);
+        Assert.Equal(100.0, output.RiskScore);
+        Assert.Contains(output.Violations, v => v.Contains("Technician ID 9999 could not be found"));
+        Assert.Contains("Proposed technician record does not exist", output.Summary);
+
+        var savedResult = await context.ValidationResults
+            .FirstOrDefaultAsync(v => v.MaintenanceRequestId == request.Id);
+        Assert.NotNull(savedResult);
+        Assert.Equal(ValidationStatus.Fail, savedResult.Status);
+    }
 }

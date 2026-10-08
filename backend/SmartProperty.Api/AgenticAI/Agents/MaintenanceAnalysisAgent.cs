@@ -34,11 +34,7 @@ public class MaintenanceAnalysisAgent
                 "Maintenance description is missing.");
         }
 
-        if (ContainsUnsafeInstruction(input.Description))
-        {
-            return CreateNeedsInformationResult(
-                "The maintenance description contains unsupported instructions.");
-        }
+        bool hasUnsafeInstruction = ContainsUnsafeInstruction(input.Description);
 
         string description = NormalizeDescription(input.Description);
         
@@ -112,6 +108,12 @@ NeedsMoreInformation = false,
 EmergencyClass = "LIFE_SAFETY_EMERGENCY"
     };
 }
+
+        if (hasUnsafeInstruction)
+        {
+            return CreateNeedsInformationResult(
+                "The maintenance description contains unsupported instructions.");
+        }
 
 
 

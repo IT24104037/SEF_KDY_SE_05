@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,33 +18,32 @@ public class ConnectionDiagnosticTest
     }
 
     [Fact]
-    public async Task TestConnectionVariants()
+    public async Task TestConfiguredDatabaseConnection()
     {
-        string[] connectionStrings = new[]
-        {
-            "Host=aws-0-ap-southeast-2.pooler.supabase.com;Port=6543;Database=postgres;Username=postgres.gjbyumgnviiyytbdcnfk;Password=Praveenthan123@;SSL Mode=Require;Trust Server Certificate=true;Timeout=15;Command Timeout=15;Pooling=false;",
-            "Host=aws-0-ap-southeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.gjbyumgnviiyytbdcnfk;Password=Praveenthan123@;SSL Mode=Require;Trust Server Certificate=true;Timeout=15;Command Timeout=15;Pooling=false;",
-            "Host=db.gjbyumgnviiyytbdcnfk.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=Praveenthan123@;SSL Mode=Require;Trust Server Certificate=true;Timeout=15;Command Timeout=15;"
-        };
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddUserSecrets(typeof(SmartProperty.Api.Data.AppDbContext).Assembly, optional: true)
+            .AddEnvironmentVariables()
+            .Build();
 
-        foreach (var cs in connectionStrings)
+        string connectionString = config.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DefaultConnection configuration string is missing.");
+
+        _output.WriteLine("Loaded DefaultConnection configuration from User Secrets.");
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand("SELECT current_database(), current_user;", conn);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
         {
-            try
-            {
-                _output.WriteLine($"Testing: {cs.Split(';')[0]};{cs.Split(';')[1]}...");
-                await using var conn = new NpgsqlConnection(cs);
-                await conn.OpenAsync();
-                await using var cmd = new NpgsqlCommand("SELECT 1;", conn);
-                var res = await cmd.ExecuteScalarAsync();
-                _output.WriteLine($"SUCCESS with {cs.Split(';')[0]};{cs.Split(';')[1]} -> Result: {res}");
-                Assert.True(true);
-                return;
-            }
-            catch (Exception ex)
-            {
-                _output.WriteLine($"FAILED with {cs.Split(';')[0]};{cs.Split(';')[1]} -> {ex.GetType().Name}: {ex.Message}");
-            }
+            string dbName = reader.GetString(0);
+            string dbUser = reader.GetString(1);
+            _output.WriteLine($"Connected successfully! Database: {dbName}, User: {dbUser}");
         }
+
+        Assert.True(conn.State == System.Data.ConnectionState.Open, "Database connection should be open.");
     }
 }
-
