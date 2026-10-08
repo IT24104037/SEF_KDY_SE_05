@@ -1,0 +1,294 @@
+{
+  "info": {
+    "_postman_id": "6e655bb9-e5e4-44a1-98ed-a5e1f8d4fca8",
+    "name": "QM Member 1 - Backend API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57655896",
+    "_collection_link": "https://go.postman.co/collection/57655896-6e655bb9-e5e4-44a1-98ed-a5e1f8d4fca8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "M1-BE-01 Valid Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"M1-BE-01 - Status code is 200\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"M1-BE-01 - Response is JSON\", function () {\r\n    pm.expect(pm.response.headers.get(\"Content-Type\"))\r\n        .to.include(\"application/json\");\r\n});\r\n\r\npm.test(\"M1-BE-01 - Authentication token is returned\", function () {\r\n    const jsonData = pm.response.json();\r\n    pm.expect(jsonData.token).to.be.a(\"string\");\r\n    pm.expect(jsonData.token.length).to.be.above(0);\r\n});\r\n\r\npm.test(\"M1-BE-01 - User details are returned\", function () {\r\n    const jsonData = pm.response.json();\r\n    pm.expect(jsonData.userId).to.exist;\r\n    pm.expect(jsonData.fullName).to.be.a(\"string\");\r\n    pm.expect(jsonData.role).to.be.a(\"string\");\r\n});\r\nconst loginData = pm.response.json();\r\n\r\npm.environment.set(\"adminToken\", loginData.token);\r\npm.environment.set(\"adminUserId\", loginData.userId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"identifier\": \"{{adminIdentifier}}\",\r\n  \"password\": \"{{adminPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "M1-BE-02 wrong password",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"M1-BE-02 - Status code is 401 Unauthorized\", function () {\r\n    pm.response.to.have.status(401);\r\n});\r\n\r\npm.test(\"M1-BE-02 - Response is JSON\", function () {\r\n    pm.expect(pm.response.headers.get(\"Content-Type\"))\r\n        .to.include(\"application/json\");\r\n});\r\n\r\npm.test(\"M1-BE-02 - Correct error message is returned\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.message)\r\n        .to.eql(\"Invalid email/mobile or password.\");\r\n});\r\n\r\npm.test(\"M1-BE-02 - Authentication token is not returned\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.token).to.not.exist;\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"identifier\": \"{{adminIdentifier}}\",\r\n  \"password\": \"{{wrongPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create tenant",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Create Tenant for M1-BE-04",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "M1-BE-03Valid Tenant Activation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"M1-BE-03 - Status code is 200\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"M1-BE-03 - Response is JSON\", function () {\r\n    pm.expect(pm.response.headers.get(\"Content-Type\"))\r\n        .to.include(\"application/json\");\r\n});\r\n\r\npm.test(\"M1-BE-03 - Activation is successful\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.success).to.eql(true);\r\n});\r\n\r\npm.test(\"M1-BE-03 - Success message is correct\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.message)\r\n        .to.eql(\"Tenant account activated successfully.\");\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"mobileNumber\": \"{{validActivationMobile}}\",\r\n  \"pin\": \"{{validActivationPin}}\",\r\n  \"password\": \"{{tenantPassword}}\",\r\n  \"confirmPassword\": \"{{tenantPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/tenant-activation/activate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tenant-activation",
+            "activate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "M1-BE-04 Expired Activation PIN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"M1-BE-04 - Status code is 400 Bad Request\", function () {\r\n    pm.response.to.have.status(400);\r\n});\r\n\r\npm.test(\"M1-BE-04 - Response is JSON\", function () {\r\n    pm.expect(pm.response.headers.get(\"Content-Type\"))\r\n        .to.include(\"application/json\");\r\n});\r\n\r\npm.test(\"M1-BE-04 - Activation is rejected\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.success).to.eql(false);\r\n});\r\n\r\npm.test(\"M1-BE-04 - Correct failure message is returned\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.message)\r\n        .to.eql(\"Invalid mobile number or PIN.\");\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"mobileNumber\": \"{{expiredActivationMobile}}\",\r\n  \"pin\": \"{{expiredActivationPin}}\",\r\n  \"password\": \"{{tenantPassword2}}\",\r\n  \"confirmPassword\": \"{{tenantPassword2}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/tenant-activation/activate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tenant-activation",
+            "activate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "M1-BE-05 Admin Self-Suspension",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"M1-BE-05 - Status code is 400 Bad Request\", function () {\r\n    pm.response.to.have.status(400);\r\n});\r\n\r\npm.test(\"M1-BE-05 - Response is JSON\", function () {\r\n    pm.expect(pm.response.headers.get(\"Content-Type\"))\r\n        .to.include(\"application/json\");\r\n});\r\n\r\npm.test(\"M1-BE-05 - Correct self-suspension error message is returned\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.message)\r\n        .to.eql(\"You cannot suspend your own account.\");\r\n});\r\n\r\npm.test(\"M1-BE-05 - Admin account remains active after rejected request\", function () {\r\n    pm.expect(pm.response.code).to.eql(400);\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/users/{{adminUserId}}/suspend",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "users",
+            "{{adminUserId}}",
+            "suspend"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "M1-BE-06 Normal Maintenance Without Photo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"M1-BE-06 - Status code is 400 Bad Request\", function () {\r\n    pm.response.to.have.status(400);\r\n});\r\n\r\npm.test(\"M1-BE-06 - Response is JSON\", function () {\r\n    pm.expect(pm.response.headers.get(\"Content-Type\"))\r\n        .to.include(\"application/json\");\r\n});\r\n\r\npm.test(\"M1-BE-06 - Correct validation message is returned\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.message)\r\n        .to.eql(\"A photo is required for a normal maintenance request.\");\r\n});\r\n\r\npm.test(\"M1-BE-06 - Request creation is rejected\", function () {\r\n    const jsonData = pm.response.json();\r\n\r\n    pm.expect(jsonData.message).to.exist;\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tenantToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"description\": \"Kitchen tap is leaking and requires repair.\",\r\n  \"requestType\": \"NORMAL\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/maintenance-requests",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "maintenance-requests"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
